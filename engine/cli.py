@@ -38,6 +38,22 @@ def main(argv: list[str] | None = None) -> int:
     pg = sub.add_parser("gpa"); pg.add_argument("--records", required=True)
     pg.add_argument("--semester", type=int, default=None)
 
+    # grade add — the audit records a proven grade; engine recomputes GPA/standing + dashboard
+    pga = sub.add_parser("grade").add_subparsers(dest="sub", required=True).add_parser("add")
+    for a in ("vault", "course", "outcome", "kind", "source"):
+        pga.add_argument(f"--{a}", required=True)
+    pga.add_argument("--score", type=float, required=True)
+    pga.add_argument("--weight", type=float, required=True)
+    pga.add_argument("--semester", type=int, required=True)
+    pga.add_argument("--passed", action="store_true")
+    pga.add_argument("--tier", default=None); pga.add_argument("--topic", default=None)
+    pga.add_argument("--weak", default=""); pga.add_argument("--today", required=True)
+
+    # day close — update the streak once the day's items are (or aren't) all proven
+    pdc = sub.add_parser("day").add_subparsers(dest="sub", required=True).add_parser("close")
+    pdc.add_argument("--vault", required=True); pdc.add_argument("--today", required=True)
+    pdc.add_argument("--all-done", action="store_true")
+
     pv = sub.add_parser("proof").add_subparsers(dest="sub", required=True).add_parser("verify")
     pv.add_argument("--gate", required=True); pv.add_argument("--evidence", required=True)
 
@@ -62,6 +78,34 @@ def main(argv: list[str] | None = None) -> int:
         recs = gb.load_records(args.records)
         val = gb.semester_gpa(recs, args.semester) if args.semester else gb.cumulative_gpa(recs)
         print(json.dumps({"gpa": val, "standing": gb.standing_for(val)})); return 0
+    if args.cmd == "grade" and args.sub == "add":
+        from pathlib import Path
+        from . import registrar as R
+        from .gradebook import GradeRecord, Proof, append_record, load_records, score_to_band
+        vault = Path(args.vault)
+        recs_path = vault / "records" / "grades.jsonl"
+        recs_path.parent.mkdir(parents=True, exist_ok=True)
+        band = score_to_band(args.score)
+        record = GradeRecord(
+            ts=_now().isoformat(), course=args.course, outcome=args.outcome, kind=args.kind,
+            band=band, score=args.score, credits_weight=args.weight, semester=args.semester,
+            proof=Proof(source=args.source, passed=args.passed),
+            tier=args.tier, topic=args.topic,
+            weak_areas=[w for w in args.weak.split(",") if w])
+        append_record(recs_path, record)
+        st = R.load_state(vault)
+        R.refresh(st, load_records(recs_path))
+        R.save_state(vault, st); R.write_dashboard(vault, st, args.today)
+        print(json.dumps({"band": band, "gpa_cumulative": st.gpa.cumulative,
+                          "standing": st.standing})); return 0
+    if args.cmd == "day" and args.sub == "close":
+        from pathlib import Path
+        from . import registrar as R
+        vault = Path(args.vault)
+        st = R.load_state(vault)
+        R.record_day(st, args.today, args.all_done)
+        R.save_state(vault, st); R.write_dashboard(vault, st, args.today)
+        print(json.dumps({"streak": st.streak.current})); return 0
     if args.cmd == "proof":
         res = get_gate(args.gate).verify(json.loads(args.evidence))
         print(res.model_dump_json()); return 0 if res.passed else 2
