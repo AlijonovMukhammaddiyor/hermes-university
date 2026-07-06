@@ -1,0 +1,2 @@
+[console_scripts]
+hu-engine = engine.cli:main

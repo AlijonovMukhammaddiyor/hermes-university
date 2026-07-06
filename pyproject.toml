@@ -1,0 +1,27 @@
+[project]
+name = "hermes-university-engine"
+version = "0.1.0"
+description = "Deterministic Registrar engine for Hermes University (owns all numbers)."
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.6",
+    "fsrs>=4.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+hu-engine = "engine.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["engine", "engine.proofgate"]
