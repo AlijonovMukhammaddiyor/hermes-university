@@ -61,6 +61,11 @@ def main(argv: list[str] | None = None) -> int:
     plw = pl.add_parser("weak"); plw.add_argument("--records", required=True)
     plw.add_argument("--tz", default="Asia/Tashkent")
 
+    # plan — the engine's per-course "what to teach next + at what difficulty" (drives assign)
+    pp = sub.add_parser("plan")
+    pp.add_argument("--vault", required=True); pp.add_argument("--course-file", required=True)
+    pp.add_argument("--tz", default="Asia/Tashkent")
+
     args = p.parse_args(argv)
 
     if args.cmd == "state" and args.sub == "init":
@@ -113,6 +118,24 @@ def main(argv: list[str] | None = None) -> int:
         recs = gb.load_records(args.records)
         m = recompute(LearnerModel(), recs, tz=args.tz, now=_now())
         print(json.dumps({"weak_areas": weak_areas(m)})); return 0
+    if args.cmd == "plan":
+        from pathlib import Path
+        from .course import load_course
+        from .learner_model import difficulty_for, next_topic
+        c = load_course(args.course_file)
+        recs = [r for r in gb.load_records(Path(args.vault) / "records" / "grades.jsonl")
+                if r.course == c.id]
+        m = recompute(LearnerModel(), recs, tz=args.tz, now=_now())
+        mastered = {oid for oid, st in m.outcomes.items() if st.mastery_band and st.mastery_band != "F"}
+        nxt = next_topic(c.dag(), mastered)
+        if nxt is None:
+            print(json.dumps({"course": c.id, "next": None, "done": True})); return 0
+        unit = c.unit_of(nxt)
+        o = c.outcome(nxt)
+        tier = difficulty_for(m, unit.id if unit else nxt, baseline=c.starting_tier)
+        print(json.dumps({"course": c.id, "next_outcome": nxt, "unit": unit.id if unit else None,
+                          "statement": o.statement if o else None, "proof": o.proof if o else None,
+                          "difficulty": tier})); return 0
     p.error("unknown command")
 
 

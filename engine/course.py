@@ -90,6 +90,15 @@ class Course(BaseModel):
     def all_outcomes(self) -> list[Outcome]:
         return [o for u in self.units for o in u.outcomes]
 
+    def unit_of(self, outcome_id: str) -> Unit | None:
+        for u in self.units:
+            if any(o.id == outcome_id for o in u.outcomes):
+                return u
+        return None
+
+    def outcome(self, outcome_id: str) -> Outcome | None:
+        return next((o for o in self.all_outcomes() if o.id == outcome_id), None)
+
     def dag(self) -> list[dict]:
         """[{outcome, depends_on}] in unit/order sequence — for learner_model.next_topic."""
         out = []
