@@ -38,6 +38,8 @@ dashboard (management is via the Hermes WebUI chat + an Obsidian dashboard).
 | D9 | **Proof-gate is a pluggable interface**; **LeetCode adapter now, Judge0 adapter later** | Ship now, no rework later |
 | D10 | **Assignments on Hermes `kanban`** (prereq links, block-on-submission, dispatch) | Ready-made pipeline, no build |
 | D11 | Course-module template = the **evidence-based pedagogy schema** (backward design) | Research-backed rigor |
+| D12 | **Adaptive within a fixed spine**: vetted skeleton stays; personalize within it (placement-skip, adaptive depth/emphasis, interleaving, optional interest branches) | Rigor + personalization, no curriculum gaps |
+| D13 | **First-class Learner Model** in the engine from phase 1; drives topics/difficulty/reviews/routine; adapts only on **2-week trends** | "super personalized over time" |
 
 ---
 
@@ -98,6 +100,23 @@ and the reason the GPA can be trusted.
 The engine derives GPA/mastery/standing from this log — the log is the truth, `state.json` is a
 cached projection the engine rewrites.
 
+### 4.4 Learner Model (`records/learner_model.json`, engine-owned) — the personalization asset
+The compounding per-learner model every teaching decision reads from (see §15):
+```jsonc
+{
+  "outcomes":  { "<outcome-id>": { "mastery_band": "B", "fsrs": {"D":.,"S":.,"R":.,"due":"..."},
+                                    "attempts": n, "last_seen": "...", "misconceptions": ["..."] } },
+  "topics":    { "<topic/pattern>": { "proficiency": 0.0-1.0, "difficulty_ceiling": "easy|med|hard",
+                                       "error_tags": ["off-by-one","wrong-invariant"] } },
+  "routine":   { "best_hours": [ "20:00-22:00" ], "adherence_by_slot": {...},
+                 "avg_time_per_task_min": {...}, "no_show_pattern": [...] },
+  "pace":      { "actual_vs_planned": 0.9, "rest_day": "Sun", "task_cap_observed": 3 },
+  "prefs":     { "modality": "video-first", "notes": "..." },
+  "goals":     { "target": "a senior role", "interests": ["graphs","distributed-systems"] },
+  "trend_window": "14d"   // adapt on trends, never on a single day
+}
+```
+
 ### 4.3 Course-module schema (the pedagogy template — course-agnostic)
 Adopted verbatim from the methodology research. A course = data, not code:
 ```
@@ -128,6 +147,11 @@ Stored per course as `courses/<CODE>/course.yaml` (+ `units/`, `rubrics/`, `reso
   advances past a unit whose `exit_gate` is unmet. Time flexes; thresholds don't.
 - **Live mastery:** a lapsed (FSRS-decayed) outcome lowers current mastery/GPA until refreshed — the
   transcript reflects *current* competence, not a one-time peak.
+- **Adaptive within the spine (D12):** the unit *order* is the vetted skeleton, but the engine
+  personalizes within it — a **placement diagnostic** lets you test out of already-mastered outcomes,
+  weak/error-prone outcomes get more assignments + depth, interleaving resurfaces your weak topics,
+  and optional **interest branches** add depth where you want it. No topic the a top-tier company bar requires is
+  ever silently dropped.
 
 ---
 
@@ -221,8 +245,8 @@ Archive the v1 Daily note. `install.sh` re-runnable = upgrade path.
 ## 12. Build phases (each verified before the next)
 
 1. **Repo + engine core**: `config.env`, `install.sh` skeleton, deterministic engine
-   (state schema+validation, gradebook GPA/standing, fsrs via py-fsrs, proofgate interface +
-   leetcode adapter) with unit tests.
+   (state schema+validation, gradebook GPA/standing, fsrs via py-fsrs, **learner_model** with its
+   query API, proofgate interface + leetcode adapter) with unit tests.
 2. **Skills/crons templates**: registrar (+management verbs), examiner (midterm/finals/promotion),
    professor.template; cron definitions. Rendered by install.sh.
 3. **Course-module template + registration workflow**; author **CS250** first end-to-end
@@ -239,6 +263,7 @@ Archive the v1 Daily note. `install.sh` re-runnable = upgrade path.
 | Artifact | Reads | Writes | Authoritative? |
 |---|---|---|---|
 | engine/registrar | grades.jsonl, course.yaml | state.json, transcript, Dashboard frontmatter | **yes** |
+| engine/learner_model | grades.jsonl, review logs, completion timestamps | learner_model.json | **yes** |
 | skill: professor | course.yaml, state.position | a submission + proposed rubric band | no (proposes) |
 | skill: examiner | course.yaml, records | proposed bands; calls engine to gate/promote | no |
 | cron: assign/audit/week | — | invoke skills + engine | no |
@@ -248,8 +273,40 @@ Every future change is checked against this table; nothing invents its own field
 
 ---
 
-## 14. Open (co-design) items — NOT decided here
+## 15. Learner Model & personalization (D12, D13)
+
+The system gets **super personalized over time** because a persistent, engine-owned Learner Model
+(§4.4) accumulates from every proof, review, and behavior, and drives every teaching decision. It is
+data in the deterministic core (durable, inspectable, trustworthy) — the LLM *reads* it to make
+teaching choices but never fabricates it.
+
+**Updated:** the nightly audit + each review feed it; adaptation fires **only on ~2-week trends**
+(never a single bad day — jittery adaptation hurts learning).
+
+**What it drives, by dimension:**
+- **Reviews (retention):** FSRS per-outcome D/S/R → due dates; weak/lapsed outcomes resurface first.
+  *(Already strong; unchanged.)*
+- **Difficulty:** `topics.difficulty_ceiling` + recent form → next-problem tier and **scaffold-fade
+  rate** (worked→completion→independent, retreating on failure). Modeled to *your* ceiling, not a
+  fixed rule.
+- **Topics (within the spine, D12):** placement diagnostic skips proven outcomes; weak/error-prone
+  outcomes get more assignments + depth; misconception tags (mined from wrong answers) trigger
+  targeted re-teach of the *exact* gap; optional interest branches add elective depth.
+- **Routine:** `routine.best_hours` + `adherence_by_slot` → the assign cron schedules Mentor-calendar
+  blocks when you actually study and productively work; `pace.task_cap_observed` sizes the daily load
+  to your real capacity (respecting the anti-fatigue cap); rest-day learned from behavior.
+- **Pace / promotion:** actual-vs-planned pace re-times the curriculum at the monthly review;
+  standing (honors/probation) shifts tiers and speed.
+- **Persona:** Guide → Collaborator → Peer → Launcher as GPA/streak rise.
+
+**Engine module:** `engine/learner_model.py` — reads `grades.jsonl` + review logs + completion
+timestamps, writes `learner_model.json`, and exposes queries the skills call
+(`next_topic(course)`, `difficulty_for(outcome)`, `best_slot(date)`, `weak_areas()`). Built in
+**phase 1** alongside the gradebook.
+
+## 16. Open (co-design) items — NOT decided here
 - Exact **week-by-week curriculum content** per course (done at registration, together).
 - Rubric criteria wording per course.
 - Whether teach/grade separation uses multi-profile vs MoA (decide at phase 2).
 - External memory provider choice (optional; decide at phase 3).
+- Placement-diagnostic depth (how aggressively to test-out) — tune after first real learner data.
