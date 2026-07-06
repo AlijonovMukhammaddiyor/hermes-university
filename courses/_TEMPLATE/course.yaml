@@ -1,0 +1,48 @@
+# Course module template. Copy to courses/<CODE>/course.yaml and fill in (RFC §6).
+# The engine validates on load: every outcome MUST have a proof; deps must form a DAG;
+# assessment Bloom target >= the outcome's Bloom level.
+
+id: XXNNN
+title: Course Title
+subject_domain: domain-slug
+credits: 2
+north_star: >
+  One sentence: what a graduate of this course can DO (a capstone competency).
+prerequisites: []
+enduring_understandings:
+  - 3–7 transferable big ideas the course keeps returning to.
+
+grading_scale: { A: 4.0, B: 3.0, C: 2.0, F: 0.0 }
+
+rubrics:
+  - id: main-rubric
+    shape: single_point            # or analytic
+    criteria:
+      - name: Criterion 1
+        target_descriptor: What "meets expectations" looks like (atomic, non-hackable).
+
+assessments:
+  - id: a.u1.o1
+    outcome_id: u1.apply
+    type: summative               # or formative
+    modality: open_problem        # recall_quiz | worked-completion | open_problem | explain | project
+    bloom_target: apply           # must be >= the outcome's bloom_level
+    rubric_id: main-rubric
+    proof_gate: "Explicit pass condition (may require performance AND self-explanation)."
+    gate: null                    # engine gate name (e.g. leetcode); null => rubric-only
+    gate_args: {}
+    scaffold_stage: independent   # worked_example | completion | independent
+
+units:
+  - id: unit-1
+    title: First Unit
+    order_index: 1
+    semester: 1
+    outcomes:
+      - id: u1.apply
+        statement: "A-SMART: action verb + specific + measurable + constraint (e.g. within 30 min, >=80%)."
+        bloom_level: apply
+        depends_on: []
+        proof: a.u1.o1
+        spaced_items: [pat.example]
+        mastery_threshold: 0.8

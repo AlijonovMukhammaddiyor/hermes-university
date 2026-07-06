@@ -1,0 +1,54 @@
+# Cron definitions (rendered + created by install.sh phase 2). Times are in {{TIMEZONE}}.
+# Each job runs unattended, loads the listed skills, works in the vault, delivers to Telegram.
+# The engine (hu-engine) is invoked by the skills for every number; jobs never compute them.
+
+jobs:
+  - name: uni-assign
+    schedule: "0 7 * * *"
+    deliver: telegram
+    workdir: "{{VAULT}}"
+    skills: [registrar]          # + professor skills for active courses (added per registration)
+    intent: >
+      Daily assign as the Registrar (skill procedure): read state + Learner Model, activate
+      any course due this week, apply the debt gate, pick <= {{DAILY_TASK_CAP}} engine-selected
+      tasks at engine-selected difficulty across active courses, append the Daily note, create
+      Mentor-calendar study blocks at the learner's best hours, commit, and Telegram the digest.
+
+  - name: uni-audit
+    schedule: "0 21 * * *"
+    deliver: telegram
+    workdir: "{{VAULT}}"
+    skills: [registrar]          # + professor skills
+    intent: >
+      Nightly audit: for each assigned item verify its proof (engine proof-gate for objective work;
+      rubric grading for artifacts, with self-explanation above 'apply'). Professors propose bands;
+      call the engine to record grades (updates GPA/mastery/streak), generate genanki cards for
+      proven concepts and push to AnkiWeb, roll debt for misses. Append audit to the Daily note,
+      commit, Telegram digest (done/total, streak, GPA, cards, tomorrow).
+
+  - name: uni-week
+    schedule: "0 18 * * 0"
+    deliver: telegram
+    workdir: "{{VAULT}}"
+    skills: [examiner]           # + professor skills
+    intent: >
+      Weekly assessment as the Examiner: branch on week_in_semester — odd=quiz, even(2,4,8,10)=unit
+      exam, 6=midterm, 12=semester finals. Grade against source; call the engine to gate unit
+      advancement and, at week 12, semester promotion (S1 finals >=B) or graduation. Write the exam
+      record, commit, Telegram summary.
+
+  - name: uni-monthly
+    schedule: "0 9 1 * *"
+    deliver: telegram
+    workdir: "{{VAULT}}"
+    skills: [registrar]
+    intent: >
+      Monthly self-review: re-pace the curriculum from the Learner Model's 2-week trends, advance the
+      persona stage if GPA/streak warrant, run any course monthly self-update. Commit, Telegram report.
+
+  - name: leetcode-cookie-check
+    schedule: "50 6 * * *"
+    deliver: telegram
+    no_agent: true
+    script: leetcode-cookie-check.sh
+    intent: "Watchdog: alert on Telegram if the LeetCode session cookie has stopped authenticating."
