@@ -24,6 +24,14 @@ def test_template_loads():
     assert load_course(ROOT / "courses" / "_TEMPLATE" / "course.yaml").id == "XXNNN"
 
 
+@pytest.mark.parametrize("path", sorted((ROOT / "courses").glob("*/course.yaml")),
+                         ids=lambda p: p.parent.name)
+def test_every_course_module_satisfies_contract(path):
+    c = load_course(path)                     # raises if the backward-design contract is violated
+    assert c.id and c.credits >= 1
+    assert c.all_outcomes(), "a course must have outcomes"
+
+
 def test_cs250_dag_drives_next_topic():
     c = load_course(ROOT / "courses" / "CS250" / "course.yaml")
     units = c.dag()
