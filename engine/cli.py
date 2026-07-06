@@ -54,6 +54,11 @@ def main(argv: list[str] | None = None) -> int:
     pdc.add_argument("--vault", required=True); pdc.add_argument("--today", required=True)
     pdc.add_argument("--all-done", action="store_true")
 
+    # promote — apply a semester-finals result (engine gates promotion/graduation)
+    ppr = sub.add_parser("promote")
+    ppr.add_argument("--vault", required=True); ppr.add_argument("--band", required=True)
+    ppr.add_argument("--today", required=True)
+
     pv = sub.add_parser("proof").add_subparsers(dest="sub", required=True).add_parser("verify")
     pv.add_argument("--gate", required=True); pv.add_argument("--evidence", required=True)
 
@@ -111,6 +116,16 @@ def main(argv: list[str] | None = None) -> int:
         R.record_day(st, args.today, args.all_done)
         R.save_state(vault, st); R.write_dashboard(vault, st, args.today)
         print(json.dumps({"streak": st.streak.current})); return 0
+    if args.cmd == "promote":
+        from pathlib import Path
+        from . import registrar as R
+        from .gradebook import load_records
+        vault = Path(args.vault)
+        st = R.load_state(vault)
+        records = load_records(vault / "records" / "grades.jsonl")
+        st, status = R.promote_or_graduate(st, args.band, args.today, records)
+        R.save_state(vault, st); R.write_dashboard(vault, st, args.today)
+        print(json.dumps({"status": status, "semester": st.position.semester})); return 0
     if args.cmd == "proof":
         res = get_gate(args.gate).verify(json.loads(args.evidence))
         print(res.model_dump_json()); return 0 if res.passed else 2
