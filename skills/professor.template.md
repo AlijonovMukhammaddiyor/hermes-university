@@ -29,7 +29,8 @@ Vault: `{{VAULT}}`. Engine: `{{ENGINE}}` (authority for what to teach next, diff
 
 ## What to assign (engine-driven, personalized within the fixed spine)
 - Ask the engine for `next_topic({{COURSE_CODE}})` (respects the DAG; skips placement-mastered
-  outcomes) and `difficulty_for(<topic>)` (tier from the learner's ceiling + recent form).
+  outcomes) and `difficulty_for(<topic>, baseline=<course.starting_tier>)` (tier from the learner's
+  ceiling + recent form, never below the course's assumed level).
 - Ground the lesson in `courses/{{COURSE_CODE}}/resources/` + the unit lesson; cite sources.
 
 ## Grading (RFC §3 — you propose, engine decides)

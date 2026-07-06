@@ -36,6 +36,15 @@ def test_difficulty_for_ramps_with_proficiency():
     assert difficulty_for(m2, "unknown-topic") == "easy"
 
 
+def test_difficulty_baseline_floors_a_strong_learner():
+    m = build([])                                            # no history
+    assert difficulty_for(m, "graphs", baseline="med") == "med"     # new topic starts at baseline
+    m2 = build([rec("dp.apply", 0.72, tier="hard")])         # weak -> would be "med"
+    assert difficulty_for(m2, "dp", baseline="med") == "med"        # not below baseline
+    m3 = build([rec("dp.apply", 0.5, tier="easy")])          # weak, ceiling easy -> below is easy
+    assert difficulty_for(m3, "dp", baseline="med") == "med"        # floored up to baseline
+
+
 def test_best_slot_from_completion_hours():
     # 22:00 Tashkent == 17:00 UTC ; put 3 records there, 1 elsewhere
     recs = [rec("x.apply", 0.9, ts="2026-07-06T17:00:00+00:00") for _ in range(3)]

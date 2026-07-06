@@ -127,14 +127,17 @@ def weak_areas(model: LearnerModel, threshold: float = WEAK_THRESHOLD) -> list[s
     return [t for t, _ in sorted(weak, key=lambda x: x[1])]
 
 
-def difficulty_for(model: LearnerModel, topic: str) -> str:
-    """Next problem tier: at the ceiling once proficient, one below while weak."""
+def difficulty_for(model: LearnerModel, topic: str, baseline: str = "easy") -> str:
+    """Next problem tier: at the ceiling once proficient, one below while weak, but never below
+    the course's `baseline` (so a strong learner starts new topics at the assumed level)."""
     st = model.topics.get(topic)
     if st is None:
-        return "easy"
-    if st.proficiency >= 0.85:
-        return st.difficulty_ceiling
-    return _tier_below(st.difficulty_ceiling)
+        tier = baseline
+    elif st.proficiency >= 0.85:
+        tier = st.difficulty_ceiling
+    else:
+        tier = _tier_below(st.difficulty_ceiling)
+    return max(tier, baseline, key=TIER_ORDER.index)
 
 
 def best_slot(model: LearnerModel) -> str | None:

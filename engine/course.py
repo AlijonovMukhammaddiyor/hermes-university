@@ -74,6 +74,7 @@ class Course(BaseModel):
     subject_domain: str
     credits: int
     north_star: str
+    starting_tier: Literal["easy", "med", "hard"] = "easy"  # difficulty floor for a new learner
     prerequisites: list[str] = Field(default_factory=list)
     enduring_understandings: list[str] = Field(default_factory=list)
     grading_scale: dict[str, float] = Field(
