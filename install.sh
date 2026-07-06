@@ -42,9 +42,17 @@ else
   log "state.json exists — leaving records intact (upgrade mode)"
 fi
 
-# 5. [PHASE 2] render + install skills (registrar, examiner, professors) --
-log "[PHASE 2] skills rendering — not yet implemented"
-# render skills/*.template.md against config.env + course modules -> $HERMES_HOME/skills/hermes-university/
+# 5. render skills (registrar, examiner, professor-per-course) ------------
+log "rendering skills"
+BUILD="$ROOT/.build/skills"; rm -rf "$BUILD"
+"$ROOT/.venv/bin/python" "$ROOT/scripts/render_skills.py" \
+  "$ROOT" "$ROOT/config.env" "$BUILD" "$VAULT" "$ENGINE"
+if command -v hermes >/dev/null 2>&1; then
+  DEST="$HERMES_HOME/skills/hermes-university"; mkdir -p "$DEST"
+  cp -r "$BUILD/." "$DEST/"; log "installed skills -> $DEST"
+else
+  log "hermes CLI not found — rendered to $BUILD (install on the droplet to deploy)"
+fi
 
 # 6. [PHASE 4] register MCPs (leetcode, google-calendar; genanki needs none)
 log "[PHASE 4] MCP registration — not yet implemented"

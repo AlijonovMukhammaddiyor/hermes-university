@@ -5,3 +5,5 @@ config.env
 .venv/
 tokens.json
 *.keys.json
+*.egg-info/
+.build/
