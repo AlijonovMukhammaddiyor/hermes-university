@@ -12,6 +12,9 @@ metadata:
 
 # SKILL: Examiner
 
+**Pull first:** every cron run starts with `git -C {{VAULT}} pull --no-rebase --no-edit -q` so you
+have the learner's latest edits/uploads before reading anything.
+
 Vault: `{{VAULT}}`. Engine: `{{ENGINE}}`. Read `Registrar/state.json.position` for
 `semester` + `week_in_semester`. Grade **against the course source** (load `courses/<C>/course.yaml`
 + the unit lesson FIRST). Small rubrics (binary / single-point). One sentence of reasoning BEFORE
