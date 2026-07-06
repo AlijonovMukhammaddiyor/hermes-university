@@ -11,6 +11,18 @@ def _state():
     return s
 
 
+def test_register_courses_from_modules():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    s = fresh_state(name="M", timezone="UTC", started_on="2026-07-06")
+    added = R.register_courses(s, root / "courses")
+    assert set(added) == {"CS250", "CS301", "CS270", "PD101"}
+    assert s.courses["CS250"].active is True and s.courses["CS250"].credits == 4
+    assert s.courses["CS250"].unit == "arrays-hashing"      # first unit id
+    # PD101 dormant until week 9
+    assert s.courses["PD101"].active is False and s.courses["PD101"].activates_week == 9
+
+
 def test_refresh_computes_gpa_and_standing():
     s = _state()
     records = [rec("a.apply", 0.95, semester=1), rec("b.apply", 0.72, semester=1)]

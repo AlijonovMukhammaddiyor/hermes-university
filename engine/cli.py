@@ -32,6 +32,8 @@ def main(argv: list[str] | None = None) -> int:
     pi.add_argument("--name", required=True); pi.add_argument("--tz", default="Asia/Tashkent")
     pi.add_argument("--started", required=True); pi.add_argument("--out", required=True)
     psh = ps.add_parser("show"); psh.add_argument("--file", required=True)
+    preg = ps.add_parser("register")
+    preg.add_argument("--file", required=True); preg.add_argument("--courses", required=True)
 
     pg = sub.add_parser("gpa"); pg.add_argument("--records", required=True)
     pg.add_argument("--semester", type=int, default=None)
@@ -50,6 +52,12 @@ def main(argv: list[str] | None = None) -> int:
         st.save(args.out); print(f"wrote {args.out}"); return 0
     if args.cmd == "state" and args.sub == "show":
         print(State.load(args.file).model_dump_json(indent=2)); return 0
+    if args.cmd == "state" and args.sub == "register":
+        from .registrar import register_courses
+        st = State.load(args.file)
+        added = register_courses(st, args.courses)
+        st.save(args.file)
+        print(json.dumps({"registered": added, "courses": sorted(st.courses)})); return 0
     if args.cmd == "gpa":
         recs = gb.load_records(args.records)
         val = gb.semester_gpa(recs, args.semester) if args.semester else gb.cumulative_gpa(recs)

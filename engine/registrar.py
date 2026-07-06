@@ -16,6 +16,33 @@ from .state import SemesterRecord, State
 PASS_BAND_POINTS = BAND_POINTS["B"]  # promotion/midterm gate = >= B
 
 
+def register_courses(state: State, course_dir: str | Path) -> list[str]:
+    """Populate state.courses from the course modules under `course_dir` (RFC §6).
+    Idempotent: updates existing entries, preserves progress fields (unit_index)."""
+    from .course import load_course
+    from .state import Course as StateCourse
+
+    added: list[str] = []
+    for path in sorted(Path(course_dir).glob("*/course.yaml")):
+        if path.parent.name == "_TEMPLATE":
+            continue
+        c = load_course(path)
+        first_unit = c.units[0].id if c.units else None
+        active = c.active_default and (c.activates_week is None or
+                                       state.position.week_in_semester >= c.activates_week)
+        existing = state.courses.get(c.id)
+        state.courses[c.id] = StateCourse(
+            title=c.title, credits=c.credits, runs_in=c.runs_in,
+            active=active if existing is None else existing.active,
+            unit=existing.unit if existing else first_unit,
+            unit_index=existing.unit_index if existing else 0,
+            activates_week=c.activates_week,
+        )
+        if existing is None:
+            added.append(c.id)
+    return added
+
+
 def refresh(state: State, records: list[GradeRecord]) -> State:
     """Recompute semester + cumulative GPA and standing from the grade log."""
     sem = state.position.semester

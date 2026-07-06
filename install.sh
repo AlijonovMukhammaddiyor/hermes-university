@@ -41,6 +41,8 @@ if [ ! -f "$STATE" ]; then
 else
   log "state.json exists — leaving records intact (upgrade mode)"
 fi
+log "registering courses into state"
+"$ENGINE" state register --file "$STATE" --courses "$ROOT/courses"
 
 # 5. render skills (registrar, examiner, professor-per-course) ------------
 log "rendering skills"

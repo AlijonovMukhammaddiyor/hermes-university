@@ -75,6 +75,9 @@ class Course(BaseModel):
     credits: int
     north_star: str
     starting_tier: Literal["easy", "med", "hard"] = "easy"  # difficulty floor for a new learner
+    runs_in: list[int] = Field(default_factory=lambda: [1, 2])
+    active_default: bool = True          # inactive until activates_week if False
+    activates_week: int | None = None    # week_in_semester it turns on (e.g. PD101 = 9)
     prerequisites: list[str] = Field(default_factory=list)
     enduring_understandings: list[str] = Field(default_factory=list)
     grading_scale: dict[str, float] = Field(
