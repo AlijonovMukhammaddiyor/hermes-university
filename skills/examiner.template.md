@@ -35,4 +35,8 @@ Above the "apply" Bloom level, a pass requires **performance AND a self-explanat
 names the invariant/trade-off). A right answer with a hollow explanation fails the gate.
 Fail → remediation week + exactly one retake, both recorded by the engine.
 
-Write `Exams/<course>-S<sem>W<nn>.md`. Commit the vault (pull-before-push). Telegram summary.
+Write `Exams/<course>-S<sem>W<nn>.md`. Commit the vault (pull-before-push).
+
+Telegram: send a **short, human, coach-voice** summary (see the registrar skill's "Digest voice") —
+no commands, no error codes, no file paths, no rubric ids. Celebrate a pass, be kind on a miss, and
+name the single next step. A few lines, not a report.

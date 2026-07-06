@@ -10,6 +10,7 @@ ownership beyond the session cookie; treat as best-effort and swappable for Judg
 from __future__ import annotations
 
 import json
+import os
 import urllib.request
 from typing import Callable
 
@@ -19,16 +20,22 @@ from .base import ProofGate, ProofResult
 Fetcher = Callable[[str, str | None], list[dict]]
 
 
+_UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+       "(KHTML, like Gecko) Chrome/120.0 Safari/537.36")
+
+
 def _default_fetcher(username: str, session: str | None) -> list[dict]:
+    # LeetCode 403s requests without a browser User-Agent; a session cookie also improves reliability.
+    session = session or os.environ.get("LEETCODE_SESSION")
     query = ('{ recentAcSubmissionList(username: "%s", limit: 20) '
              '{ titleSlug timestamp } }') % username
-    req = urllib.request.Request(
-        "https://leetcode.com/graphql",
-        data=json.dumps({"query": query}).encode(),
-        headers={"Content-Type": "application/json", "Referer": "https://leetcode.com",
-                 **({"Cookie": f"LEETCODE_SESSION={session}"} if session else {})},
-        method="POST",
-    )
+    headers = {"Content-Type": "application/json", "Referer": "https://leetcode.com",
+               "User-Agent": _UA}
+    if session:
+        headers["Cookie"] = f"LEETCODE_SESSION={session}"
+    req = urllib.request.Request("https://leetcode.com/graphql",
+                                 data=json.dumps({"query": query}).encode(),
+                                 headers=headers, method="POST")
     with urllib.request.urlopen(req, timeout=20) as resp:
         data = json.load(resp)
     return data.get("data", {}).get("recentAcSubmissionList") or []
