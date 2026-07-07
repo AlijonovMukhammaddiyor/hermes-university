@@ -56,6 +56,11 @@ units:
     summary: "Core building blocks and the first solving patterns."
     resources:
       - { type: textbook, title: "CLRS", locator: "ch. 1-2", why: "foundations", tier: core, cost: paid }
+    sessions:
+      - { week: 1, focus: "Big-O and the first pattern",
+          readings: [ { type: textbook, title: "CLRS", locator: "ch. 1" } ], deliverable: "5 warm-up problems" }
+      - { week: 2, focus: "Arrays & hashing",
+          readings: [ { type: textbook, title: "CLRS", locator: "ch. 2" } ], deliverable: "problem set 1" }
     outcomes:
       - { id: f1.apply, statement: "Apply a basic pattern to solve a problem in under 30 minutes.",
           bloom_level: apply, proof: a.f1, depends_on: [], spaced_items: [p.basic] }
@@ -68,6 +73,11 @@ units:
     resources:
       - { type: course, title: "MIT OCW 6.006", url: "https://ocw.mit.edu", locator: "Lec 1-3",
           tier: supplementary, cost: free }
+    sessions:
+      - { week: 3, focus: "Two pointers & sliding window",
+          readings: [ { type: course, title: "MIT OCW 6.006", locator: "Lec 1-2" } ], deliverable: "problem set 2" }
+      - { week: 4, focus: "Composing patterns under time",
+          readings: [ { type: course, title: "MIT OCW 6.006", locator: "Lec 3" } ], deliverable: "timed mock" }
     outcomes:
       - { id: f2.apply, statement: "Compose two patterns to solve a harder problem.",
           bloom_level: apply, proof: a.f2, depends_on: [f1.apply], spaced_items: [p.compose] }

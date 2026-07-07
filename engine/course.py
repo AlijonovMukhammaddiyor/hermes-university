@@ -88,6 +88,14 @@ class Outcome(BaseModel):
     mastery_threshold: float = 0.8
 
 
+class Session(BaseModel):
+    """One week of the prepared calendar (RFC-006) — focus + exact readings + a deliverable."""
+    week: int                                                 # week number within the course
+    focus: str                                                # the week's theme / what you do
+    readings: list[Resource] = Field(default_factory=list)    # exact readings for the week (locators)
+    deliverable: str = ""                                     # the assignment/artifact due that week
+
+
 class Unit(BaseModel):
     id: str
     title: str
@@ -96,6 +104,7 @@ class Unit(BaseModel):
     outcomes: list[Outcome]
     summary: str | None = None                                # one-line what/why of the unit
     resources: list[Resource] = Field(default_factory=list)   # per-unit reading list (researched)
+    sessions: list[Session] = Field(default_factory=list)     # week-by-week plan (RFC-006)
     est_weeks: int = 1                                         # schedule span
     prereq_outcomes: list[str] = Field(default_factory=list)
     entry_gate: float = 0.8

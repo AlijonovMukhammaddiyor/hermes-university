@@ -79,6 +79,12 @@ A-SMART outcomes** (Bloom-tagged) → **prereq DAG** → unit sequence (`order_i
   (`ch. 3–4`, `Lectures 5–7`), one-line `why` per resource. Set the course `primary_text`.
 - Every resource `type` MUST be one of: **textbook · course · paper · docs · video · problemset ·
   reference** (the engine rejects others).
+- **Week-by-week plan (Ivy-grade — everything prepared).** For EACH teaching unit fill `sessions`:
+  one entry per week it spans, with `week` (number within the course), `focus`, the **exact `readings`
+  for that week** (specific resources with locators, drawn from the unit's pool — divide them, don't
+  dump the whole list), and a concrete `deliverable` (the assignment/artifact due). Plan the *entire*
+  term so a learner opens the syllabus and knows exactly what to read and do each week. The engine's
+  `authored` gate requires `sessions` on every teaching unit — a course with only topics is NOT done.
 
 **Phase 4 — Validate, co-design, persist.**
 - Write `{{COURSES_DIR}}/<CODE>/course.yaml` (copy the schema from `{{COURSES_DIR}}/_TEMPLATE/course.yaml`).
@@ -86,9 +92,11 @@ A-SMART outcomes** (Bloom-tagged) → **prereq DAG** → unit sequence (`order_i
   The engine reports `missing_for_authored` — fix every item (description, per-unit resources,
   professor_profile, mastery_model, research dossier) and every structural error before proceeding.
 - Regenerate docs: `{{ENGINE}} render-docs --vault {{VAULT}} --courses {{COURSES_DIR}}`.
-- **Active co-design** (when interactive): send the draft **Syllabus as a file** (`hermes send -f
-  {{VAULT}}/Courses/<CODE>/Syllabus.md`) — never a Telegram table — and ask 2–3 pointed calibration
-  questions (pace? deeper on X? swap resource Y?), one per message; revise, re-validate.
+- **Active co-design** (when interactive): **send the full `Syllabus.md` FILE** (`hermes send -f
+  {{VAULT}}/Courses/<CODE>/Syllabus.md`) — it contains the week-by-week plan with readings +
+  deliverables. **Do NOT summarize the arc as a topic list in chat** — the learner must see the
+  *prepared* syllabus. Only after sending the file, ask 2–3 pointed calibration questions (pace?
+  deeper on X? swap resource Y?), one per message; revise, re-validate.
 - **Persist:** always commit + push the **vault** (that succeeds; it's what the learner sees). Commit
   the **repo** (`course.yaml` + dossier) and push **best-effort** — if the push is rejected/read-only,
   commit locally and move on **silently**; a repo-push failure never surfaces to the learner and never

@@ -20,8 +20,11 @@ def test_render_catalog_lists_all_courses():
 def test_render_syllabus_has_units_and_grading():
     syl = docs.render_syllabus(load_course(CDIR / "GEN101" / "course.yaml"))
     assert "Basics" in syl and "Grading policy" in syl and "proof:" in syl
-    assert "Weekly schedule" in syl and "Assessment plan" in syl   # upgraded syllabus
+    assert "Assessment plan" in syl
     assert "What the best in this field can do" in syl and "How this course is taught" in syl
+    # RFC-006: Ivy-grade week-by-week plan with readings + deliverables
+    assert "Week-by-week plan" in syl and "| Week | Focus | Readings | Deliverable |" in syl
+    assert "problem set 1" in syl and "timed mock" in syl
 
 
 def test_syllabus_and_resources_render_researched_materials():

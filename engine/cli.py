@@ -182,6 +182,7 @@ def main(argv: list[str] | None = None) -> int:
         missing = []
         if not c.description: missing.append("description")
         if not all(u.resources for u in teaching): missing.append("unit-resources")
+        if not all(u.sessions for u in teaching): missing.append("weekly-plan")
         if not c.professor_profile: missing.append("professor_profile")
         if not has_mastery: missing.append("mastery_model")
         if not has_dossier: missing.append("research-dossier")

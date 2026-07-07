@@ -55,6 +55,28 @@ def _res_line(r) -> str:
     return "- " + head
 
 
+def _cell(s: str) -> str:
+    return (s or "").replace("|", "/").replace("\n", " ").strip()
+
+
+def _week_plan_table(c) -> list[str]:
+    """Ivy-grade week-by-week plan (RFC-006): Week · Focus · Readings · Deliverable. Markdown table —
+    fine in vault docs (Obsidian/WebUI render it); the Telegram no-table rule is separate."""
+    rows = []
+    for u in sorted(c.units, key=lambda x: (x.semester, x.order_index)):
+        for s in getattr(u, "sessions", []) or []:
+            reads = "; ".join(
+                _cell(r.title + (f" {r.locator}" if r.locator else "")) for r in s.readings) or "—"
+            rows.append((s.week, _cell(s.focus), reads, _cell(s.deliverable) or "—"))
+    if not rows:
+        return []
+    out = ["## Week-by-week plan", "", "| Week | Focus | Readings | Deliverable |",
+           "|---|---|---|---|"]
+    for wk, focus, reads, deliv in sorted(rows, key=lambda r: r[0]):
+        out.append(f"| {wk} | {focus} | {reads} | {deliv} |")
+    return out + [""]
+
+
 # ---------------------------------------------------------------- syllabus
 def render_syllabus(c: Course) -> str:
     out = [f"# {c.id} — {c.title}", "", f"> {c.north_star.strip()}", ""]
@@ -87,8 +109,9 @@ def render_syllabus(c: Course) -> str:
                    [f"- {m}" for m in pp.common_misconceptions] + [""]
     if c.enduring_understandings:
         out += ["## Enduring understandings"] + [f"- {e}" for e in c.enduring_understandings] + [""]
-    out += ["## Grading policy", grading_line(c), "",
-            "## Weekly schedule, outcomes & readings"]
+    out += ["## Grading policy", grading_line(c), ""]
+    out += _week_plan_table(c)
+    out += ["## Units, outcomes & proofs"]
     assess = {a.id: a for a in c.assessments}
     week: dict[int, int] = {}
     for u in sorted(c.units, key=lambda x: (x.semester, x.order_index)):
