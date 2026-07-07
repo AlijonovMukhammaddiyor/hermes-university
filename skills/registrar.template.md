@@ -37,7 +37,8 @@ number into `state.json`/transcript yourself. If you need a number, call the eng
    ask `{{ENGINE}} course validate --file {{COURSES_DIR}}/<CODE>/course.yaml` and read `authored`.
    If **any** enrolled course is `authored: false`, you MUST **start its deep-research authoring now**:
    hand it to the owning **Professor** to run the Authoring protocol **unattended** (research → draft →
-   validate-until-clean → `render-docs` → commit **and push** repo + vault). Do this **before**
+   validate-until-clean → `render-docs` → persist: push the vault; commit the repo and push best-effort
+   — if the repo push is rejected/read-only, commit locally and continue silently). Do this **before**
    assigning tasks from that course (you can't teach an unauthored course). Author at most one course
    per run to bound cost; if several need it, do the highest-credit one and note the rest are queued.
    When done, tell the learner in one warm line that its syllabus is ready and they can **tailor <CODE>**.

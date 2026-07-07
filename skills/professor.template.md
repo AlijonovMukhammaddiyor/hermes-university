@@ -77,7 +77,10 @@ locator?, why?, tier(core|supplementary), cost(free|paid)`.
   ask **2–3 specific calibration questions** ("pace ok?", "go deeper on X or cut it?", "swap resource
   Y for a hands-on one?"), one per message, not just "adjust or approve". Revise on their answers,
   re-validate. Only on explicit approval is the course live.
-- Commit the repo + vault (pull-before-push).
+- **Persist:** always commit the **vault** and push it (that succeeds and is what the learner sees).
+  For the **repo**, commit `course.yaml` + dossier and *try* to push (pull-before-push) — but if the
+  push is rejected (e.g. read-only deploy key) or fails, **commit locally and move on silently**; a
+  repo-push failure is never surfaced to the learner and never blocks the course going live.
 
 ## Teaching method (evidence-based — apply every session)
 1. **Concept before problem**: teach the mental model first (cited to the unit's researched resource),
