@@ -112,7 +112,8 @@ Courses are **designed by research, not hand-typed**, and authored by the single
   protocol**: (interactive) short intake interview → **research is human-in-the-loop** — the Professor
   writes a deep-research `PROMPT.md` and asks the learner to run it in **Claude (Deep Research)** and
   upload the report to `{{VAULT}}/Uploads/<CODE>/`; authoring **pauses** until it lands (never from
-  memory) → build the **FULL A–Z curriculum** (fundamentals always included) with best-materials +
+  memory — the Professor shows **no arc, units, or textbook before the report exists**) → build the
+  **FULL A–Z curriculum** (fundamentals always included) with best-materials +
   week-by-week plan → `{{ENGINE}} course validate` until `authored: true` → `{{ENGINE}} render-docs` →
   send the full `Syllabus.md` file → **placement** (see enroll) → `MyPlan.md`. Persist vault + repo
   (best-effort).
