@@ -23,6 +23,38 @@ def test_register_courses_from_modules():
     assert s.courses["PD101"].active is False and s.courses["PD101"].activates_week == 9
 
 
+def test_catalog_lists_available_courses():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    cat = {c["code"] for c in R.catalog(root / "courses")}
+    assert cat == {"CS250", "CS301", "CS270", "PD101"}   # _TEMPLATE excluded
+
+
+def test_enroll_and_drop():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    s = fresh_state(name="M", timezone="UTC", started_on="2026-07-06")
+    assert s.courses == {}                                 # un-enrolled by default
+    assert R.enroll(s, root / "courses", "CS250") == "enrolled"
+    assert s.courses["CS250"].active is True and s.courses["CS250"].unit == "arrays-hashing"
+    assert R.enroll(s, root / "courses", "CS250") == "already"   # idempotent
+    # PD101 enrolls but stays dormant until week 9
+    R.enroll(s, root / "courses", "PD101")
+    assert s.courses["PD101"].active is False
+    assert R.active_courses(s) == ["CS250"]
+    assert R.drop(s, "CS250") is True and "CS250" not in s.courses
+    assert R.drop(s, "CS250") is False
+
+
+def test_enroll_unknown_course_raises():
+    import pytest
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    s = fresh_state(name="M", timezone="UTC", started_on="2026-07-06")
+    with pytest.raises(KeyError):
+        R.enroll(s, root / "courses", "NOPE")
+
+
 def test_refresh_computes_gpa_and_standing():
     s = _state()
     records = [rec("a.apply", 0.95, semester=1), rec("b.apply", 0.72, semester=1)]

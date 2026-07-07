@@ -59,6 +59,14 @@ def main(argv: list[str] | None = None) -> int:
     ppr.add_argument("--vault", required=True); ppr.add_argument("--band", required=True)
     ppr.add_argument("--today", required=True)
 
+    # enrollment — catalog / enroll / drop
+    pcat = sub.add_parser("catalog"); pcat.add_argument("--courses", required=True)
+    pen = sub.add_parser("enroll")
+    pen.add_argument("--vault", required=True); pen.add_argument("--courses", required=True)
+    pen.add_argument("--code", required=True)
+    pdr = sub.add_parser("drop")
+    pdr.add_argument("--vault", required=True); pdr.add_argument("--code", required=True)
+
     pv = sub.add_parser("proof").add_subparsers(dest="sub", required=True).add_parser("verify")
     pv.add_argument("--gate", required=True); pv.add_argument("--evidence", required=True)
 
@@ -116,6 +124,23 @@ def main(argv: list[str] | None = None) -> int:
         R.record_day(st, args.today, args.all_done)
         R.save_state(vault, st); R.write_dashboard(vault, st, args.today)
         print(json.dumps({"streak": st.streak.current})); return 0
+    if args.cmd == "catalog":
+        from . import registrar as R
+        print(json.dumps(R.catalog(args.courses), indent=2)); return 0
+    if args.cmd == "enroll":
+        from . import registrar as R
+        vault = __import__("pathlib").Path(args.vault)
+        st = R.load_state(vault)
+        result = R.enroll(st, args.courses, args.code)
+        R.save_state(vault, st)
+        print(json.dumps({"code": args.code, "result": result,
+                          "enrolled": sorted(st.courses)})); return 0
+    if args.cmd == "drop":
+        from . import registrar as R
+        vault = __import__("pathlib").Path(args.vault)
+        st = R.load_state(vault); dropped = R.drop(st, args.code); R.save_state(vault, st)
+        print(json.dumps({"code": args.code, "dropped": dropped,
+                          "enrolled": sorted(st.courses)})); return 0
     if args.cmd == "promote":
         from pathlib import Path
         from . import registrar as R

@@ -43,6 +43,51 @@ def register_courses(state: State, course_dir: str | Path) -> list[str]:
     return added
 
 
+def catalog(course_dir: str | Path) -> list[dict]:
+    """List AVAILABLE courses (the modules) — does not touch state. For the enrollment menu."""
+    from .course import load_course
+
+    out: list[dict] = []
+    for path in sorted(Path(course_dir).glob("*/course.yaml")):
+        if path.parent.name == "_TEMPLATE":
+            continue
+        c = load_course(path)
+        out.append({"code": c.id, "title": c.title, "credits": c.credits,
+                    "domain": c.subject_domain, "units": len(c.units),
+                    "activates_week": c.activates_week, "north_star": c.north_star.strip()})
+    return out
+
+
+def enroll(state: State, course_dir: str | Path, code: str) -> str:
+    """Enroll the learner in ONE course from the catalog. Returns 'enrolled' or 'already'.
+    Active immediately unless the module is dormant-until-week (e.g. PD101 wk 9)."""
+    from .course import load_course
+    from .state import Course as StateCourse
+
+    if code in state.courses:
+        return "already"
+    path = Path(course_dir) / code / "course.yaml"
+    if not path.exists():
+        raise KeyError(f"no course module {code!r} in the catalog")
+    c = load_course(path)
+    active = c.active_default and (c.activates_week is None or
+                                   state.position.week_in_semester >= c.activates_week)
+    state.courses[code] = StateCourse(
+        title=c.title, credits=c.credits, runs_in=c.runs_in, active=active,
+        unit=(c.units[0].id if c.units else None), unit_index=0,
+        activates_week=c.activates_week)
+    return "enrolled"
+
+
+def drop(state: State, code: str) -> bool:
+    """Un-enroll a course. Returns True if it was enrolled."""
+    return state.courses.pop(code, None) is not None
+
+
+def active_courses(state: State) -> list[str]:
+    return [k for k, c in state.courses.items() if c.active]
+
+
 def refresh(state: State, records: list[GradeRecord]) -> State:
     """Recompute semester + cumulative GPA and standing from the grade log."""
     sem = state.position.semester

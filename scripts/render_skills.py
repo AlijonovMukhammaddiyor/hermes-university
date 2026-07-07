@@ -29,6 +29,7 @@ def main(argv: list[str]) -> int:
         "DAILY_TASK_CAP": cfg.get("DAILY_TASK_CAP", "4"),
         "VAULT": vault,
         "ENGINE": engine,
+        "COURSES_DIR": str(root / "courses"),
     }
     # registrar + examiner (one each)
     for name in ("registrar", "examiner"):
