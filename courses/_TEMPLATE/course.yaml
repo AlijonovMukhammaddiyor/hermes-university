@@ -42,6 +42,7 @@ mastery_model:
   deliberate_practice: "The regimen that gets the learner to the bar."
 
 grading_scale: { A: 4.0, B: 3.0, C: 2.0, F: 0.0 }
+grade_weights: { hw: 0.40, quiz: 0.20, exam: 0.20, midterm: 0.10, finals: 0.10 }  # sums renormalized
 
 rubrics:
   - id: main-rubric
@@ -68,6 +69,7 @@ units:
     order_index: 1
     semester: 1
     est_weeks: 1
+    foundational: true            # a fundamentals unit — placement can test the learner out of it
     summary: "One line: what this unit builds and why."
     resources:            # the researched best materials for THIS unit (specific locators)
       - { type: textbook, title: "…", locator: "ch. 1–2", why: "…", tier: core, cost: paid }

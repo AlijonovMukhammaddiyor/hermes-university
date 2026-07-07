@@ -55,13 +55,23 @@ Catalog → Registration (prereqs, credit-load, holds) → Syllabus → Academic
   → Promotion (finals ≥B) → Graduation (credential + diploma)   ·   throughout: Advising · SRS
 ```
 
-## Autonomous course authoring
+## Course authoring (research-driven, placement-personalized — RFC-007)
 When you enroll a course that isn't authored yet — or the daily loop finds one — the Professor runs its
-authoring protocol: (optional intake interview) → **deep research as a multi-round harness** (fan-out
-sweep → deep read of primary sources → adversarial verification, ≥2 corroborating sources and no strong
-refutation → a completeness critic that loops until no material gaps → a cited dossier) → backward
-design from the excellence bar → resource map → validate to `authored: true` → render → co-design →
-persist. Zero code, zero redeploy: a new course's professor is the Faculty Handbook bound to the module.
+authoring protocol:
+1. **Research is human-in-the-loop.** The Professor writes a deep-research **prompt**
+   (`Courses/<CODE>/research/PROMPT.md`); you run it in **Claude (Deep Research)** and upload the cited
+   report to `Uploads/<CODE>/`. Authoring **pauses** until it lands — the model never authors from
+   memory. For everything the report doesn't cover, the Professor does **mandatory web search (Serper)**
+   and cites it. A machine-checked `authored` gate rejects any dossier without ≥5 cited URLs +
+   confidence tags + an open-questions section.
+2. **Build the FULL A–Z curriculum** (fundamentals always included as `foundational` units), best
+   materials, and a week-by-week plan → validate to `authored: true` → render the full `Syllabus.md`.
+3. **Placement, not assumption.** The learner self-reports or sits a rigorous placement exam per unit;
+   a "yes" is verified at **≥ B** before it counts. Passed outcomes are recorded and the engine renders
+   a personalized `MyPlan.md` (mastered units skipped, weeks renumbered). The full course stays in
+   `Syllabus.md`; `MyPlan.md` is the learner's track.
+
+Zero code, zero redeploy: a new course's professor is the Faculty Handbook bound to the module.
 
 ## Install & run
 See the [README](README.md) quickstart and [PREREQUISITES.md](PREREQUISITES.md). `install.sh` is

@@ -80,6 +80,13 @@ def test_every_course_module_satisfies_contract(path):
     assert c.all_outcomes(), "a course must have outcomes"
 
 
+def test_foundational_flag_loads():
+    c = load_course(FIXTURES / "GEN101" / "course.yaml")
+    basics = next(u for u in c.units if u.id == "basics")
+    assert basics.foundational is True
+    assert next(u for u in c.units if u.id == "intermediate").foundational is False
+
+
 def test_dag_drives_next_topic():
     c = load_course(FIXTURES / "GEN101" / "course.yaml")
     units = c.dag()

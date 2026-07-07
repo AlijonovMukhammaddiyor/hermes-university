@@ -1,11 +1,15 @@
-# RFC-001 — Hermes University v2 Architecture
+# RFC-001 — Hermes University Architecture (historical)
 
-Status: **DRAFT — awaiting sign-off** · Owner: the maintainer · Date: 2026-07-06
+Status: **SUPERSEDED — historical record. The canonical description is [`ARCHITECTURE.md`](../ARCHITECTURE.md).**
+Date: 2026-07-06
 
-This is the canonical spec. Every doc, engine module, skill, cron, and template in this repo
-points at the definitions here. "In sync" is enforced structurally: **the deterministic engine is
-the single source of truth for all numbers**, and **one config renders everything**. If an artifact
-disagrees with this RFC, the artifact is wrong.
+> This was the original design draft. It has been amended by RFC-002 (lifecycle/rendering), RFC-003
+> (authoring), **RFC-004 (single Faculty professor — supersedes per-course professors here)**,
+> **RFC-005 (empty catalog + de-personalization + `profile.yaml`)**, RFC-006 (week-by-week plan), and
+> **RFC-007 (human-in-the-loop research + placement-driven curriculum)**, all consolidated into
+> `ARCHITECTURE.md`. Where this document disagrees with `ARCHITECTURE.md` or the code, **this document
+> is the stale one.** Kept for provenance; do not treat sections below (per-course professors, seed
+> courses, a top-tier company/interview framing, `credits_weight`, USER.md/Mem0/Bitwarden) as current.
 
 ---
 

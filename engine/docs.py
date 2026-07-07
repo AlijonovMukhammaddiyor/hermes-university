@@ -10,7 +10,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from .course import Course, load_course
-from .gradebook import GradeRecord, course_gpa, load_records
+from .gradebook import GradeRecord, band_meets, course_gpa, load_records
 from .state import State
 
 
@@ -156,6 +156,35 @@ def render_resources(c: Course) -> str:
     return "\n".join(out).rstrip() + "\n"
 
 
+# ---------------------------------------------------------------- personalized plan (RFC-007)
+def render_my_plan(c: Course, mastered: set[str]) -> str:
+    """The learner's personalized track: placed-out units (all outcomes mastered) are skipped and the
+    remaining weeks are renumbered. The canonical full A–Z course stays in Syllabus.md."""
+    placed, rows, week = [], [], 1
+    for u in sorted(c.units, key=lambda x: (x.semester, x.order_index)):
+        outs = [o.id for o in u.outcomes]
+        if outs and all(o in mastered for o in outs):
+            placed.append(u.title)
+            continue
+        for s in (getattr(u, "sessions", []) or []):
+            reads = "; ".join(
+                _cell(r.title + (f" {r.locator}" if r.locator else "")) for r in s.readings) or "—"
+            rows.append((week, _cell(u.title), _cell(s.focus), reads, _cell(s.deliverable) or "—"))
+            week += 1
+    out = [f"# 🎯 My Plan — {c.id} · {c.title}", "",
+           "Your personalized track — placed-out units skipped, weeks renumbered. "
+           "The full A–Z course is in `Syllabus.md`.", ""]
+    if placed:
+        out += ["**Placed out (tested):** " + ", ".join(placed), ""]
+    if rows:
+        out += ["| Week | Unit | Focus | Readings | Deliverable |", "|---|---|---|---|---|"]
+        out += [f"| {w} | {unit} | {focus} | {reads} | {deliv} |"
+                for w, unit, focus, reads, deliv in rows]
+    else:
+        out += ["_All units placed out — nothing left to schedule._"]
+    return "\n".join(out).rstrip() + "\n"
+
+
 # ---------------------------------------------------------------- transcript
 def _course_records(records: list[GradeRecord], code: str) -> list[GradeRecord]:
     return [r for r in records if r.course == code]
@@ -183,7 +212,9 @@ def render_transcript(state: State, records: list[GradeRecord]) -> str:
 # ---------------------------------------------------------------- degree progress
 def render_degree_progress(state: State, records: list[GradeRecord],
                            modules: dict[str, Course]) -> str:
-    passed = {r.outcome for r in records if r.band != "F"}
+    # an outcome counts as achieved only at its mastery threshold (default ≥B), matching promotion
+    thr = {o.id: o.mastery_threshold for m in modules.values() for o in m.all_outcomes()}
+    passed = {r.outcome for r in records if band_meets(r.band, thr.get(r.outcome, 0.8))}
     total = req = 0
     for code, c in state.courses.items():
         m = modules.get(code)

@@ -12,6 +12,28 @@ def test_score_to_band_boundaries():
     assert gb.score_to_band(0.699) == "F"
 
 
+def test_band_meets_threshold():
+    # default 0.8 -> requires >= B; a C does NOT master an outcome (consistent with ≥B promotion)
+    assert gb.band_meets("A") and gb.band_meets("B")
+    assert not gb.band_meets("C") and not gb.band_meets("F")
+    assert gb.band_meets("A", 0.9) and not gb.band_meets("B", 0.9)   # higher threshold needs A
+
+
+def test_gpa_cli_runs(tmp_path, capsys):
+    # regression: the `gpa` command must not TypeError (semester_gpa/cumulative_gpa need `courses`)
+    import json
+
+    from engine.cli import main
+    from engine.gradebook import GradeRecord, Proof, append_record
+    p = tmp_path / "grades.jsonl"
+    append_record(p, GradeRecord(ts="t", course="X", outcome="o.apply", kind="hw", band="A",
+                                 score=0.95, semester=1, proof=Proof(source="rubric", passed=True)))
+    assert main(["gpa", "--records", str(p)]) == 0
+    out = json.loads(capsys.readouterr().out)
+    assert out["gpa"] == 4.0 and out["standing"] == "honors"
+    assert main(["gpa", "--records", str(p), "--semester", "1"]) == 0   # semester branch too
+
+
 from engine.state import Course as SC
 
 COURSES = {"CS250": SC(title="DSA", credits=4), "CS270": SC(title="AI", credits=2)}

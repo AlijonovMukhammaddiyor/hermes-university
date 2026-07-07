@@ -49,6 +49,12 @@ def score_to_band(score: float) -> Band:
     return "F"
 
 
+def band_meets(band: str, threshold: float = 0.8) -> bool:
+    """True if `band` clears an outcome's mastery threshold (mapped to a band cutoff). Default 0.8 → B.
+    The single bar for 'mastered / placed-out / passed', consistent with the ≥B promotion gate."""
+    return BAND_POINTS.get(band, 0.0) >= BAND_POINTS[score_to_band(threshold)]
+
+
 def course_gpa(records: Iterable[GradeRecord], weights: dict[str, float] | None) -> float | None:
     """One course's GPA (0–4): kind-weighted mean of grade points, renormalized over the kinds that
     actually have records. Deterministic — the grading policy comes from the course, not the model."""

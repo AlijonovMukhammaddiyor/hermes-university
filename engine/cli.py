@@ -37,6 +37,7 @@ def main(argv: list[str] | None = None) -> int:
 
     pg = sub.add_parser("gpa"); pg.add_argument("--records", required=True)
     pg.add_argument("--semester", type=int, default=None)
+    pg.add_argument("--state", default=None)   # for credit/kind weights; else equal-weight
 
     # grade add — the audit records a proven grade; engine recomputes GPA/standing + dashboard
     pga = sub.add_parser("grade").add_subparsers(dest="sub", required=True).add_parser("add")
@@ -69,6 +70,15 @@ def main(argv: list[str] | None = None) -> int:
     # render-docs — regenerate the visible university documents
     prd = sub.add_parser("render-docs")
     prd.add_argument("--vault", required=True); prd.add_argument("--courses", required=True)
+
+    # advance — move the calendar forward a week and activate any now-due courses (weekly cron)
+    padv = sub.add_parser("advance")
+    padv.add_argument("--vault", required=True); padv.add_argument("--weeks", type=int, default=1)
+
+    # render-my-plan — the learner's personalized (placement-pruned) track → Courses/<CODE>/MyPlan.md
+    prm = sub.add_parser("render-my-plan")
+    prm.add_argument("--vault", required=True); prm.add_argument("--course-file", required=True)
+    prm.add_argument("--tz", default="UTC")
 
     # course validate — structural gate for professor-authored YAML (RFC-003 §4)
     pcv = sub.add_parser("course").add_subparsers(dest="sub", required=True).add_parser("validate")
@@ -105,7 +115,13 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"registered": added, "courses": sorted(st.courses)})); return 0
     if args.cmd == "gpa":
         recs = gb.load_records(args.records)
-        val = gb.semester_gpa(recs, args.semester) if args.semester else gb.cumulative_gpa(recs)
+        if args.state:
+            courses = State.load(args.state).courses
+        else:                                   # no state: each course equal-weight (credits 1, no policy)
+            from types import SimpleNamespace
+            courses = {c: SimpleNamespace(credits=1, grade_weights={}) for c in {r.course for r in recs}}
+        val = (gb.semester_gpa(recs, courses, args.semester) if args.semester
+               else gb.cumulative_gpa(recs, courses))
         print(json.dumps({"gpa": val, "standing": gb.standing_for(val)})); return 0
     if args.cmd == "grade" and args.sub == "add":
         from pathlib import Path
@@ -166,17 +182,50 @@ def main(argv: list[str] | None = None) -> int:
         from . import docs
         written = docs.render_all(args.vault, args.courses)
         print(json.dumps({"rendered": written})); return 0
+    if args.cmd == "advance":
+        from pathlib import Path
+        from . import registrar as R
+        vault = Path(args.vault)
+        st = R.load_state(vault)
+        for _ in range(max(0, args.weeks)):
+            R.advance_week(st)
+        activated = R.activate_due_courses(st)
+        R.save_state(vault, st)
+        print(json.dumps({"semester": st.position.semester,
+                          "week": st.position.week_in_semester, "activated": activated})); return 0
+    if args.cmd == "render-my-plan":
+        from pathlib import Path
+        from . import docs
+        from .course import load_course
+        c = load_course(args.course_file)
+        recs = [r for r in gb.load_records(Path(args.vault) / "records" / "grades.jsonl")
+                if r.course == c.id]
+        m = recompute(LearnerModel(), recs, tz=args.tz, now=_now())
+        mastered = {oid for oid, st in m.outcomes.items() if st.mastery_band and gb.band_meets(
+            st.mastery_band, (c.outcome(oid).mastery_threshold if c.outcome(oid) else 0.8))}
+        rel = f"Courses/{c.id}/MyPlan.md"
+        path = Path(args.vault) / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(docs.render_my_plan(c, mastered))
+        print(json.dumps({"rendered": rel, "placed_out": sorted(mastered)})); return 0
     if args.cmd == "course" and args.sub == "validate":
         from .course import load_course
         try:
             c = load_course(args.file)
         except Exception as e:
             print(json.dumps({"ok": False, "error": str(e)})); return 2
+        import re as _re
         from pathlib import Path as _P
         n_res = len(c.resources) + sum(len(u.resources) for u in c.units)
         teaching = [u for u in c.units if not u.id.endswith("finals")]
+        # Dossier gate (RFC-007): real cited research, not a memory dump. Require ≥5 distinct source
+        # URLs + confidence tags + an "open questions / couldn't verify" section.
         dossier = _P(args.file).parent / "research" / "dossier.md"
-        has_dossier = dossier.exists() and dossier.stat().st_size > 200
+        dtext = dossier.read_text() if dossier.exists() else ""
+        n_urls = len(set(_re.findall(r"https?://[^\s)\]>]+", dtext)))
+        has_dossier = (n_urls >= 5 and "confidence" in dtext.lower()
+                       and any(s in dtext.lower() for s in
+                               ("open question", "couldn't verify", "could not verify", "cannot verify")))
         mm = c.mastery_model
         has_mastery = bool(mm and mm.excellence_bar and mm.staying_current)
         missing = []
@@ -185,7 +234,8 @@ def main(argv: list[str] | None = None) -> int:
         if not all(u.sessions for u in teaching): missing.append("weekly-plan")
         if not c.professor_profile: missing.append("professor_profile")
         if not has_mastery: missing.append("mastery_model")
-        if not has_dossier: missing.append("research-dossier")
+        if not has_dossier:
+            missing.append("research-dossier(needs ≥5 cited URLs + confidence + open-questions)")
         authored = not missing
         print(json.dumps({"ok": True, "id": c.id, "units": len(c.units),
                           "outcomes": len(c.all_outcomes()), "resources": n_res,
@@ -221,15 +271,23 @@ def main(argv: list[str] | None = None) -> int:
         recs = [r for r in gb.load_records(Path(args.vault) / "records" / "grades.jsonl")
                 if r.course == c.id]
         m = recompute(LearnerModel(), recs, tz=args.tz, now=_now())
-        mastered = {oid for oid, st in m.outcomes.items() if st.mastery_band and st.mastery_band != "F"}
+
+        def _thr(oid):                             # per-outcome mastery threshold (default 0.8 → ≥B)
+            oc = c.outcome(oid)
+            return oc.mastery_threshold if oc else 0.8
+        mastered = {oid for oid, st in m.outcomes.items()
+                    if st.mastery_band and gb.band_meets(st.mastery_band, _thr(oid))}
         nxt = next_topic(c.dag(), mastered)
         if nxt is None:
             print(json.dumps({"course": c.id, "next": None, "done": True})); return 0
         unit = c.unit_of(nxt)
         o = c.outcome(nxt)
+        a = next((x for x in c.assessments if o and x.id == o.proof), None)   # module-driven gate
         tier = difficulty_for(m, unit.id if unit else nxt, baseline=c.starting_tier)
         print(json.dumps({"course": c.id, "next_outcome": nxt, "unit": unit.id if unit else None,
-                          "statement": o.statement if o else None, "proof": o.proof if o else None,
+                          "statement": o.statement if o else None,
+                          "proof_gate": a.proof_gate if a else None,
+                          "gate": a.gate if a else None, "gate_args": a.gate_args if a else {},
                           "difficulty": tier})); return 0
     p.error("unknown command")
 

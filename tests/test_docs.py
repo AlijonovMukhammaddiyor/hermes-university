@@ -85,18 +85,40 @@ def test_authored_gate_requires_full_depth(capsys, tmp_path):
     main(["course", "validate", "--file", str(cdir / "course.yaml")])
     out = _json.loads(capsys.readouterr().out)
     assert out["authored"] is False
-    assert {"professor_profile", "mastery_model", "research-dossier"} <= set(out["missing_for_authored"])
+    miss = set(out["missing_for_authored"])
+    assert {"professor_profile", "mastery_model"} <= miss
+    assert any(x.startswith("research-dossier") for x in miss)
 
-    # add profile + mastery_model + a dossier -> now authored
+    # a THIN dossier (no cited URLs / confidence / open-questions) must still fail the hardened gate
     base["professor_profile"] = {"persona": "p", "teaching_stance": "s"}
     base["mastery_model"] = {"excellence_bar": "be the best",
                              "staying_current": [{"type": "reference", "title": "feed"}]}
     (cdir / "course.yaml").write_text(yaml.safe_dump(base))
     (cdir / "research").mkdir()
-    (cdir / "research" / "dossier.md").write_text("# Dossier\n" + "source · url · why\n" * 20)
+    (cdir / "research" / "dossier.md").write_text("# Dossier\n" + "a topic i remember\n" * 20)
+    main(["course", "validate", "--file", str(cdir / "course.yaml")])
+    assert any(x.startswith("research-dossier")
+               for x in _json.loads(capsys.readouterr().out)["missing_for_authored"])
+
+    # a REAL cited dossier (>=5 URLs + confidence + open-questions) -> authored
+    (cdir / "research" / "dossier.md").write_text(
+        "# Dossier\n" + "".join(f"- src{i} https://ex{i}.com confidence: high\n" for i in range(6))
+        + "\n## Open Questions\n- none\n")
     main(["course", "validate", "--file", str(cdir / "course.yaml")])
     out = _json.loads(capsys.readouterr().out)
     assert out["authored"] is True and out["missing_for_authored"] == []
+
+
+def test_render_my_plan_prunes_and_renumbers():
+    c = load_course(CDIR / "GEN101" / "course.yaml")
+    # nothing mastered -> full plan, both teaching units' weeks present, renumbered from 1
+    full = docs.render_my_plan(c, mastered=set())
+    assert "My Plan" in full and "| Week |" in full and "Placed out" not in full
+    assert "| 1 |" in full and "| 4 |" in full          # 2 units × 2 weeks = weeks 1..4
+    # master all of unit 'basics' -> it's placed out, remaining weeks renumber from 1
+    pruned = docs.render_my_plan(c, mastered={"f1.apply"})
+    assert "Placed out (tested):** Basics" in pruned
+    assert "Two pointers" in pruned and "| 1 |" in pruned   # intermediate now starts at week 1
 
 
 def test_render_transcript_and_degree(tmp_path):

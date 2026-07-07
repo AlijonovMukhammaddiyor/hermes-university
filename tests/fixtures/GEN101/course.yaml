@@ -53,6 +53,7 @@ units:
     order_index: 1
     semester: 1
     est_weeks: 2
+    foundational: true
     summary: "Core building blocks and the first solving patterns."
     resources:
       - { type: textbook, title: "CLRS", locator: "ch. 1-2", why: "foundations", tier: core, cost: paid }

@@ -1,7 +1,9 @@
 # RFC-003 — Research-Driven Course Authoring & World-Class Professors
 
-Status: **ACCEPTED — implementing** · Owner: the maintainer · Date: 2026-07-07
-Builds on RFC-001 (engine owns numbers; course = data) and RFC-002 (lifecycle + rendering layer).
+Status: **HISTORICAL** — canonical description is [`ARCHITECTURE.md`](../ARCHITECTURE.md). Date: 2026-07-07
+> Superseded where it disagrees with later RFCs: per-course professors → **one Faculty professor**
+> (RFC-004); CS270/"4 seed courses" are gone → **empty catalog** (RFC-005); research is now
+> **human-in-the-loop + placement-driven** (RFC-007). The research-as-data principle stands.
 
 ## 0. Why
 Today a course is a static `course.yaml` I hand-authored, and its "syllabus" is a thin list of topics

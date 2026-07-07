@@ -103,12 +103,10 @@ class Unit(BaseModel):
     semester: int
     outcomes: list[Outcome]
     summary: str | None = None                                # one-line what/why of the unit
+    foundational: bool = False                                # a fundamentals unit (RFC-007 placement)
     resources: list[Resource] = Field(default_factory=list)   # per-unit reading list (researched)
     sessions: list[Session] = Field(default_factory=list)     # week-by-week plan (RFC-006)
     est_weeks: int = 1                                         # schedule span
-    prereq_outcomes: list[str] = Field(default_factory=list)
-    entry_gate: float = 0.8
-    exit_gate: float = 0.8
 
 
 class Course(BaseModel):
@@ -125,7 +123,7 @@ class Course(BaseModel):
     starting_tier: Literal["easy", "med", "hard"] = "easy"  # difficulty floor for a new learner
     runs_in: list[int] = Field(default_factory=lambda: [1, 2])
     active_default: bool = True          # inactive until activates_week if False
-    activates_week: int | None = None    # week_in_semester it turns on (e.g. PD101 = 9)
+    activates_week: int | None = None    # week_in_semester a dormant course turns on
     prerequisites: list[str] = Field(default_factory=list)
     enduring_understandings: list[str] = Field(default_factory=list)
     grading_scale: dict[str, float] = Field(

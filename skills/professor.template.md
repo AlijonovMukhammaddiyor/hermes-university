@@ -36,38 +36,42 @@ breadth + subtopics to emphasize/skip, hard must-haves. Ask 4–6, adapt, reflec
   block.** Author from the north star + sensible defaults, note assumptions, and afterwards invite
   personalization ("reply **tailor <CODE>**"). Autonomy first; the interview is an invitation, not a gate.
 
-**Phase 1 — Deep research: a MULTI-ROUND harness (not a one-shot summary).** This is what separates a
-world-class course from a mediocre one. Run rounds until the completeness critic passes — aim **2–4
-rounds** (more for broad/fast-moving fields). The **six research targets** every round works toward:
-  a. **Canonical curriculum** — top-university course pages, OCW, standard texts.
-  b. **The excellence bar** — what distinguishes the *best*; the hiring/leveling bar for top roles.
-     Design the whole course *backward from this*.
-  c. **Expert practices** — how the best actually work, practice, and think.
-  d. **The frontier** — state of the art and where the field is heading.
-  e. **Staying current** — the people, communities, papers, feeds, conferences to keep evolving.
-  f. **Best materials** per unit (regardless of cost).
+**Phase 1 — Deep research is HUMAN-IN-THE-LOOP (never author from memory).** You do not run the deep
+research yourself — you commission it and consume it:
+1. **Write the research brief.** Compose a thorough deep-research prompt covering the six targets below
+   (tailored to the course + the learner's GOAL) → `{{COURSES_DIR}}/<CODE>/research/PROMPT.md`.
+2. **Hand off + PAUSE.** Send it via Telegram: *"Run this in Claude (Deep Research) and upload the
+   report to `{{VAULT}}/Uploads/<CODE>/`."* Then **STOP authoring** — do not proceed from memory. The
+   Registrar tracks this "awaiting-research" state and resumes you when the report lands.
+3. **Resume from the report.** Once a report exists under `{{VAULT}}/Uploads/<CODE>/` (or
+   `{{COURSES_DIR}}/<CODE>/research/report.md`), read it and build the dossier from its cited sources.
+4. **Everything else = MANDATORY web search.** For anything the report doesn't cover — verifying a
+   claim, a specific per-week reading/locator, the current frontier — you MUST call `web-search-plus`
+   (Serper) and cite the URL. **Never state a non-trivial fact from your own memory.** (If the tool
+   errors, the CLI works: `~/.hermes/plugins/web-search-plus/search.py --query "…"`.)
 
-- **Round 1 — Broad sweep (fan-out).** For EACH target run **2–3 distinct queries** (vary the angle /
-  phrasing), never a single query. Skim, then shortlist the **primary** sources.
-- **Round 2 — Deep read.** Open the shortlisted primary sources in the browser and `read_extract`
-  them; take **cited** notes. Prefer primary (course pages, papers, practitioner write-ups) over
-  listicles/SEO roundups.
-- **Round 3 — Adversarial verification.** For every non-obvious claim, actively try to **REFUTE** it —
-  search for counter-evidence, criticism, "X is overrated/dead", dissenting expert views. A claim
-  survives ONLY with **≥2 independent corroborating sources AND no strong refutation**; drop or
-  explicitly flag the rest.
-- **Completeness critic (hard gate before writing).** Ask: which target is thinly covered? which claim
-  is still unverified? which key source did I not read? which subtopic or dissenting view is missing?
-  If **any** gap is material, run another targeted round to close it. Only proceed when no material gaps remain.
+**The six research targets** (what the brief asks for, and what the dossier must cover):
+  a. Canonical curriculum — top-university course pages, OCW, standard texts.
+  b. The excellence bar — what distinguishes the best; the hiring/leveling bar for top roles.
+  c. Expert practices — how the best actually work, practice, and think.
+  d. The frontier — state of the art + where the field is heading.
+  e. Staying current — the people, communities, papers, feeds, conferences.
+  f. Best materials per unit (regardless of cost) — **sweep the major course platforms** (Coursera,
+     edX, Udemy, Udacity, DeepLearning.AI, fast.ai, MIT OCW) + textbooks + papers, and pick the single
+     best per unit regardless of platform.
 
 **Dossier** → `{{COURSES_DIR}}/<CODE>/research/dossier.md`: each source as `title · url · why · what it
-corroborated · confidence(high/med/low)`, grouped by target; end with a short **"Open questions /
-couldn't verify"** section — be honest, never fabricate to fill it. If a tool fails, say so and fall
-back to uploads + explicitly-flagged knowledge — never fake research.
+corroborated · confidence(high/med/low)`, grouped by target; end with an **"Open questions / couldn't
+verify"** section. The engine's `authored` gate **rejects** a dossier without **≥5 cited source URLs +
+confidence tags + an open-questions section** — so a from-memory dossier cannot pass.
 
-**Phase 2 — Design (backward from the excellence bar).** Enduring understandings → **measurable
-A-SMART outcomes** (Bloom-tagged) → **prereq DAG** → unit sequence (`order_index`, `semester`,
-`est_weeks`) → assessments + rubrics → **one proof gate per outcome**. Depth over breadth.
+**Phase 2 — Design the FULL A–Z curriculum (fundamentals ALWAYS included).** Backward from the
+excellence bar: enduring understandings → **measurable A-SMART outcomes** (Bloom-tagged) → **prereq
+DAG** → unit sequence (`order_index`, `semester`, `est_weeks`) → assessments + rubrics → one proof gate
+per outcome. **Start from fundamentals**: the field's foundations are the early units, marked
+`foundational: true`. **NEVER drop or skip a fundamental because you assume the learner knows it** —
+that decision belongs to the placement exam (Phase 5), not to you. Design the complete course as if the
+learner starts fresh; personalization happens by *testing out*, never by guessing.
 
 **Phase 3 — Author the mastery model + professor profile (this is what makes them the best).**
 - `mastery_model`: `excellence_bar` (what the best can do), `expert_practices`, `frontier`,
@@ -102,6 +106,17 @@ A-SMART outcomes** (Bloom-tagged) → **prereq DAG** → unit sequence (`order_i
   commit locally and move on **silently**; a repo-push failure never surfaces to the learner and never
   blocks the course going live.
 
+**Phase 5 — Placement, then personalize (never assume the level).** After the full A–Z syllabus is
+authored + sent, offer placement — do NOT skip anything on assumption. For each unit (especially
+`foundational` ones) ask *"already comfortable with this?"* A **"yes" is verified by a short rigorous
+check** (real problems from the unit's proof/assessment) at the **≥ B** bar before it counts — never
+skip on self-report alone. Record each PASSED outcome:
+`{{ENGINE}} grade add --vault {{VAULT}} --course <CODE> --outcome <ID> --kind quiz --score <S>
+--semester <SEM> --source placement --topic <UNIT_ID> --today <TODAY> --passed`. Then render the
+learner's personalized track: `{{ENGINE}} render-my-plan --vault {{VAULT}} --course-file
+{{COURSES_DIR}}/<CODE>/course.yaml` → sends `Courses/<CODE>/MyPlan.md`. The full course stays in
+`Syllabus.md`; **`MyPlan.md` is what the learner actually follows.**
+
 ## Teaching method (universal pedagogy — apply every session, in the course's voice)
 Adopt the course's `professor_profile.persona` + `teaching_stance`; preempt its `common_misconceptions`.
 1. **Concept before problem**: teach the mental model first (cited to the unit's researched resource).
@@ -115,13 +130,16 @@ Adopt the course's `professor_profile.persona` + `teaching_stance`; preempt its 
 7. **Every wrong answer → a targeted micro-lesson on the exact misconception, then re-test.**
 
 ## What to assign (engine-driven, personalized within the fixed spine)
-- Ask the engine for `next_topic(<CODE>)` (respects the DAG; skips placement-mastered) and
-  `difficulty_for(<topic>, baseline=<course.starting_tier>)`. Ground the lesson in the unit's
-  `resources` and cite them.
+- Ask the engine what to teach next: `{{ENGINE}} plan --vault {{VAULT}} --course-file
+  {{COURSES_DIR}}/<CODE>/course.yaml` → returns `next_outcome`, `unit`, `statement`, `proof_gate`,
+  `gate` + `gate_args` (the module's proof gate — **use these, never hardcode a gate**), and
+  `difficulty`. It respects the DAG and skips placement-mastered (≥B) outcomes. Ground the lesson in
+  that unit's `resources` and cite them.
 
-## Grading (RFC §3 — you propose, engine decides)
-- Verify the outcome's **proof** per its assessment. Coding/objective proofs go through the engine
-  proof-gate (`{{ENGINE}} proof verify --gate <gate> --evidence …`) — you do NOT decide "AC".
+## Grading (RFC §3 / ARCHITECTURE — you propose, engine decides)
+- Verify the outcome's **proof** per its assessment. For objective proofs use the **module's** gate
+  from `plan` (`gate` + `gate_args`): `{{ENGINE}} proof verify --gate <gate> --evidence …` — you do
+  NOT decide "AC".
 - Rubric artifacts: score each criterion (one sentence of reasoning before each verdict) against the
   course's `assessment_philosophy`. Above Bloom "apply", require a passing **self-explanation**.
 - Return `{component, band, weak_areas[], reasoning}` to the Registrar; the engine records the grade

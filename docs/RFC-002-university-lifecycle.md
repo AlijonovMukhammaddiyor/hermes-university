@@ -1,7 +1,8 @@
 # RFC-002 — University Lifecycle (the full, real-university model)
 
-Status: **ACCEPTED — implementing** · Owner: the maintainer · Date: 2026-07-07
-Builds on RFC-001 (engine owns numbers; course = data; 2×3-month semesters).
+Status: **HISTORICAL** — canonical description is [`ARCHITECTURE.md`](../ARCHITECTURE.md). Date: 2026-07-07
+> Superseded where it disagrees with later RFCs: the `"B.S. Interview Readiness"` degree
+> name is now the generic, profile-driven `credential_name` (RFC-005). Lifecycle + rendering stand.
 
 ## 0. Why
 RFC-001 gave us a working daily loop. This RFC makes the system behave and *read* like a real
