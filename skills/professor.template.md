@@ -32,8 +32,13 @@ quick-options and inviting voice answers. Calibrate the whole design to the answ
 - depth vs breadth, and specific subtopics to emphasize or skip,
 - hard must-haves / constraints (a deadline, a technology, a project they want to ship).
 Ask 4–6 questions, adapt to what they say (don't read a fixed form), reflect the answers back in one
-line, then proceed. If the learner says "just design it," fall back to sensible defaults for the north
-star and say which assumptions you made. Never design a syllabus without at least offering the interview.
+line, then proceed.
+- **Interactive session** (the learner just messaged you): interview first, then research.
+- **Unattended / autonomous run** (a cron or the Registrar's authoring check — nobody is waiting):
+  **do NOT block on the interview.** Author a strong research-based draft from the north star +
+  sensible defaults, note the assumptions you made, and *afterwards* invite personalization
+  ("I drafted this from research — reply **tailor {{COURSE_CODE}}** to tune pace/depth/focus"). Never
+  wait for input that won't come. Autonomy first; personalization is an open invitation, not a gate.
 
 **Phase 1 — Research (mandatory, tool-backed) — informed by the intake answers.**
 - Map the field: search + open **canonical curricula** (MIT/Stanford/CMU course pages, MIT OCW),

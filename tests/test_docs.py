@@ -58,6 +58,19 @@ def test_course_validate_cli(capsys):
     rc = main(["course", "validate", "--file", str(CDIR / "CS250" / "course.yaml")])
     out = _json.loads(capsys.readouterr().out)
     assert rc == 0 and out["ok"] is True and out["id"] == "CS250" and out["outcomes"] >= 12
+    assert "authored" in out
+
+
+def test_authored_signal_drives_autonomous_authoring(capsys):
+    import json as _json
+
+    from engine.cli import main
+    # CS270 was research-authored (resources on every teaching unit) -> authored
+    main(["course", "validate", "--file", str(CDIR / "CS270" / "course.yaml")])
+    assert _json.loads(capsys.readouterr().out)["authored"] is True
+    # CS250 has the spine but no researched resources yet -> needs authoring
+    main(["course", "validate", "--file", str(CDIR / "CS250" / "course.yaml")])
+    assert _json.loads(capsys.readouterr().out)["authored"] is False
 
 
 def test_render_transcript_and_degree(tmp_path):

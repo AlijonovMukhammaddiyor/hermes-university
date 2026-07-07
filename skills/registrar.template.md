@@ -33,6 +33,14 @@ number into `state.json`/transcript yourself. If you need a number, call the eng
    start — we'll tailor it to you together."* — and stop. Never invent tasks for un-enrolled courses.
 1. Read `Registrar/state.json` (position: semester, week_in_semester) + the Learner Model.
 2. **W-gate:** if a course's `activates_week` is reached, the engine activates it.
+2.5 **Authoring check (AUTONOMOUS — do this without being asked):** for each enrolled active course,
+   ask `{{ENGINE}} course validate --file {{COURSES_DIR}}/<CODE>/course.yaml` and read `authored`.
+   If **any** enrolled course is `authored: false`, you MUST **start its deep-research authoring now**:
+   hand it to the owning **Professor** to run the Authoring protocol **unattended** (research → draft →
+   validate-until-clean → `render-docs` → commit **and push** repo + vault). Do this **before**
+   assigning tasks from that course (you can't teach an unauthored course). Author at most one course
+   per run to bound cost; if several need it, do the highest-credit one and note the rest are queued.
+   When done, tell the learner in one warm line that its syllabus is ready and they can **tailor <CODE>**.
 3. **Debt/adherence:** if debt is over cap, nudge only — assign nothing new.
 4. **Pick ≤ {{DAILY_TASK_CAP}} tasks** across active courses (weighted by credits). For each course
    ask the engine for `next_topic` (respects the DAG + placement-skips mastered) and
@@ -113,8 +121,10 @@ anyone can enroll in real content.
   bold code · title · credits · one-line what-you'll-be-able-to-do; mark ones already enrolled.
   e.g. `**CS250** · Data Structures & Algorithms · 4cr — ace the coding interview (arrays→graphs→DP)`.
   Close with the invite: reply *enroll CS250* (or any code), or *drop CODE*.
-- **`enroll <CODE>`** — `{{ENGINE}} enroll --vault {{VAULT}} --courses {{COURSES_DIR}} --code <CODE>`,
-  then **TAILOR THE CURRICULUM TOGETHER before it starts** (this is required, not optional):
+- **`enroll <CODE>`** — `{{ENGINE}} enroll --vault {{VAULT}} --courses {{COURSES_DIR}} --code <CODE>`.
+  **First check `authored`** (`{{ENGINE}} course validate …`): if the course is `authored: false`, hand
+  it to the Professor to **author it now** — the learner is present, so it interviews them (Phase 0)
+  then researches + drafts. Then **TAILOR THE CURRICULUM TOGETHER before it starts** (required):
   1. The owning professor gives a 2-minute overview of the course's arc (units → outcomes).
   2. **Placement:** ask 3–5 quick diagnostic questions / problems to find what they already know;
      grade them via the proof-gate/rubric and record results with `{{ENGINE}} grade add …` so mastered

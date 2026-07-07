@@ -169,8 +169,11 @@ def main(argv: list[str] | None = None) -> int:
         except Exception as e:
             print(json.dumps({"ok": False, "error": str(e)})); return 2
         n_res = len(c.resources) + sum(len(u.resources) for u in c.units)
+        teaching = [u for u in c.units if not u.id.endswith("finals")]
+        authored = bool(c.description) and all(u.resources for u in teaching)
         print(json.dumps({"ok": True, "id": c.id, "units": len(c.units),
                           "outcomes": len(c.all_outcomes()), "resources": n_res,
+                          "authored": authored,
                           "no_resource_units": [u.id for u in c.units if not u.resources]}))
         return 0
     if args.cmd == "promote":
