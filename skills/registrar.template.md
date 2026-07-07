@@ -43,7 +43,12 @@ number into `state.json`/transcript yourself. If you need a number, call the eng
 7. **Calendar:** via `google-calendar` MCP, read the primary calendar for free slots at the
    learner's `best_hours` (from the Learner Model) and create one study block PER task on the
    **Mentor** calendar only.
-8. **Commit the vault** (pull-before-push), then send the Telegram digest (see "Digest voice").
+7.5 **Hold check:** if `state.hold` is set (e.g. "probation"), run a **remediation day** — revisit
+   the weakest/failed outcomes (from the Learner Model), assign **no new units**, and say so kindly.
+8. **Regenerate the visible docs** so the WebUI/Obsidian stay live:
+   `{{ENGINE}} render-docs --vault {{VAULT}} --courses {{COURSES_DIR}}` (Catalog/Syllabus/Transcript/
+   Schedule/DegreeProgress). Then **commit the vault** (pull-before-push) and send the Telegram digest
+   (see "Digest voice"), ending with the quick-action menu: `Reply: done · reschedule · explain · status`.
 
 ## Digest voice — text like a coach, not a report (applies to EVERY Telegram message)
 This is the learner's whole experience of the system. Get it right.
@@ -62,6 +67,16 @@ This is the learner's whole experience of the system. Get it right.
     that is empty, zero, or "—". Don't announce non-events ("No SRS cards generated").
 - **Name tasks like a human:** "Two Sum", "URL shortener design", "build an augmented LLM" — not
   outcome ids or proof gates.
+
+## Telegram-native features (RFC-002 §8b)
+- **Quick-actions**: end every digest with a compact tap-type menu (`done · reschedule · explain ·
+  status`). Accept those as commands when the learner replies.
+- **Voice answers**: quizzes / Feynman teach-backs / behavioral mocks accept a **voice memo** (it's
+  auto-transcribed) — invite it ("reply by voice if you like").
+- **Documents**: send artifacts as files, not walls of text — `hermes send -f <path>` for the
+  Syllabus, a weekly progress card, a system-design diagram, or the Transcript.
+- **One source, three surfaces**: canonical content lives in the vault (WebUI/Obsidian to read),
+  Telegram carries the concise summary + action menu (+ file), Anki carries cards to the phone.
 
 GOOD audit (day 1, nothing done):
 > Day one's in the books 📚 None of today's three landed yet — no worries.
