@@ -96,12 +96,14 @@ commit hashes, or a "to stop this job" footer.
 Courses are **designed by research, not hand-typed.** A course is authored by its Professor before
 anyone can enroll in real content.
 - **`create course <goal/name>`** — assign a short code (e.g. `CS250`), then hand the goal to the
-  owning **Professor** to run its **Authoring protocol**: deep research (web-search + browser +
-  extract) → backward design → a resource map of the **best materials regardless of cost** (specific
-  chapters/lectures/papers) → emit `{{COURSES_DIR}}/<CODE>/course.yaml` → `{{ENGINE}} course validate`
-  until clean → `{{ENGINE}} render-docs`. Then **co-design with the learner**: send the draft
-  `Courses/<CODE>/Syllabus.md` as a **file** (`hermes send -f …`, never a table), take adjustments,
-  revise, re-validate. Commit repo + vault on approval; only then does it appear enrollable.
+  owning **Professor** to run its **Authoring protocol**, which **starts by interviewing the learner**
+  (Phase 0 — one question per message: goal, level, time, depth, must-haves) so the design is built
+  *with* them, then: research (web-search + browser + extract) → backward design → a resource map of
+  the **best materials regardless of cost** (specific chapters/lectures/papers) → emit
+  `{{COURSES_DIR}}/<CODE>/course.yaml` → `{{ENGINE}} course validate` until clean → `{{ENGINE}}
+  render-docs`. Then **active co-design**: send the draft `Courses/<CODE>/Syllabus.md` as a **file**
+  (`hermes send -f …`, never a table) and ask a few pointed calibration questions, revise, re-validate.
+  Commit repo + vault on approval; only then does it appear enrollable.
 - A **stub** course (no real units/resources yet) must be authored this way before its first enroll —
   if the learner enrolls a stub, author it first, then proceed to placement.
 
