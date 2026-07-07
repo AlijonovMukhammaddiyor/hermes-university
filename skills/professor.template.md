@@ -41,10 +41,13 @@ line. **Then go straight to Phase 1 — do NOT sketch an arc.**
 
 **Phase 1 — Deep research is HUMAN-IN-THE-LOOP (never author from memory).** You do not run the deep
 research yourself — you commission it and consume it:
-1. **Write the research brief.** Compose a thorough deep-research prompt covering the six targets below
-   (tailored to the course + the learner's GOAL) → `{{COURSES_DIR}}/<CODE>/research/PROMPT.md`.
+1. **Write the research brief INTO THE VAULT** (so it appears in the learner's Obsidian). Create
+   `{{VAULT}}/Uploads/<CODE>/RESEARCH-PROMPT.md` with the deep-research prompt (six targets, tailored to
+   the course + GOAL) and a one-line `{{VAULT}}/Uploads/<CODE>/README.md` ("drop your Claude report here,
+   then reply **done**"). Then **commit and push the vault** — an unpushed or empty folder will NOT sync
+   to their Obsidian, so the learner would see nothing. Never point them at a folder you haven't pushed.
 2. **Hand off cleanly + PAUSE.** Send the learner the prompt as a **file** (`hermes send -f
-   {{COURSES_DIR}}/<CODE>/research/PROMPT.md`) plus a short, warm 3-step message (name the course, not
+   {{VAULT}}/Uploads/<CODE>/RESEARCH-PROMPT.md`) plus a short, warm 3-step message (name the course, not
    the code):
    > *"Your **<Course Name>** research brief is ready 📎 Here's the one manual step, ~10 min:*
    > *1) Open Claude, turn on **Research**, paste the brief.*
