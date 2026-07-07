@@ -36,19 +36,34 @@ breadth + subtopics to emphasize/skip, hard must-haves. Ask 4–6, adapt, reflec
   block.** Author from the north star + sensible defaults, note assumptions, and afterwards invite
   personalization ("reply **tailor <CODE>**"). Autonomy first; the interview is an invitation, not a gate.
 
-**Phase 1 — Deep research (mandatory; verified, cited, primary-source).** Fan out queries and open
-**primary sources** for all six targets, then write `{{COURSES_DIR}}/<CODE>/research/dossier.md`
-(each source: title · url · why · what it corroborated):
-  a. **Canonical curriculum** of the field (top-university course pages, OCW, standard texts).
-  b. **The excellence bar** — what distinguishes the *best* practitioners; the hiring/leveling bar for
-     top roles. Design the whole course *backward from this*.
+**Phase 1 — Deep research: a MULTI-ROUND harness (not a one-shot summary).** This is what separates a
+world-class course from a mediocre one. Run rounds until the completeness critic passes — aim **2–4
+rounds** (more for broad/fast-moving fields). The **six research targets** every round works toward:
+  a. **Canonical curriculum** — top-university course pages, OCW, standard texts.
+  b. **The excellence bar** — what distinguishes the *best*; the hiring/leveling bar for top roles.
+     Design the whole course *backward from this*.
   c. **Expert practices** — how the best actually work, practice, and think.
   d. **The frontier** — state of the art and where the field is heading.
   e. **Staying current** — the people, communities, papers, feeds, conferences to keep evolving.
   f. **Best materials** per unit (regardless of cost).
-**Cross-verify** every non-obvious claim across ≥2 independent sources; **drop what you can't
-corroborate.** If a tool fails, say so and fall back to uploads + explicitly-flagged knowledge — never
-fake research.
+
+- **Round 1 — Broad sweep (fan-out).** For EACH target run **2–3 distinct queries** (vary the angle /
+  phrasing), never a single query. Skim, then shortlist the **primary** sources.
+- **Round 2 — Deep read.** Open the shortlisted primary sources in the browser and `read_extract`
+  them; take **cited** notes. Prefer primary (course pages, papers, practitioner write-ups) over
+  listicles/SEO roundups.
+- **Round 3 — Adversarial verification.** For every non-obvious claim, actively try to **REFUTE** it —
+  search for counter-evidence, criticism, "X is overrated/dead", dissenting expert views. A claim
+  survives ONLY with **≥2 independent corroborating sources AND no strong refutation**; drop or
+  explicitly flag the rest.
+- **Completeness critic (hard gate before writing).** Ask: which target is thinly covered? which claim
+  is still unverified? which key source did I not read? which subtopic or dissenting view is missing?
+  If **any** gap is material, run another targeted round to close it. Only proceed when no material gaps remain.
+
+**Dossier** → `{{COURSES_DIR}}/<CODE>/research/dossier.md`: each source as `title · url · why · what it
+corroborated · confidence(high/med/low)`, grouped by target; end with a short **"Open questions /
+couldn't verify"** section — be honest, never fabricate to fill it. If a tool fails, say so and fall
+back to uploads + explicitly-flagged knowledge — never fake research.
 
 **Phase 2 — Design (backward from the excellence bar).** Enduring understandings → **measurable
 A-SMART outcomes** (Bloom-tagged) → **prereq DAG** → unit sequence (`order_index`, `semester`,

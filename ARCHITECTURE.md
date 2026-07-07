@@ -57,10 +57,11 @@ Catalog → Registration (prereqs, credit-load, holds) → Syllabus → Academic
 
 ## Autonomous course authoring
 When you enroll a course that isn't authored yet — or the daily loop finds one — the Professor runs its
-authoring protocol: (optional intake interview) → deep research (fan-out searches, primary sources,
-cross-verify ≥2, cite a dossier) → backward design from the excellence bar → resource map → validate to
-`authored: true` → render → co-design → persist. Zero code, zero redeploy: a new course's professor is
-the Faculty Handbook bound to the new module.
+authoring protocol: (optional intake interview) → **deep research as a multi-round harness** (fan-out
+sweep → deep read of primary sources → adversarial verification, ≥2 corroborating sources and no strong
+refutation → a completeness critic that loops until no material gaps → a cited dossier) → backward
+design from the excellence bar → resource map → validate to `authored: true` → render → co-design →
+persist. Zero code, zero redeploy: a new course's professor is the Faculty Handbook bound to the module.
 
 ## Install & run
 See the [README](README.md) quickstart and [PREREQUISITES.md](PREREQUISITES.md). `install.sh` is
