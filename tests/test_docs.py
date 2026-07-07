@@ -34,6 +34,20 @@ def test_render_transcript_and_degree(tmp_path):
     assert "Degree Progress" in dp and "Outcomes mastered" in dp
 
 
+def test_schedule_has_real_dates():
+    s = fresh_state(name="M", timezone="UTC", started_on="2026-07-06")
+    sch = docs.render_schedule(s)
+    assert "Term start: 2026-07-06" in sch and "Projected graduation" in sch and "Semester 2" in sch
+
+
+def test_diploma_render_when_awarded():
+    s = fresh_state(name="the maintainer", timezone="UTC", started_on="2026-07-06")
+    s.degree.awarded_on = "2027-01-01"
+    s.gpa.cumulative = 3.6
+    dip = docs.render_diploma(s)
+    assert "Diploma" in dip and "2027-01-01" in dip and "the maintainer" in dip and "3.60" in dip
+
+
 def test_render_all_writes_files(tmp_path):
     (tmp_path / "Registrar").mkdir(parents=True)
     s = fresh_state(name="M", timezone="UTC", started_on="2026-07-06")

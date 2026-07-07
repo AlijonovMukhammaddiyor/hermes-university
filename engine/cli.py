@@ -56,7 +56,7 @@ def main(argv: list[str] | None = None) -> int:
     # promote — apply a semester-finals result (engine gates promotion/graduation)
     ppr = sub.add_parser("promote")
     ppr.add_argument("--vault", required=True); ppr.add_argument("--band", required=True)
-    ppr.add_argument("--today", required=True)
+    ppr.add_argument("--today", required=True); ppr.add_argument("--courses", default=None)
 
     # enrollment — catalog / enroll / drop
     pcat = sub.add_parser("catalog"); pcat.add_argument("--courses", required=True)
@@ -115,10 +115,12 @@ def main(argv: list[str] | None = None) -> int:
             weak_areas=[w for w in args.weak.split(",") if w])
         append_record(recs_path, record)
         st = R.load_state(vault)
-        R.refresh(st, load_records(recs_path))
+        all_recs = load_records(recs_path)
+        R.refresh(st, all_recs)
         R.save_state(vault, st); R.write_dashboard(vault, st, args.today)
+        R.persist_learner_model(vault, all_recs, st.learner.timezone, _now())
         print(json.dumps({"band": band, "gpa_cumulative": st.gpa.cumulative,
-                          "standing": st.standing})); return 0
+                          "standing": st.standing, "hold": st.hold})); return 0
     if args.cmd == "day" and args.sub == "close":
         from pathlib import Path
         from . import registrar as R
@@ -165,7 +167,11 @@ def main(argv: list[str] | None = None) -> int:
         records = load_records(vault / "records" / "grades.jsonl")
         st, status = R.promote_or_graduate(st, args.band, args.today, records)
         R.save_state(vault, st); R.write_dashboard(vault, st, args.today)
-        print(json.dumps({"status": status, "semester": st.position.semester})); return 0
+        if args.courses:
+            from . import docs
+            docs.render_all(vault, args.courses)   # refresh Transcript/DegreeProgress/Diploma
+        print(json.dumps({"status": status, "semester": st.position.semester,
+                          "degree_awarded": st.degree.awarded_on})); return 0
     if args.cmd == "proof":
         res = get_gate(args.gate).verify(json.loads(args.evidence))
         print(res.model_dump_json()); return 0 if res.passed else 2

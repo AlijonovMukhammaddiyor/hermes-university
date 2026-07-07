@@ -93,6 +93,22 @@ def test_refresh_computes_gpa_and_standing():
     assert s.standing == "good"
 
 
+def test_probation_sets_hold_and_recovery_clears_it():
+    s = _state()
+    R.refresh(s, [rec("a.apply", 0.50, course="CS250")])          # F -> GPA 0 -> probation
+    assert s.standing == "probation" and s.hold == "probation"
+    R.refresh(s, [rec("a.apply", 0.95, course="CS250"), rec("b.apply", 0.95, course="CS250")])
+    assert s.standing in ("good", "honors") and s.hold is None
+
+
+def test_persist_learner_model_writes_file(tmp_path):
+    from datetime import datetime, timezone
+    (tmp_path / "records").mkdir(parents=True)
+    R.persist_learner_model(tmp_path, [rec("two-pointers.apply", 0.9, tier="med")],
+                            "UTC", datetime(2026, 7, 10, tzinfo=timezone.utc))
+    assert (tmp_path / "records" / "learner_model.json").exists()
+
+
 def test_activate_due_courses_by_week():
     s = _state()
     s.position.week_in_semester = 3

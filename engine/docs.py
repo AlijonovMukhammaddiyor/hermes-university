@@ -111,15 +111,52 @@ def render_degree_progress(state: State, records: list[GradeRecord],
     return "\n".join(out).rstrip() + "\n"
 
 
-# ---------------------------------------------------------------- schedule (calendar filled in P1)
+# ---------------------------------------------------------------- schedule (academic calendar)
+def term_calendar(started_on: str | None, total_semesters: int, wps: int) -> dict:
+    """Key dates per semester derived from the start date. Week N of semester S begins
+    `started_on + ((S-1)*wps + (N-1))` weeks."""
+    from datetime import date, timedelta
+    if not started_on:
+        return {}
+    start = date.fromisoformat(started_on)
+
+    def wk(sem: int, w: int) -> str:
+        return (start + timedelta(weeks=(sem - 1) * wps + (w - 1))).isoformat()
+
+    cal = {}
+    for s in range(1, total_semesters + 1):
+        cal[s] = {"start": wk(s, 1), "add_drop_deadline": wk(s, 2),
+                  "midterm": wk(s, 6), "finals": wk(s, wps)}
+    cal["graduation"] = (start + timedelta(weeks=total_semesters * wps)).isoformat()
+    return cal
+
+
 def render_schedule(state: State) -> str:
-    p = state.position
-    return (f"# 🗓️ Academic Schedule\n\n"
-            f"- **Program:** {state.program.total_semesters} semesters × "
-            f"{state.program.weeks_per_semester} weeks\n"
-            f"- **Started:** {state.program.started_on}\n"
-            f"- **Now:** Semester {p.semester}, week {p.week_in_semester}\n"
-            f"- **This semester:** biweekly exams (wk 2,4,8,10) · midterm wk 6 · finals wk 12\n")
+    p, pr = state.position, state.program
+    cal = term_calendar(pr.started_on, pr.total_semesters, pr.weeks_per_semester)
+    out = ["# 🗓️ Academic Schedule", "",
+           f"- **Program:** {pr.total_semesters} semesters × {pr.weeks_per_semester} weeks "
+           f"· started {pr.started_on}",
+           f"- **Now:** Semester {p.semester}, week {p.week_in_semester}", ""]
+    for s in range(1, pr.total_semesters + 1):
+        c = cal.get(s, {})
+        out += [f"## Semester {s}",
+                f"- Term start: {c.get('start','?')}  ·  Add/drop deadline: {c.get('add_drop_deadline','?')}",
+                f"- Midterm (wk 6): {c.get('midterm','?')}  ·  **Finals (wk {pr.weeks_per_semester}): {c.get('finals','?')}**",
+                f"- Cadence: biweekly unit exams (wk 2,4,8,10), quiz on other Sundays", ""]
+    out.append(f"🎓 **Projected graduation:** {cal.get('graduation','?')}")
+    return "\n".join(out).rstrip() + "\n"
+
+
+def render_diploma(state: State) -> str:
+    d = state.degree
+    return (f"# 🎓 Diploma\n\n"
+            f"This certifies that **{state.learner.name or 'the learner'}** has completed\n\n"
+            f"## {d.name}\n\n"
+            f"- **Requirement met:** {d.requirement}\n"
+            f"- **Cumulative GPA:** {_fmt(state.gpa.cumulative)}\n"
+            f"- **Awarded:** {d.awarded_on}\n\n"
+            f"Congratulations. 🎉\n")
 
 
 # ---------------------------------------------------------------- orchestrator
@@ -147,6 +184,8 @@ def render_all(vault: str | Path, courses_dir: str | Path) -> list[str]:
     w("Registrar/Schedule.md", render_schedule(state))
     enrolled_modules = {k: modules[k] for k in state.courses if k in modules}
     w("Registrar/DegreeProgress.md", render_degree_progress(state, records, enrolled_modules))
+    if state.degree.awarded_on:
+        w("Registrar/Diploma.md", render_diploma(state))
     return written
 
 
