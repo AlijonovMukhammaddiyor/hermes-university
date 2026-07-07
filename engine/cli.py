@@ -168,12 +168,23 @@ def main(argv: list[str] | None = None) -> int:
             c = load_course(args.file)
         except Exception as e:
             print(json.dumps({"ok": False, "error": str(e)})); return 2
+        from pathlib import Path as _P
         n_res = len(c.resources) + sum(len(u.resources) for u in c.units)
         teaching = [u for u in c.units if not u.id.endswith("finals")]
-        authored = bool(c.description) and all(u.resources for u in teaching)
+        dossier = _P(args.file).parent / "research" / "dossier.md"
+        has_dossier = dossier.exists() and dossier.stat().st_size > 200
+        mm = c.mastery_model
+        has_mastery = bool(mm and mm.excellence_bar and mm.staying_current)
+        missing = []
+        if not c.description: missing.append("description")
+        if not all(u.resources for u in teaching): missing.append("unit-resources")
+        if not c.professor_profile: missing.append("professor_profile")
+        if not has_mastery: missing.append("mastery_model")
+        if not has_dossier: missing.append("research-dossier")
+        authored = not missing
         print(json.dumps({"ok": True, "id": c.id, "units": len(c.units),
                           "outcomes": len(c.all_outcomes()), "resources": n_res,
-                          "authored": authored,
+                          "authored": authored, "missing_for_authored": missing,
                           "no_resource_units": [u.id for u in c.units if not u.resources]}))
         return 0
     if args.cmd == "promote":

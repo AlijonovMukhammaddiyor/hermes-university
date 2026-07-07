@@ -52,6 +52,26 @@ def test_invalid_resource_type_rejected():
         Resource(type="tweet", title="x")
 
 
+def test_professor_profile_and_mastery_model_load():
+    from engine.course import Course, MasteryModel, ProfessorProfile, Resource
+    pp = ProfessorProfile(persona="rigorous systems mentor", teaching_stance="build-then-generalize",
+                          common_misconceptions=["cache = free"], assessment_philosophy="ship + defend")
+    mm = MasteryModel(excellence_bar="designs planet-scale systems",
+                      expert_practices=["writes design docs first"], frontier="serverless + edge",
+                      staying_current=[Resource(type="reference", title="High Scalability")],
+                      signature_work="a public design portfolio")
+    c = Course.model_validate({
+        "id": "RX", "title": "x", "subject_domain": "d", "credits": 1, "north_star": "n",
+        "description": "d", "professor_profile": pp.model_dump(), "mastery_model": mm.model_dump(),
+        "assessments": [{"id": "a1", "outcome_id": "o1", "type": "summative", "modality": "project",
+                         "bloom_target": "apply", "proof_gate": "g"}],
+        "units": [{"id": "u", "title": "U", "order_index": 1, "semester": 1,
+                   "outcomes": [{"id": "o1", "statement": "s", "bloom_level": "apply", "proof": "a1"}]}],
+    })
+    assert c.professor_profile.persona.startswith("rigorous")
+    assert c.mastery_model.excellence_bar and c.mastery_model.staying_current[0].title == "High Scalability"
+
+
 @pytest.mark.parametrize("path", sorted((ROOT / "courses").glob("*/course.yaml")),
                          ids=lambda p: p.parent.name)
 def test_every_course_module_satisfies_contract(path):

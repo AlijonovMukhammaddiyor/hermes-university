@@ -14,8 +14,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import yaml  # noqa: E402
-
 from engine.render import load_config_env, render_file  # noqa: E402
 
 
@@ -31,25 +29,12 @@ def main(argv: list[str]) -> int:
         "ENGINE": engine,
         "COURSES_DIR": str(root / "courses"),
     }
-    # registrar + examiner (one each)
-    for name in ("registrar", "examiner"):
+    # registrar + examiner + professor — ONE each (Faculty Handbook: the single professor teaches
+    # every course by reading its module; no per-course professor artifacts — RFC-004).
+    for name in ("registrar", "examiner", "professor"):
         render_file(root / "skills" / f"{name}.template.md",
                     out / name / "SKILL.md", base)
         print(f"rendered {name}")
-    # professor per course
-    for course_dir in sorted((root / "courses").glob("*/course.yaml")):
-        if course_dir.parent.name == "_TEMPLATE":
-            continue
-        c = yaml.safe_load(course_dir.read_text())
-        code = c["id"]
-        vals = {**base,
-                "COURSE_CODE": code,
-                "COURSE_CODE_LOWER": code.lower(),
-                "COURSE_TITLE": c["title"],
-                "COURSE_DOMAIN": c.get("subject_domain", "general")}
-        render_file(root / "skills" / "professor.template.md",
-                    out / f"{code.lower()}-professor" / "SKILL.md", vals)
-        print(f"rendered {code.lower()}-professor")
     return 0
 
 

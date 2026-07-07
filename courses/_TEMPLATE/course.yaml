@@ -22,6 +22,25 @@ primary_text:
 # Course-level library (cross-cutting references). Per-UNIT readings live on each unit below.
 resources: []
 
+# The researched teaching character for this field (RFC-004) — voice + how to teach it well.
+professor_profile:
+  persona: "Who the professor is for this field — the voice/character calibrated to the learner."
+  teaching_stance: "The pedagogical approach that works for THIS domain."
+  common_misconceptions:
+    - "What trips learners here — the professor preempts these."
+  assessment_philosophy: "What 'excellent' looks like in this field and how to grade it rigorously."
+
+# How this course makes the learner one of the BEST and keeps them evolving (RFC-004) — researched.
+mastery_model:
+  excellence_bar: "What the best in this field can DO — design the whole course backward from this."
+  expert_practices:
+    - "How top practitioners actually work / practice / think."
+  frontier: "State of the art + where the field is heading."
+  staying_current:              # people/communities/papers/feeds/confs to keep evolving (Resources)
+    - { type: reference, title: "…", url: "https://…", why: "how to keep up after the course" }
+  signature_work: "The portfolio/reputation that earns a seat with the best."
+  deliberate_practice: "The regimen that gets the learner to the bar."
+
 grading_scale: { A: 4.0, B: 3.0, C: 2.0, F: 0.0 }
 
 rubrics:

@@ -36,7 +36,7 @@ number into `state.json`/transcript yourself. If you need a number, call the eng
 2.5 **Authoring check (AUTONOMOUS — do this without being asked):** for each enrolled active course,
    ask `{{ENGINE}} course validate --file {{COURSES_DIR}}/<CODE>/course.yaml` and read `authored`.
    If **any** enrolled course is `authored: false`, you MUST **start its deep-research authoring now**:
-   hand it to the owning **Professor** to run the Authoring protocol **unattended** (research → draft →
+   hand it to the **Professor** (the single Faculty skill, told the course code) to run the Authoring protocol **unattended** (research → draft →
    validate-until-clean → `render-docs` → persist: push the vault; commit the repo and push best-effort
    — if the repo push is rejected/read-only, commit locally and continue silently). Do this **before**
    assigning tasks from that course (you can't teach an unauthored course). Author at most one course
@@ -46,7 +46,7 @@ number into `state.json`/transcript yourself. If you need a number, call the eng
 4. **Pick ≤ {{DAILY_TASK_CAP}} tasks** across active courses (weighted by credits). For each course
    ask the engine for `next_topic` (respects the DAG + placement-skips mastered) and
    `difficulty_for` (tier from your ceiling). Personalize within the fixed spine.
-5. Call the owning **professor** skill to produce a concept-first lesson + the sized task.
+5. Call the **Professor** skill (told the course code) to produce a concept-first lesson + the sized task.
 6. Append to `Daily/YYYY-MM-DD.md` (`## Assigned / ## Proof / ## Log`, append-only, YAML
    frontmatter only so Obsidian Bases/Dataview can read it).
 7. **Calendar:** via `google-calendar` MCP, read the primary calendar for free slots at the
@@ -105,7 +105,7 @@ commit hashes, or a "to stop this job" footer.
 Courses are **designed by research, not hand-typed.** A course is authored by its Professor before
 anyone can enroll in real content.
 - **`create course <goal/name>`** — assign a short code (e.g. `CS250`), then hand the goal to the
-  owning **Professor** to run its **Authoring protocol**, which **starts by interviewing the learner**
+  **Professor** (single Faculty skill) to run its **Authoring protocol**, which **starts by interviewing the learner**
   (Phase 0 — one question per message: goal, level, time, depth, must-haves) so the design is built
   *with* them, then: research (web-search + browser + extract) → backward design → a resource map of
   the **best materials regardless of cost** (specific chapters/lectures/papers) → emit
@@ -126,7 +126,7 @@ anyone can enroll in real content.
   **First check `authored`** (`{{ENGINE}} course validate …`): if the course is `authored: false`, hand
   it to the Professor to **author it now** — the learner is present, so it interviews them (Phase 0)
   then researches + drafts. Then **TAILOR THE CURRICULUM TOGETHER before it starts** (required):
-  1. The owning professor gives a 2-minute overview of the course's arc (units → outcomes).
+  1. The Professor gives a 2-minute overview of the course's arc (units → outcomes).
   2. **Placement:** ask 3–5 quick diagnostic questions / problems to find what they already know;
      grade them via the proof-gate/rubric and record results with `{{ENGINE}} grade add …` so mastered
      outcomes are auto-skipped (the engine's placement-skip).

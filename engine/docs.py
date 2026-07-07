@@ -66,6 +66,27 @@ def render_syllabus(c: Course) -> str:
             f"**Prereqs:** {', '.join(c.prerequisites) or 'none'}", ""]
     if getattr(c, "primary_text", None):
         out += ["## Primary text", _res_line(c.primary_text), ""]
+    mm = getattr(c, "mastery_model", None)
+    if mm:
+        out += ["## What the best in this field can do", mm.excellence_bar.strip(), ""]
+        if mm.expert_practices:
+            out += ["**How the best practice:**"] + [f"- {p}" for p in mm.expert_practices] + [""]
+        if mm.signature_work:
+            out += [f"**Signature work that earns a seat with the best:** {mm.signature_work.strip()}", ""]
+        if mm.frontier or mm.staying_current:
+            out += ["## How to keep evolving"]
+            if mm.frontier:
+                out += [mm.frontier.strip(), ""]
+            if mm.staying_current:
+                out += [_res_line(r) for r in mm.staying_current] + [""]
+        if mm.deliberate_practice:
+            out += [f"**Deliberate-practice regimen:** {mm.deliberate_practice.strip()}", ""]
+    pp = getattr(c, "professor_profile", None)
+    if pp:
+        out += ["## How this course is taught", f"*{pp.teaching_stance.strip()}*", ""]
+        if pp.common_misconceptions:
+            out += ["**Misconceptions the professor preempts:**"] + \
+                   [f"- {m}" for m in pp.common_misconceptions] + [""]
     if c.enduring_understandings:
         out += ["## Enduring understandings"] + [f"- {e}" for e in c.enduring_understandings] + [""]
     out += ["## Grading policy", grading_line(c), "",

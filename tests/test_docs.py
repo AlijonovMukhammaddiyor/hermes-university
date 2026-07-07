@@ -61,16 +61,36 @@ def test_course_validate_cli(capsys):
     assert "authored" in out
 
 
-def test_authored_signal_drives_autonomous_authoring(capsys):
+def test_authored_gate_requires_full_depth(capsys, tmp_path):
     import json as _json
 
+    import yaml
+
     from engine.cli import main
-    # CS270 was research-authored (resources on every teaching unit) -> authored
-    main(["course", "validate", "--file", str(CDIR / "CS270" / "course.yaml")])
-    assert _json.loads(capsys.readouterr().out)["authored"] is True
-    # CS250 has the spine but no researched resources yet -> needs authoring
+    # CS250 lacks researched resources -> needs authoring
     main(["course", "validate", "--file", str(CDIR / "CS250" / "course.yaml")])
-    assert _json.loads(capsys.readouterr().out)["authored"] is False
+    out = _json.loads(capsys.readouterr().out)
+    assert out["authored"] is False and "unit-resources" in out["missing_for_authored"]
+
+    # a course with resources but no professor_profile/mastery_model/dossier is NOT authored (RFC-004 bar)
+    base = load_course(CDIR / "CS270" / "course.yaml").model_dump()
+    cdir = tmp_path / "CS270"; cdir.mkdir()
+    (cdir / "course.yaml").write_text(yaml.safe_dump(base))
+    main(["course", "validate", "--file", str(cdir / "course.yaml")])
+    out = _json.loads(capsys.readouterr().out)
+    assert out["authored"] is False
+    assert {"professor_profile", "mastery_model", "research-dossier"} <= set(out["missing_for_authored"])
+
+    # add profile + mastery_model + a dossier -> now authored
+    base["professor_profile"] = {"persona": "p", "teaching_stance": "s"}
+    base["mastery_model"] = {"excellence_bar": "be the best",
+                             "staying_current": [{"type": "reference", "title": "feed"}]}
+    (cdir / "course.yaml").write_text(yaml.safe_dump(base))
+    (cdir / "research").mkdir()
+    (cdir / "research" / "dossier.md").write_text("# Dossier\n" + "source · url · why\n" * 20)
+    main(["course", "validate", "--file", str(cdir / "course.yaml")])
+    out = _json.loads(capsys.readouterr().out)
+    assert out["authored"] is True and out["missing_for_authored"] == []
 
 
 def test_render_transcript_and_degree(tmp_path):

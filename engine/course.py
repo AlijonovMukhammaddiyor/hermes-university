@@ -32,6 +32,25 @@ class Resource(BaseModel):
     cost: Literal["free", "paid"] = "free"
 
 
+class ProfessorProfile(BaseModel):
+    """The researched teaching character for a field (RFC-004) — data, not code."""
+    persona: str                                         # voice/character for the field + learner
+    teaching_stance: str                                 # pedagogical approach for this domain
+    common_misconceptions: list[str] = Field(default_factory=list)   # preempted by the professor
+    assessment_philosophy: str = ""                      # what "excellent" is + how to grade it
+    hint_style: str | None = None
+
+
+class MasteryModel(BaseModel):
+    """How this course makes the learner one of the best AND keeps them evolving (RFC-004)."""
+    excellence_bar: str                                  # what the best in this field can DO
+    expert_practices: list[str] = Field(default_factory=list)   # how top practitioners work
+    frontier: str = ""                                   # state of the art + trajectory
+    staying_current: list["Resource"] = Field(default_factory=list)  # people/communities/feeds/papers
+    signature_work: str = ""                             # portfolio/reputation to work with the best
+    deliberate_practice: str = ""                        # the regimen to reach the bar
+
+
 class Criterion(BaseModel):
     name: str
     target_descriptor: str
@@ -92,6 +111,8 @@ class Course(BaseModel):
     description: str = ""                                      # syllabus/catalog prose (researched)
     primary_text: Resource | None = None                      # the anchoring textbook/course
     resources: list[Resource] = Field(default_factory=list)   # course-level library
+    professor_profile: ProfessorProfile | None = None         # researched teaching character (RFC-004)
+    mastery_model: MasteryModel | None = None                 # become-the-best + keep-evolving (RFC-004)
     starting_tier: Literal["easy", "med", "hard"] = "easy"  # difficulty floor for a new learner
     runs_in: list[int] = Field(default_factory=lambda: [1, 2])
     active_default: bool = True          # inactive until activates_week if False
