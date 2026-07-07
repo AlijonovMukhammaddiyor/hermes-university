@@ -12,23 +12,32 @@ def test_score_to_band_boundaries():
     assert gb.score_to_band(0.699) == "F"
 
 
-def test_gpa_credit_weighted():
-    # A(4.0)*1 + C(2.0)*1 => 3.0 ; weighting changes it
-    recs = [rec("a.apply", 0.95, credits_weight=1.0), rec("b.apply", 0.72, credits_weight=1.0)]
-    assert gb.gpa(recs) == 3.0
-    recs2 = [rec("a.apply", 0.95, credits_weight=3.0), rec("b.apply", 0.72, credits_weight=1.0)]
-    assert gb.gpa(recs2) == pytest.approx((4.0 * 3 + 2.0) / 4, abs=0.01)
+from engine.state import Course as SC
+
+COURSES = {"CS250": SC(title="DSA", credits=4), "CS270": SC(title="AI", credits=2)}
 
 
-def test_gpa_empty_is_none():
-    assert gb.gpa([]) is None
+def test_course_gpa_kind_weighted():
+    # two hw records A(4) + C(2) -> equal-weight mean 3.0 with no policy
+    assert gb.course_gpa([rec("a", 0.95), rec("b", 0.72)], {}) == 3.0
+    # policy weights renormalize over present kinds: hw=A(4), finals=C(2), weights hw.2/finals.8
+    recs = [rec("a", 0.95, kind="hw"), rec("b", 0.72, kind="finals")]
+    assert gb.course_gpa(recs, {"hw": 0.2, "finals": 0.8}) == pytest.approx(4 * 0.2 + 2 * 0.8, abs=0.01)
+    assert gb.course_gpa([], {}) is None
+
+
+def test_gpa_credit_weighted_over_courses():
+    # CS250 (4cr) all A=4.0, CS270 (2cr) all C=2.0 -> (4*4 + 2*2)/6
+    recs = [rec("a", 0.95, course="CS250"), rec("b", 0.72, course="CS270")]
+    assert gb.gpa(recs, COURSES) == pytest.approx((4 * 4 + 2 * 2) / 6, abs=0.01)
+    assert gb.gpa([], COURSES) is None
 
 
 def test_semester_and_cumulative():
-    recs = [rec("a.apply", 0.95, semester=1), rec("b.apply", 0.72, semester=2)]
-    assert gb.semester_gpa(recs, 1) == 4.0
-    assert gb.semester_gpa(recs, 2) == 2.0
-    assert gb.cumulative_gpa(recs) == 3.0
+    recs = [rec("a", 0.95, course="CS250", semester=1), rec("b", 0.72, course="CS250", semester=2)]
+    assert gb.semester_gpa(recs, COURSES, 1) == 4.0
+    assert gb.semester_gpa(recs, COURSES, 2) == 2.0
+    assert gb.cumulative_gpa(recs, COURSES) == 3.0
 
 
 def test_standing():

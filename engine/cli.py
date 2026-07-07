@@ -43,7 +43,6 @@ def main(argv: list[str] | None = None) -> int:
     for a in ("vault", "course", "outcome", "kind", "source"):
         pga.add_argument(f"--{a}", required=True)
     pga.add_argument("--score", type=float, required=True)
-    pga.add_argument("--weight", type=float, required=True)
     pga.add_argument("--semester", type=int, required=True)
     pga.add_argument("--passed", action="store_true")
     pga.add_argument("--tier", default=None); pga.add_argument("--topic", default=None)
@@ -63,9 +62,13 @@ def main(argv: list[str] | None = None) -> int:
     pcat = sub.add_parser("catalog"); pcat.add_argument("--courses", required=True)
     pen = sub.add_parser("enroll")
     pen.add_argument("--vault", required=True); pen.add_argument("--courses", required=True)
-    pen.add_argument("--code", required=True)
+    pen.add_argument("--code", required=True); pen.add_argument("--today", default=None)
     pdr = sub.add_parser("drop")
     pdr.add_argument("--vault", required=True); pdr.add_argument("--code", required=True)
+
+    # render-docs — regenerate the visible university documents
+    prd = sub.add_parser("render-docs")
+    prd.add_argument("--vault", required=True); prd.add_argument("--courses", required=True)
 
     pv = sub.add_parser("proof").add_subparsers(dest="sub", required=True).add_parser("verify")
     pv.add_argument("--gate", required=True); pv.add_argument("--evidence", required=True)
@@ -106,7 +109,7 @@ def main(argv: list[str] | None = None) -> int:
         band = score_to_band(args.score)
         record = GradeRecord(
             ts=_now().isoformat(), course=args.course, outcome=args.outcome, kind=args.kind,
-            band=band, score=args.score, credits_weight=args.weight, semester=args.semester,
+            band=band, score=args.score, semester=args.semester,
             proof=Proof(source=args.source, passed=args.passed),
             tier=args.tier, topic=args.topic,
             weak_areas=[w for w in args.weak.split(",") if w])
@@ -128,19 +131,31 @@ def main(argv: list[str] | None = None) -> int:
         from . import registrar as R
         print(json.dumps(R.catalog(args.courses), indent=2)); return 0
     if args.cmd == "enroll":
+        from pathlib import Path
+        from . import docs
         from . import registrar as R
-        vault = __import__("pathlib").Path(args.vault)
+        vault = Path(args.vault)
         st = R.load_state(vault)
-        result = R.enroll(st, args.courses, args.code)
+        try:
+            result = R.enroll(st, args.courses, args.code, today=args.today)
+        except R.EnrollError as e:
+            print(json.dumps({"code": args.code, "result": "refused", "reason": str(e)}))
+            return 2
         R.save_state(vault, st)
+        docs.render_all(vault, args.courses)     # refresh the visible docs
         print(json.dumps({"code": args.code, "result": result,
                           "enrolled": sorted(st.courses)})); return 0
     if args.cmd == "drop":
+        from pathlib import Path
         from . import registrar as R
-        vault = __import__("pathlib").Path(args.vault)
+        vault = Path(args.vault)
         st = R.load_state(vault); dropped = R.drop(st, args.code); R.save_state(vault, st)
         print(json.dumps({"code": args.code, "dropped": dropped,
                           "enrolled": sorted(st.courses)})); return 0
+    if args.cmd == "render-docs":
+        from . import docs
+        written = docs.render_all(args.vault, args.courses)
+        print(json.dumps({"rendered": written})); return 0
     if args.cmd == "promote":
         from pathlib import Path
         from . import registrar as R

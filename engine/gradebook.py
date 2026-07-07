@@ -31,7 +31,6 @@ class GradeRecord(BaseModel):
     kind: Literal["hw", "quiz", "exam", "midterm", "finals"]
     band: Band
     score: float           # 0..1
-    credits_weight: float  # contribution weight
     semester: int
     proof: Proof
     # Learner-model signal (optional; set by the grader):
@@ -50,23 +49,43 @@ def score_to_band(score: float) -> Band:
     return "F"
 
 
-def gpa(records: Iterable[GradeRecord]) -> float | None:
-    """Credit-weighted GPA. None when there are no weighted records."""
-    pts = wt = 0.0
+def course_gpa(records: Iterable[GradeRecord], weights: dict[str, float] | None) -> float | None:
+    """One course's GPA (0–4): kind-weighted mean of grade points, renormalized over the kinds that
+    actually have records. Deterministic — the grading policy comes from the course, not the model."""
+    from collections import defaultdict
+    by_kind: dict[str, list[float]] = defaultdict(list)
     for r in records:
-        pts += BAND_POINTS[r.band] * r.credits_weight
-        wt += r.credits_weight
-    if wt == 0:
+        by_kind[r.kind].append(BAND_POINTS[r.band])
+    if not by_kind:
         return None
-    return round(pts / wt, 2)
+    means = {k: sum(v) / len(v) for k, v in by_kind.items()}
+    w = weights or {}
+    tw = sum(w.get(k, 0.0) for k in means)
+    if tw == 0:                                   # no policy weight for present kinds → equal-weight
+        return round(sum(means.values()) / len(means), 2)
+    return round(sum(means[k] * w.get(k, 0.0) for k in means) / tw, 2)
 
 
-def semester_gpa(records: Iterable[GradeRecord], semester: int) -> float | None:
-    return gpa(r for r in records if r.semester == semester)
+def gpa(records: Iterable[GradeRecord], courses: dict) -> float | None:
+    """Credit-weighted mean of course GPAs (courses that have records). `courses` maps code →
+    an object with `.credits` and `.grade_weights` (state.Course)."""
+    records = list(records)
+    pts = cr = 0.0
+    for code, c in courses.items():
+        cg = course_gpa((r for r in records if r.course == code), getattr(c, "grade_weights", {}))
+        if cg is None:
+            continue
+        pts += cg * c.credits
+        cr += c.credits
+    return round(pts / cr, 2) if cr else None
 
 
-def cumulative_gpa(records: Iterable[GradeRecord]) -> float | None:
-    return gpa(records)
+def semester_gpa(records: Iterable[GradeRecord], courses: dict, semester: int) -> float | None:
+    return gpa((r for r in records if r.semester == semester), courses)
+
+
+def cumulative_gpa(records: Iterable[GradeRecord], courses: dict) -> float | None:
+    return gpa(records, courses)
 
 
 def standing_for(gpa_value: float | None) -> Literal["good", "honors", "probation"]:

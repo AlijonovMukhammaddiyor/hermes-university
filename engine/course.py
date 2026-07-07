@@ -82,6 +82,9 @@ class Course(BaseModel):
     enduring_understandings: list[str] = Field(default_factory=list)
     grading_scale: dict[str, float] = Field(
         default_factory=lambda: {"A": 4.0, "B": 3.0, "C": 2.0, "F": 0.0})
+    grade_weights: dict[str, float] = Field(  # policy over assessment kinds (renormalized in use)
+        default_factory=lambda: {"hw": 0.30, "quiz": 0.20, "exam": 0.20,
+                                 "midterm": 0.10, "finals": 0.20})
     rubrics: list[Rubric] = Field(default_factory=list)
     assessments: list[Assessment] = Field(default_factory=list)
     units: list[Unit] = Field(default_factory=list)

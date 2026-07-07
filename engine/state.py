@@ -51,6 +51,8 @@ class Course(BaseModel):
     unit: str | None = None
     unit_index: int = 0
     activates_week: int | None = None
+    grade_weights: dict[str, float] = Field(default_factory=dict)  # copied from the module at enroll
+    enrolled_on: str | None = None
 
 
 class Assessments(BaseModel):
@@ -68,6 +70,23 @@ class SemesterRecord(BaseModel):
     completed_on: str
 
 
+class EnrollmentRecord(BaseModel):
+    code: str
+    enrolled_on: str
+    dropped_on: str | None = None
+
+
+class Enrollment(BaseModel):
+    credit_cap: int = 14
+    records: list[EnrollmentRecord] = Field(default_factory=list)
+
+
+class Degree(BaseModel):
+    name: str = "B.S. Interview Readiness"
+    requirement: str = "pass finals of both 3-month semesters (>=B)"
+    awarded_on: str | None = None
+
+
 class State(BaseModel):
     schema_version: Literal[3] = SCHEMA_VERSION
     program: Program = Field(default_factory=Program)
@@ -79,6 +98,9 @@ class State(BaseModel):
     courses: dict[str, Course] = Field(default_factory=dict)
     assessments: Assessments = Field(default_factory=Assessments)
     history: list[SemesterRecord] = Field(default_factory=list)
+    enrollment: Enrollment = Field(default_factory=Enrollment)
+    hold: str | None = None                       # e.g. "probation" — blocks new material
+    degree: Degree = Field(default_factory=Degree)
 
     @classmethod
     def load(cls, path: str | Path) -> "State":

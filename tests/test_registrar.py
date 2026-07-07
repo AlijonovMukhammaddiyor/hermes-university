@@ -55,6 +55,36 @@ def test_enroll_unknown_course_raises():
         R.enroll(s, root / "courses", "NOPE")
 
 
+def test_enroll_blocked_by_hold():
+    import pytest
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    s = fresh_state(name="M", timezone="UTC", started_on="2026-07-06")
+    s.hold = "probation"
+    with pytest.raises(R.EnrollError):
+        R.enroll(s, root / "courses", "CS250")
+
+
+def test_enroll_blocked_by_credit_cap():
+    import pytest
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    s = fresh_state(name="M", timezone="UTC", started_on="2026-07-06")
+    s.enrollment.credit_cap = 5                    # CS250 is 4, CS301 is 4 -> 8 > 5
+    R.enroll(s, root / "courses", "CS250")
+    with pytest.raises(R.EnrollError):
+        R.enroll(s, root / "courses", "CS301")
+
+
+def test_enroll_copies_grade_weights_and_records():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    s = fresh_state(name="M", timezone="UTC", started_on="2026-07-06")
+    R.enroll(s, root / "courses", "CS250", today="2026-07-06")
+    assert s.courses["CS250"].grade_weights                      # policy copied from the module
+    assert s.enrollment.records[0].code == "CS250"
+
+
 def test_refresh_computes_gpa_and_standing():
     s = _state()
     records = [rec("a.apply", 0.95, semester=1), rec("b.apply", 0.72, semester=1)]

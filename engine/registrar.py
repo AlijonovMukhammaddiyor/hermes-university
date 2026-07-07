@@ -36,7 +36,7 @@ def register_courses(state: State, course_dir: str | Path) -> list[str]:
             active=active if existing is None else existing.active,
             unit=existing.unit if existing else first_unit,
             unit_index=existing.unit_index if existing else 0,
-            activates_week=c.activates_week,
+            activates_week=c.activates_week, grade_weights=c.grade_weights,
         )
         if existing is None:
             added.append(c.id)
@@ -58,11 +58,15 @@ def catalog(course_dir: str | Path) -> list[dict]:
     return out
 
 
-def enroll(state: State, course_dir: str | Path, code: str) -> str:
-    """Enroll the learner in ONE course from the catalog. Returns 'enrolled' or 'already'.
-    Active immediately unless the module is dormant-until-week (e.g. PD101 wk 9)."""
+class EnrollError(Exception):
+    """Registration refused (prereq / credit-load / hold)."""
+
+
+def enroll(state: State, course_dir: str | Path, code: str, today: str | None = None) -> str:
+    """Enroll in ONE course, enforcing registrar rules (RFC-002 §4). Returns 'enrolled'/'already'.
+    Raises EnrollError with a human reason on prereq/credit-load/hold violations."""
     from .course import load_course
-    from .state import Course as StateCourse
+    from .state import Course as StateCourse, EnrollmentRecord
 
     if code in state.courses:
         return "already"
@@ -70,12 +74,24 @@ def enroll(state: State, course_dir: str | Path, code: str) -> str:
     if not path.exists():
         raise KeyError(f"no course module {code!r} in the catalog")
     c = load_course(path)
+
+    if state.hold:
+        raise EnrollError(f"enrollment is on hold ({state.hold}); clear it before adding courses")
+    for pre in c.prerequisites:                     # prereq must already be enrolled
+        if pre not in state.courses:
+            raise EnrollError(f"{code} requires {pre} first — enroll in {pre} before {code}")
+    load = sum(sc.credits for sc in state.courses.values() if sc.active) + c.credits
+    if load > state.enrollment.credit_cap:
+        raise EnrollError(f"credit load {load} exceeds cap {state.enrollment.credit_cap}; "
+                          f"drop a course before adding {code}")
+
     active = c.active_default and (c.activates_week is None or
                                    state.position.week_in_semester >= c.activates_week)
     state.courses[code] = StateCourse(
         title=c.title, credits=c.credits, runs_in=c.runs_in, active=active,
         unit=(c.units[0].id if c.units else None), unit_index=0,
-        activates_week=c.activates_week)
+        activates_week=c.activates_week, grade_weights=c.grade_weights, enrolled_on=today)
+    state.enrollment.records.append(EnrollmentRecord(code=code, enrolled_on=today or ""))
     return "enrolled"
 
 
@@ -91,8 +107,8 @@ def active_courses(state: State) -> list[str]:
 def refresh(state: State, records: list[GradeRecord]) -> State:
     """Recompute semester + cumulative GPA and standing from the grade log."""
     sem = state.position.semester
-    state.gpa.semester = gb.semester_gpa(records, sem)
-    state.gpa.cumulative = gb.cumulative_gpa(records)
+    state.gpa.semester = gb.semester_gpa(records, state.courses, sem)
+    state.gpa.cumulative = gb.cumulative_gpa(records, state.courses)
     state.standing = gb.standing_for(state.gpa.cumulative)
     return state
 
@@ -131,11 +147,13 @@ def promote_or_graduate(state: State, finals_band: str, on: str,
     'promoted', 'graduated', 'remediation'. Deterministic; the Examiner supplies the band."""
     sem = state.position.semester
     passed = band_passes(finals_band)
+    sem_gpa = gb.semester_gpa(records, state.courses, sem)
     state.history.append(SemesterRecord(
-        semester=sem, gpa=gb.semester_gpa(records, sem),
-        standing=gb.standing_for(gb.semester_gpa(records, sem)),
+        semester=sem, gpa=sem_gpa, standing=gb.standing_for(sem_gpa),
         finals_grade=finals_band, completed_on=on,
     ))
+    if sem >= state.program.total_semesters and passed:
+        state.degree.awarded_on = on             # graduation awards the degree
     key = f"s{sem}_finals"
     setattr(state.assessments, key, finals_band)
     if not passed:
