@@ -11,78 +11,65 @@ def _state():
     return s
 
 
-def test_register_courses_from_modules():
+def _fixtures():
     from pathlib import Path
-    root = Path(__file__).resolve().parents[1]
+    return Path(__file__).resolve().parents[1] / "tests" / "fixtures"
+
+
+def test_register_courses_from_modules():
     s = fresh_state(name="M", timezone="UTC", started_on="2026-07-06")
-    added = R.register_courses(s, root / "courses")
-    assert set(added) == {"CS250", "CS301", "CS270", "PD101"}
-    assert s.courses["CS250"].active is True and s.courses["CS250"].credits == 4
-    assert s.courses["CS250"].unit == "arrays-hashing"      # first unit id
-    # PD101 dormant until week 9
-    assert s.courses["PD101"].active is False and s.courses["PD101"].activates_week == 9
+    added = R.register_courses(s, _fixtures())
+    assert set(added) == {"GEN101", "GEN102"}
+    assert s.courses["GEN101"].active is True and s.courses["GEN101"].credits == 3
+    assert s.courses["GEN101"].unit == "basics"      # first unit id
 
 
 def test_catalog_lists_available_courses():
-    from pathlib import Path
-    root = Path(__file__).resolve().parents[1]
-    cat = {c["code"] for c in R.catalog(root / "courses")}
-    assert cat == {"CS250", "CS301", "CS270", "PD101"}   # _TEMPLATE excluded
+    cat = {c["code"] for c in R.catalog(_fixtures())}
+    assert cat == {"GEN101", "GEN102"}
 
 
 def test_enroll_and_drop():
-    from pathlib import Path
-    root = Path(__file__).resolve().parents[1]
     s = fresh_state(name="M", timezone="UTC", started_on="2026-07-06")
     assert s.courses == {}                                 # un-enrolled by default
-    assert R.enroll(s, root / "courses", "CS250") == "enrolled"
-    assert s.courses["CS250"].active is True and s.courses["CS250"].unit == "arrays-hashing"
-    assert R.enroll(s, root / "courses", "CS250") == "already"   # idempotent
-    # PD101 enrolls but stays dormant until week 9
-    R.enroll(s, root / "courses", "PD101")
-    assert s.courses["PD101"].active is False
-    assert R.active_courses(s) == ["CS250"]
-    assert R.drop(s, "CS250") is True and "CS250" not in s.courses
-    assert R.drop(s, "CS250") is False
+    assert R.enroll(s, _fixtures(), "GEN101") == "enrolled"
+    assert s.courses["GEN101"].active is True and s.courses["GEN101"].unit == "basics"
+    assert R.enroll(s, _fixtures(), "GEN101") == "already"   # idempotent
+    R.enroll(s, _fixtures(), "GEN102")
+    assert set(R.active_courses(s)) == {"GEN101", "GEN102"}
+    assert R.drop(s, "GEN101") is True and "GEN101" not in s.courses
+    assert R.drop(s, "GEN101") is False
 
 
 def test_enroll_unknown_course_raises():
     import pytest
-    from pathlib import Path
-    root = Path(__file__).resolve().parents[1]
     s = fresh_state(name="M", timezone="UTC", started_on="2026-07-06")
     with pytest.raises(KeyError):
-        R.enroll(s, root / "courses", "NOPE")
+        R.enroll(s, _fixtures(), "NOPE")
 
 
 def test_enroll_blocked_by_hold():
     import pytest
-    from pathlib import Path
-    root = Path(__file__).resolve().parents[1]
     s = fresh_state(name="M", timezone="UTC", started_on="2026-07-06")
     s.hold = "probation"
     with pytest.raises(R.EnrollError):
-        R.enroll(s, root / "courses", "CS250")
+        R.enroll(s, _fixtures(), "GEN101")
 
 
 def test_enroll_blocked_by_credit_cap():
     import pytest
-    from pathlib import Path
-    root = Path(__file__).resolve().parents[1]
     s = fresh_state(name="M", timezone="UTC", started_on="2026-07-06")
-    s.enrollment.credit_cap = 5                    # CS250 is 4, CS301 is 4 -> 8 > 5
-    R.enroll(s, root / "courses", "CS250")
+    s.enrollment.credit_cap = 3                    # GEN101 is 3, GEN102 is 2 -> 5 > 3
+    R.enroll(s, _fixtures(), "GEN101")
     with pytest.raises(R.EnrollError):
-        R.enroll(s, root / "courses", "CS301")
+        R.enroll(s, _fixtures(), "GEN102")
 
 
 def test_enroll_copies_grade_weights_and_records():
-    from pathlib import Path
-    root = Path(__file__).resolve().parents[1]
     s = fresh_state(name="M", timezone="UTC", started_on="2026-07-06")
-    R.enroll(s, root / "courses", "CS250", today="2026-07-06")
-    assert s.courses["CS250"].grade_weights                      # policy copied from the module
-    assert s.enrollment.records[0].code == "CS250"
+    R.enroll(s, _fixtures(), "GEN101", today="2026-07-06")
+    assert s.courses["GEN101"].grade_weights                      # policy copied from the module
+    assert s.enrollment.records[0].code == "GEN101"
 
 
 def test_refresh_computes_gpa_and_standing():

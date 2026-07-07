@@ -1,0 +1,80 @@
+# Generic, non-personal fixture course (RFC-005) — used only by tests, so the shipped catalog stays
+# empty. Fully authored to the RFC-004 bar (description + per-unit resources + professor_profile +
+# mastery_model + a dossier alongside) so the `authored` gate reports true.
+id: GEN101
+title: Foundations of Algorithmic Thinking
+subject_domain: computer-science
+credits: 3
+north_star: "Solve unfamiliar problems by decomposing them and choosing the right data structure."
+description: >
+  A generic example course used by the test-suite to exercise the engine end-to-end. Builds core
+  problem-solving: recognize the pattern, pick the structure, analyze the cost.
+primary_text: { type: textbook, title: "Introduction to Algorithms", author: "CLRS",
+  locator: "ch. 1-6", why: "the canonical reference", tier: core, cost: paid }
+resources: []
+
+professor_profile:
+  persona: "A patient problem-solving mentor who values understanding over memorization."
+  teaching_stance: "Concept first, then deliberate practice on progressively harder problems."
+  common_misconceptions:
+    - "Memorizing solutions beats understanding the underlying pattern."
+  assessment_philosophy: "Correct, justified, and analyzed for time/space complexity."
+
+mastery_model:
+  excellence_bar: "Solves unseen medium problems and derives their complexity under time pressure."
+  expert_practices:
+    - "Pattern recognition over memorization; always analyze complexity."
+  frontier: "Foundations are stable; the frontier is problem-solving speed and breadth."
+  staying_current:
+    - { type: reference, title: "Competitive-programming communities", url: "https://codeforces.com" }
+  signature_work: "A public record of solved problems with clean write-ups and complexity analysis."
+  deliberate_practice: "One problem per day; review the pattern; re-solve from scratch a day later."
+
+grading_scale: { A: 4.0, B: 3.0, C: 2.0, F: 0.0 }
+grade_weights: { hw: 0.4, quiz: 0.2, exam: 0.2, midterm: 0.1, finals: 0.1 }
+
+rubrics:
+  - id: main
+    shape: single_point
+    criteria:
+      - { name: Correctness, target_descriptor: "Passes all cases with justified reasoning." }
+
+assessments:
+  - { id: a.f1, outcome_id: f1.apply, type: summative, modality: open_problem, bloom_target: apply,
+      rubric_id: main, proof_gate: "Solves a basic single-pattern problem." }
+  - { id: a.f2, outcome_id: f2.apply, type: summative, modality: open_problem, bloom_target: apply,
+      rubric_id: main, proof_gate: "Solves a two-step problem composing patterns." }
+  - { id: a.fin, outcome_id: s1.finals, type: summative, modality: open_problem, bloom_target: create,
+      rubric_id: main, proof_gate: "Solves unseen problems under time and derives complexity." }
+
+units:
+  - id: basics
+    title: Basics
+    order_index: 1
+    semester: 1
+    est_weeks: 2
+    summary: "Core building blocks and the first solving patterns."
+    resources:
+      - { type: textbook, title: "CLRS", locator: "ch. 1-2", why: "foundations", tier: core, cost: paid }
+    outcomes:
+      - { id: f1.apply, statement: "Apply a basic pattern to solve a problem in under 30 minutes.",
+          bloom_level: apply, proof: a.f1, depends_on: [], spaced_items: [p.basic] }
+  - id: intermediate
+    title: Intermediate
+    order_index: 2
+    semester: 1
+    est_weeks: 2
+    summary: "Compose multiple patterns."
+    resources:
+      - { type: course, title: "MIT OCW 6.006", url: "https://ocw.mit.edu", locator: "Lec 1-3",
+          tier: supplementary, cost: free }
+    outcomes:
+      - { id: f2.apply, statement: "Compose two patterns to solve a harder problem.",
+          bloom_level: apply, proof: a.f2, depends_on: [f1.apply], spaced_items: [p.compose] }
+  - id: gen101-finals
+    title: Finals
+    order_index: 3
+    semester: 1
+    outcomes:
+      - { id: s1.finals, statement: "Solve unseen problems under time, deriving complexity.",
+          bloom_level: create, proof: a.fin, depends_on: [f1.apply, f2.apply] }

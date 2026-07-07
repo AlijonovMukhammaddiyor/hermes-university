@@ -7,13 +7,14 @@ from engine.course import load_course
 from engine.learner_model import next_topic
 
 ROOT = Path(__file__).resolve().parents[1]
+FIXTURES = ROOT / "tests" / "fixtures"      # generic courses; shipped catalog is empty (RFC-005)
 
 
-def test_cs250_module_loads_and_satisfies_contract():
-    c = load_course(ROOT / "courses" / "CS250" / "course.yaml")
-    assert c.id == "CS250" and c.credits == 4
+def test_fixture_module_loads_and_satisfies_contract():
+    c = load_course(FIXTURES / "GEN101" / "course.yaml")
+    assert c.id == "GEN101" and c.credits == 3
     # backward-design contract holds (validator would have raised otherwise)
-    assert len(c.all_outcomes()) >= 12
+    assert len(c.all_outcomes()) >= 3
     # every outcome resolves to an assessment for that outcome
     assess = {a.id: a for a in c.assessments}
     for o in c.all_outcomes():
@@ -26,9 +27,8 @@ def test_template_loads():
 
 def test_resources_schema_optional_and_typed():
     from engine.course import Course, Resource
-    # existing courses validate WITHOUT resources (additive, non-breaking)
-    c = load_course(ROOT / "courses" / "CS250" / "course.yaml")
-    assert isinstance(c.resources, list)
+    c = load_course(FIXTURES / "GEN101" / "course.yaml")
+    assert isinstance(c.resources, list) and c.units[0].resources[0].type == "textbook"
     # a fully-specified researched course carries typed resources on course + unit
     r = Resource(type="textbook", title="CLRS", author="Cormen", locator="ch. 6",
                  why="canonical", tier="core", cost="paid")
@@ -72,7 +72,7 @@ def test_professor_profile_and_mastery_model_load():
     assert c.mastery_model.excellence_bar and c.mastery_model.staying_current[0].title == "High Scalability"
 
 
-@pytest.mark.parametrize("path", sorted((ROOT / "courses").glob("*/course.yaml")),
+@pytest.mark.parametrize("path", sorted(FIXTURES.glob("*/course.yaml")),
                          ids=lambda p: p.parent.name)
 def test_every_course_module_satisfies_contract(path):
     c = load_course(path)                     # raises if the backward-design contract is violated
@@ -80,14 +80,12 @@ def test_every_course_module_satisfies_contract(path):
     assert c.all_outcomes(), "a course must have outcomes"
 
 
-def test_cs250_dag_drives_next_topic():
-    c = load_course(ROOT / "courses" / "CS250" / "course.yaml")
+def test_dag_drives_next_topic():
+    c = load_course(FIXTURES / "GEN101" / "course.yaml")
     units = c.dag()
-    first = next_topic(units, mastered=set())
-    assert first == "ah.apply"                      # arrays-hashing is the entry
-    # sliding-window depends on two-pointers -> not offered until tp.apply mastered
-    got = next_topic(units, mastered={"ah.apply", "ah.analyze"})
-    assert got == "tp.apply"
+    assert next_topic(units, mastered=set()) == "f1.apply"          # basics is the entry
+    # intermediate depends on basics -> not offered until f1.apply mastered
+    assert next_topic(units, mastered={"f1.apply"}) == "f2.apply"
 
 
 def test_orphan_outcome_is_rejected():

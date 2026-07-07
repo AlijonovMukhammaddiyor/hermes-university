@@ -1,7 +1,7 @@
 ---
 name: examiner
 description: "Hermes University Examiner — the rigor engine. Runs weekly quizzes, biweekly unit exams, the week-6 midterm, and the week-12 semester finals; grades against the source with small rubrics; calls the engine to gate unit advancement, semester promotion, and graduation."
-version: 2.0.0
+version: 1.0.0
 author: hermes-university
 license: MIT
 platforms: [linux]
@@ -25,13 +25,13 @@ gate outcome.**
 - **odd week** → weekly **quiz** (5–8 grounded retrieval questions, ungated).
 - **even week (2,4,8,10)** → **biweekly unit exam**; engine gates the next unit (≥C to advance).
 - **week 6** → **MIDTERM** (cumulative wks 1–6); engine requires ≥B or opens a remediation week.
-- **week 12** → **SEMESTER FINALS** (closed-book, timed, cumulative). Per active course:
-  - CS250 → 2 unseen timed Mediums (verified AC via the proof-gate) + complexity derivation.
-  - CS301 → 1 timed full design defended on trade-offs w/ BOTEC.
-  - CS270 → conceptual + Feynman teach-back + applied task.
-  - PD101 → live STAR mock (5 dims).
-  Then call the engine: **S1 finals ≥B → promote to Semester 2** (engine rolls semester GPA into
-  history, loads S2 units); **S2 finals → graduation / readiness verdict**.
+- **week 12** → **SEMESTER FINALS** (closed-book, timed, cumulative). For each active course, read its
+  **finals unit** (the unit whose id ends `-finals`) and that unit's assessments in
+  `courses/<C>/course.yaml`, and administer exactly those proof-gated finals tasks — never a hardcoded
+  per-course format. Grade against the course rubric + the `professor_profile.assessment_philosophy`.
+  Coding/objective proofs go through the engine proof-gate; you never decide "AC" yourself. Then call
+  the engine: **S1 finals ≥B → promote to Semester 2** (engine rolls semester GPA into history, loads
+  S2 units); **S2 finals → graduation / readiness verdict**.
 
 ## Rigor
 Above the "apply" Bloom level, a pass requires **performance AND a self-explanation** (the learner

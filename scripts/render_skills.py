@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Render skill templates against config.env + course modules → an output dir.
+"""Render skill templates against the instance profile → an output dir.
 
-Called by install.sh (phase 2). Renders registrar + examiner once, and the professor template
-once per course found under courses/. Fails loudly on any unresolved placeholder.
+Renders registrar + examiner + professor (one each — the single Faculty Handbook professor teaches
+every course by reading its module, RFC-004). Identity/goals come from profile.yaml (RFC-005); the
+5th arg is kept for backward compatibility and ignored. Fails loudly on any unresolved placeholder.
 
-Usage: render_skills.py <repo_root> <config.env> <out_dir> <vault> <engine_path>
+Usage: render_skills.py <repo_root> <ignored> <out_dir> <vault> <engine_path>
 """
 
 from __future__ import annotations
@@ -14,17 +15,20 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from engine.render import load_config_env, render_file  # noqa: E402
+from engine.profile import load_profile  # noqa: E402
+from engine.render import render_file  # noqa: E402
 
 
 def main(argv: list[str]) -> int:
-    root, cfg_path, out_dir, vault, engine = argv[1:6]
+    root, _cfg_ignored, out_dir, vault, engine = argv[1:6]
     root, out = Path(root), Path(out_dir)
-    cfg = load_config_env(cfg_path)
+    prof = load_profile(root)
     base = {
-        "LEARNER_NAME": cfg.get("LEARNER_NAME", ""),
-        "TIMEZONE": cfg.get("TIMEZONE", "Asia/Tashkent"),
-        "DAILY_TASK_CAP": cfg.get("DAILY_TASK_CAP", "4"),
+        "LEARNER_NAME": prof.name,
+        "TIMEZONE": prof.timezone,
+        "DAILY_TASK_CAP": str(prof.daily_task_cap),
+        "GOAL": prof.goal,
+        "TARGET_LEVEL": prof.target_level,
         "VAULT": vault,
         "ENGINE": engine,
         "COURSES_DIR": str(root / "courses"),

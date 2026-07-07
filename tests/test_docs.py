@@ -6,21 +6,22 @@ from engine.state import fresh_state
 from tests.conftest import rec
 
 ROOT = Path(__file__).resolve().parents[1]
-CDIR = ROOT / "courses"
+CDIR = ROOT / "tests" / "fixtures"      # generic courses; the shipped catalog is empty (RFC-005)
 
 
 def test_render_catalog_lists_all_courses():
-    mods = [load_course(p) for p in sorted(CDIR.glob("*/course.yaml")) if p.parent.name != "_TEMPLATE"]
+    mods = [load_course(p) for p in sorted(CDIR.glob("*/course.yaml"))]
     cat = docs.render_catalog(mods)
-    for code in ("CS250", "CS301", "CS270", "PD101"):
+    for code in ("GEN101", "GEN102"):
         assert code in cat
-    assert "enroll CS250" in cat and "credits" in cat
+    assert "enroll GEN101" in cat and "credits" in cat
 
 
 def test_render_syllabus_has_units_and_grading():
-    syl = docs.render_syllabus(load_course(CDIR / "CS250" / "course.yaml"))
-    assert "Arrays & Hashing" in syl and "Grading policy" in syl and "proof:" in syl
+    syl = docs.render_syllabus(load_course(CDIR / "GEN101" / "course.yaml"))
+    assert "Basics" in syl and "Grading policy" in syl and "proof:" in syl
     assert "Weekly schedule" in syl and "Assessment plan" in syl   # upgraded syllabus
+    assert "What the best in this field can do" in syl and "How this course is taught" in syl
 
 
 def test_syllabus_and_resources_render_researched_materials():
@@ -47,17 +48,17 @@ def test_render_all_writes_resources(tmp_path):
     fresh_state(name="M", timezone="UTC", started_on="2026-07-06").save(
         tmp_path / "Registrar" / "state.json")
     written = docs.render_all(tmp_path, CDIR)
-    assert "Courses/CS250/Resources.md" in written
-    assert (tmp_path / "Courses" / "CS250" / "Resources.md").exists()
+    assert "Courses/GEN101/Resources.md" in written
+    assert (tmp_path / "Courses" / "GEN101" / "Resources.md").exists()
 
 
 def test_course_validate_cli(capsys):
     import json as _json
 
     from engine.cli import main
-    rc = main(["course", "validate", "--file", str(CDIR / "CS250" / "course.yaml")])
+    rc = main(["course", "validate", "--file", str(CDIR / "GEN101" / "course.yaml")])
     out = _json.loads(capsys.readouterr().out)
-    assert rc == 0 and out["ok"] is True and out["id"] == "CS250" and out["outcomes"] >= 12
+    assert rc == 0 and out["ok"] is True and out["id"] == "GEN101" and out["outcomes"] >= 3
     assert "authored" in out
 
 
@@ -67,14 +68,16 @@ def test_authored_gate_requires_full_depth(capsys, tmp_path):
     import yaml
 
     from engine.cli import main
-    # CS250 lacks researched resources -> needs authoring
-    main(["course", "validate", "--file", str(CDIR / "CS250" / "course.yaml")])
+    # a minimal course (no resources/profile/mastery/dossier) -> needs authoring
+    main(["course", "validate", "--file", str(CDIR / "GEN102" / "course.yaml")])
     out = _json.loads(capsys.readouterr().out)
     assert out["authored"] is False and "unit-resources" in out["missing_for_authored"]
 
-    # a course with resources but no professor_profile/mastery_model/dossier is NOT authored (RFC-004 bar)
-    base = load_course(CDIR / "CS270" / "course.yaml").model_dump()
-    cdir = tmp_path / "CS270"; cdir.mkdir()
+    # resources present but no professor_profile/mastery_model/dossier -> not authored (RFC-004 bar)
+    base = load_course(CDIR / "GEN101" / "course.yaml").model_dump()
+    base.pop("professor_profile", None)
+    base.pop("mastery_model", None)
+    cdir = tmp_path / "GEN101"; cdir.mkdir()
     (cdir / "course.yaml").write_text(yaml.safe_dump(base))
     main(["course", "validate", "--file", str(cdir / "course.yaml")])
     out = _json.loads(capsys.readouterr().out)
@@ -95,12 +98,12 @@ def test_authored_gate_requires_full_depth(capsys, tmp_path):
 
 def test_render_transcript_and_degree(tmp_path):
     s = fresh_state(name="M", timezone="UTC", started_on="2026-07-06")
-    R.enroll(s, CDIR, "CS250", today="2026-07-06")
-    records = [rec("ah.apply", 0.95, course="CS250", kind="hw")]
+    R.enroll(s, CDIR, "GEN101", today="2026-07-06")
+    records = [rec("f1.apply", 0.95, course="GEN101", kind="hw")]
     R.refresh(s, records)
     tr = docs.render_transcript(s, records)
-    assert "CS250" in tr and "Cumulative GPA" in tr and "4.00" in tr
-    mods = {"CS250": load_course(CDIR / "CS250" / "course.yaml")}
+    assert "GEN101" in tr and "Cumulative GPA" in tr and "4.00" in tr
+    mods = {"GEN101": load_course(CDIR / "GEN101" / "course.yaml")}
     dp = docs.render_degree_progress(s, records, mods)
     assert "Degree Progress" in dp and "Outcomes mastered" in dp
 
@@ -112,21 +115,21 @@ def test_schedule_has_real_dates():
 
 
 def test_diploma_render_when_awarded():
-    s = fresh_state(name="the maintainer", timezone="UTC", started_on="2026-07-06")
+    s = fresh_state(name="Ada Lovelace", timezone="UTC", started_on="2026-07-06")
     s.degree.awarded_on = "2027-01-01"
     s.gpa.cumulative = 3.6
     dip = docs.render_diploma(s)
-    assert "Diploma" in dip and "2027-01-01" in dip and "the maintainer" in dip and "3.60" in dip
+    assert "Diploma" in dip and "2027-01-01" in dip and "Ada Lovelace" in dip and "3.60" in dip
 
 
 def test_render_all_writes_files(tmp_path):
     (tmp_path / "Registrar").mkdir(parents=True)
     s = fresh_state(name="M", timezone="UTC", started_on="2026-07-06")
-    R.enroll(s, CDIR, "CS250", today="2026-07-06")
+    R.enroll(s, CDIR, "GEN101", today="2026-07-06")
     s.save(tmp_path / "Registrar" / "state.json")
     written = docs.render_all(tmp_path, CDIR)
     assert "Catalog.md" in written
-    assert "Courses/CS250/Syllabus.md" in written
+    assert "Courses/GEN101/Syllabus.md" in written
     assert "Registrar/Transcript.md" in written
     assert (tmp_path / "Catalog.md").exists()
     assert (tmp_path / "Registrar" / "DegreeProgress.md").exists()

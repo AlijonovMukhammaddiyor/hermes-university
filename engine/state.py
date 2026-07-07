@@ -82,7 +82,7 @@ class Enrollment(BaseModel):
 
 
 class Degree(BaseModel):
-    name: str = "B.S. Interview Readiness"
+    name: str = "Hermes University Certificate of Mastery"   # from profile.credential_name (RFC-005)
     requirement: str = "pass finals of both 3-month semesters (>=B)"
     awarded_on: str | None = None
 
@@ -111,10 +111,13 @@ class State(BaseModel):
 
 
 def fresh_state(*, name: str, timezone: str, started_on: str,
-                total_semesters: int = 2, weeks_per_semester: int = 12) -> State:
+                total_semesters: int = 2, weeks_per_semester: int = 12,
+                credential_name: str | None = None) -> State:
     """A clean day-1 state (no courses yet; registration adds them)."""
+    degree = Degree(name=credential_name) if credential_name else Degree()
     return State(
         program=Program(total_semesters=total_semesters,
                         weeks_per_semester=weeks_per_semester, started_on=started_on),
         learner=Learner(name=name, timezone=timezone),
+        degree=degree,
     )

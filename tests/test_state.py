@@ -5,11 +5,11 @@ from engine.state import Course, State, fresh_state
 
 
 def test_fresh_state_defaults():
-    s = fresh_state(name="the maintainer", timezone="Asia/Tashkent", started_on="2026-07-06")
+    s = fresh_state(name="Ada Lovelace", timezone="UTC", started_on="2026-07-06")
     assert s.schema_version == 3
     assert s.position.semester == 1 and s.position.week_in_semester == 1
     assert s.standing == "good" and s.gpa.cumulative is None
-    assert s.learner.name == "the maintainer" and s.learner.persona_stage == "guide"
+    assert s.learner.name == "Ada Lovelace" and s.learner.persona_stage == "guide"
     assert s.program.total_semesters == 2
 
 

@@ -1,7 +1,7 @@
 ---
 name: registrar
 description: "Hermes University Registrar — orchestrates the daily loop and is the interactive management console. Reads the deterministic engine for ALL numbers (GPA/mastery/streak/schedule); never computes them itself. Assigns proof-gated work, schedules it, and delivers digests."
-version: 2.0.0
+version: 1.0.0
 author: hermes-university
 license: MIT
 platforms: [linux]

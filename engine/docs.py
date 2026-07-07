@@ -13,8 +13,6 @@ from .course import Course, load_course
 from .gradebook import GradeRecord, course_gpa, load_records
 from .state import State
 
-DEGREE_NAME = "B.S. Interview Readiness"
-
 
 # ---------------------------------------------------------------- catalog
 def render_catalog(courses: list[Course]) -> str:
@@ -173,7 +171,7 @@ def render_degree_progress(state: State, records: list[GradeRecord],
         req += sum(1 for o in outs if o in passed)
     pct = int(round(100 * req / total)) if total else 0
     credits_enrolled = sum(c.credits for c in state.courses.values())
-    out = [f"# 🧭 Degree Progress — {DEGREE_NAME}", "",
+    out = [f"# 🧭 Degree Progress — {state.degree.name}", "",
            f"**Requirement:** pass finals of both 3-month semesters (≥B).", "",
            f"**Outcomes mastered:** {req}/{total}  ({pct}%)",
            f"**Semester:** {state.position.semester}/{state.program.total_semesters} · "

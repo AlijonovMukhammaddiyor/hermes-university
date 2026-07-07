@@ -7,3 +7,10 @@ tokens.json
 *.keys.json
 *.egg-info/
 .build/
+
+# Instance data (RFC-005) — private, never in the open-source repo.
+profile.yaml
+courses/*
+!courses/_TEMPLATE/
+vault/
+.env

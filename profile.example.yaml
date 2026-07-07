@@ -1,0 +1,15 @@
+# Hermes University — your instance profile (RFC-005).
+# Copy to profile.yaml (git-ignored) and make it yours. This is the ONLY place personal data lives.
+# Personalize to your GOALS — who you want to become — never to your job/employer.
+
+name: "Learner"
+timezone: "UTC"
+
+# Who you want to become. Courses are designed backward from this.
+goal: "Become one of the best in the fields you study, able to work with the best people."
+target_level: "top of the field"      # the excellence bar to design toward
+current_level: "capable beginner"      # calibrates placement / what to skip
+interests: []                          # optional depth branches, e.g. ["distributed systems"]
+
+daily_task_cap: 4                      # max tasks assigned per day
+credential_name: "Hermes University Certificate of Mastery"

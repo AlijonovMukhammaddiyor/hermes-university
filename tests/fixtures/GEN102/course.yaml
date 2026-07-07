@@ -1,0 +1,19 @@
+# A second minimal generic fixture (RFC-005), for multi-course tests (catalog/register/set).
+id: GEN102
+title: Second Example Course
+subject_domain: general
+credits: 2
+north_star: "A second generic course used by multi-course tests."
+grading_scale: { A: 4.0, B: 3.0, C: 2.0, F: 0.0 }
+rubrics:
+  - { id: r, shape: single_point, criteria: [{ name: c, target_descriptor: "meets expectations" }] }
+assessments:
+  - { id: a1, outcome_id: o1, type: summative, modality: explain, bloom_target: apply,
+      rubric_id: r, proof_gate: "explains the core idea" }
+units:
+  - id: u1
+    title: Only Unit
+    order_index: 1
+    semester: 1
+    outcomes:
+      - { id: o1, statement: "Explain the core idea in plain language.", bloom_level: apply, proof: a1 }

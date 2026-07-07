@@ -29,7 +29,7 @@ def main(argv: list[str] | None = None) -> int:
 
     ps = sub.add_parser("state").add_subparsers(dest="sub", required=True)
     pi = ps.add_parser("init")
-    pi.add_argument("--name", required=True); pi.add_argument("--tz", default="Asia/Tashkent")
+    pi.add_argument("--name", default=None); pi.add_argument("--tz", default=None)
     pi.add_argument("--started", required=True); pi.add_argument("--out", required=True)
     psh = ps.add_parser("show"); psh.add_argument("--file", required=True)
     preg = ps.add_parser("register")
@@ -89,7 +89,11 @@ def main(argv: list[str] | None = None) -> int:
     args = p.parse_args(argv)
 
     if args.cmd == "state" and args.sub == "init":
-        st = fresh_state(name=args.name, timezone=args.tz, started_on=args.started)
+        from pathlib import Path as _P
+        from .profile import load_profile
+        prof = load_profile(_P(__file__).resolve().parents[1])
+        st = fresh_state(name=args.name or prof.name, timezone=args.tz or prof.timezone,
+                         started_on=args.started, credential_name=prof.credential_name)
         st.save(args.out); print(f"wrote {args.out}"); return 0
     if args.cmd == "state" and args.sub == "show":
         print(State.load(args.file).model_dump_json(indent=2)); return 0
