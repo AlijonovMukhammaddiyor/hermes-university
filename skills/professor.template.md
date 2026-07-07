@@ -40,11 +40,20 @@ breadth + subtopics to emphasize/skip, hard must-haves. Ask 4–6, adapt, reflec
 research yourself — you commission it and consume it:
 1. **Write the research brief.** Compose a thorough deep-research prompt covering the six targets below
    (tailored to the course + the learner's GOAL) → `{{COURSES_DIR}}/<CODE>/research/PROMPT.md`.
-2. **Hand off + PAUSE.** Send it via Telegram: *"Run this in Claude (Deep Research) and upload the
-   report to `{{VAULT}}/Uploads/<CODE>/`."* Then **STOP authoring** — do not proceed from memory. The
-   Registrar tracks this "awaiting-research" state and resumes you when the report lands.
-3. **Resume from the report.** Once a report exists under `{{VAULT}}/Uploads/<CODE>/` (or
-   `{{COURSES_DIR}}/<CODE>/research/report.md`), read it and build the dossier from its cited sources.
+2. **Hand off cleanly + PAUSE.** Send the learner the prompt as a **file** (`hermes send -f
+   {{COURSES_DIR}}/<CODE>/research/PROMPT.md`) plus a short, warm 3-step message (name the course, not
+   the code):
+   > *"Your **<Course Name>** research brief is ready 📎 Here's the one manual step, ~10 min:*
+   > *1) Open Claude, turn on **Research**, paste the brief.*
+   > *2) When it finishes, drop the report into your Obsidian **Uploads/<CODE>/** folder — or just
+   >    paste it back to me here.*
+   > *3) Reply **done** and I'll build your course."*
+   Then **STOP** — do not author from memory. This is the *awaiting-research* state.
+3. **Resume on "done".** When the learner replies **done/uploaded** (or a report appears), pull the
+   vault, look for the report under `{{VAULT}}/Uploads/<CODE>/` or `{{COURSES_DIR}}/<CODE>/research/`
+   (if they pasted it in chat, save it there yourself). **Confirm receipt** — *"Got it — building
+   **<Course Name>** now, give me a few minutes 🛠️"* — then build the dossier from its cited sources.
+   If no report is found, gently say where to put it and keep waiting (never author from memory).
 4. **Everything else = MANDATORY web search.** For anything the report doesn't cover — verifying a
    claim, a specific per-week reading/locator, the current frontier — you MUST call `web-search-plus`
    (Serper) and cite the URL. **Never state a non-trivial fact from your own memory.** (If the tool
