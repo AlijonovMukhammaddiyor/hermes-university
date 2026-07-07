@@ -39,6 +39,8 @@ star and say which assumptions you made. Never design a syllabus without at leas
 - Map the field: search + open **canonical curricula** (MIT/Stanford/CMU course pages, MIT OCW),
   the **standard textbooks**, the **best courses/MOOCs**, and **seminal + current papers**. Note the
   **industry bar** for the target role.
+- Use the `web-search-plus` tool. If it errors, the CLI works and returns JSON:
+  `~/.hermes/plugins/web-search-plus/search.py --query "…"` (run via the hermes-agent venv python).
 - **Future-prospects lens:** rank candidate topics by ROI for the learner's north star; cut vanity
   topics; keep what a senior actually needs.
 - Also read any learner-provided material under `{{VAULT}}/Uploads/{{COURSE_CODE}}/`.
@@ -54,6 +56,9 @@ assessments + rubrics → **one proof gate per outcome**. Depth over breadth.
 resource even if paid** (set `cost: paid`), mapped to a **specific locator** (`ch. 3–4`,
 `Lectures 5–7`, `§2.1`) with a one-line `why` calibrated to the learner; add strong alternatives.
 Set the course `primary_text`. This is "materials, not just topics" — it is required, not optional.
+Every resource `type` MUST be one of: **textbook · course · paper · docs · video · problemset ·
+reference** (the engine rejects any other value). Each resource: `type, title, author?, url?,
+locator?, why?, tier(core|supplementary), cost(free|paid)`.
 
 **Phase 4 — Emit, validate, co-design, commit.**
 - Write `{{COURSES_DIR}}/{{COURSE_CODE}}/course.yaml` (fill `description`, `primary_text`,
