@@ -8,9 +8,19 @@ subject_domain: domain-slug
 credits: 2
 north_star: >
   One sentence: what a graduate of this course can DO (a capstone competency).
+description: >
+  2–4 sentences from RESEARCH: what the course covers, why it matters for the learner's future
+  (highest-ROI topics for the target role), and how it's assessed. Not vibes — grounded in the dossier.
 prerequisites: []
 enduring_understandings:
   - 3–7 transferable big ideas the course keeps returning to.
+
+# Anchoring textbook/course (best regardless of cost; mark paid). Researched, with a real locator.
+primary_text:
+  { type: textbook, title: "Book/Course Title", author: "Author", url: "https://…",
+    locator: "whole", why: "why this is THE anchor for this learner", tier: core, cost: paid }
+# Course-level library (cross-cutting references). Per-UNIT readings live on each unit below.
+resources: []
 
 grading_scale: { A: 4.0, B: 3.0, C: 2.0, F: 0.0 }
 
@@ -38,6 +48,11 @@ units:
     title: First Unit
     order_index: 1
     semester: 1
+    est_weeks: 1
+    summary: "One line: what this unit builds and why."
+    resources:            # the researched best materials for THIS unit (specific locators)
+      - { type: textbook, title: "…", locator: "ch. 1–2", why: "…", tier: core, cost: paid }
+      - { type: course, title: "…", url: "https://…", locator: "Lectures 1–3", tier: supplementary, cost: free }
     outcomes:
       - id: u1.apply
         statement: "A-SMART: action verb + specific + measurable + constraint (e.g. within 30 min, >=80%)."

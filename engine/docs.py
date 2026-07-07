@@ -22,10 +22,14 @@ def render_catalog(courses: list[Course]) -> str:
     for c in sorted(courses, key=lambda x: x.id):
         prereqs = ", ".join(c.prerequisites) if c.prerequisites else "none"
         out += [f"## {c.id} — {c.title}  ·  {c.credits} credits",
-                f"*{c.north_star.strip()}*", "",
-                f"- **Prerequisites:** {prereqs}",
-                f"- **Units ({len(c.units)}):** " + " → ".join(u.title for u in c.units),
-                f"- **Grading:** " + grading_line(c),
+                f"*{c.north_star.strip()}*", ""]
+        if getattr(c, "description", ""):
+            out += [c.description.strip(), ""]
+        out += [f"- **Prerequisites:** {prereqs}",
+                f"- **Units ({len(c.units)}):** " + " → ".join(u.title for u in c.units)]
+        if getattr(c, "primary_text", None):
+            out += [f"- **Primary text:** {c.primary_text.title}"]
+        out += [f"- **Grading:** " + grading_line(c),
                 f"- **Enroll:** reply `enroll {c.id}`", ""]
     return "\n".join(out).rstrip() + "\n"
 
@@ -37,23 +41,76 @@ def grading_line(c: Course) -> str:
     return " · ".join(f"{k} {int(round(v*100))}%" for k, v in w.items() if v)
 
 
+def _res_line(r) -> str:
+    """One Markdown bullet for a Resource (single line so it nests cleanly under readings)."""
+    head = f"**{r.title}**"
+    if r.author:
+        head += f" · {r.author}"
+    if r.locator:
+        head += f" — {r.locator}"
+    tags = r.type + (", paid" if getattr(r, "cost", "free") == "paid" else "")
+    head += f" _({tags})_"
+    if r.url:
+        head += f" — {r.url}"
+    if r.why:
+        head += f"  · _{r.why}_"
+    return "- " + head
+
+
 # ---------------------------------------------------------------- syllabus
 def render_syllabus(c: Course) -> str:
-    out = [f"# {c.id} — {c.title}", "", f"> {c.north_star.strip()}", "",
-           f"**Credits:** {c.credits}  ·  **Domain:** {c.subject_domain}  ·  "
-           f"**Prereqs:** {', '.join(c.prerequisites) or 'none'}", ""]
+    out = [f"# {c.id} — {c.title}", "", f"> {c.north_star.strip()}", ""]
+    if getattr(c, "description", ""):
+        out += [c.description.strip(), ""]
+    out += [f"**Credits:** {c.credits}  ·  **Domain:** {c.subject_domain}  ·  "
+            f"**Prereqs:** {', '.join(c.prerequisites) or 'none'}", ""]
+    if getattr(c, "primary_text", None):
+        out += ["## Primary text", _res_line(c.primary_text), ""]
     if c.enduring_understandings:
         out += ["## Enduring understandings"] + [f"- {e}" for e in c.enduring_understandings] + [""]
     out += ["## Grading policy", grading_line(c), "",
-            "## Units & outcomes (the schedule)"]
+            "## Weekly schedule, outcomes & readings"]
     assess = {a.id: a for a in c.assessments}
+    week: dict[int, int] = {}
     for u in sorted(c.units, key=lambda x: (x.semester, x.order_index)):
-        out.append(f"\n### Sem {u.semester} · Unit {u.order_index}: {u.title}")
+        start = week.get(u.semester, 1)
+        end = start + max(1, getattr(u, "est_weeks", 1)) - 1
+        week[u.semester] = end + 1
+        span = f"Week {start}" if start == end else f"Weeks {start}–{end}"
+        out.append(f"\n### Sem {u.semester} · {span} · {u.title}")
+        if getattr(u, "summary", None):
+            out.append(f"_{u.summary.strip()}_")
         for o in u.outcomes:
             a = assess.get(o.proof)
             proof = (a.proof_gate if a else "—")
             out.append(f"- **{o.bloom_level}** — {o.statement}")
             out.append(f"  - *proof:* {proof}")
+        if getattr(u, "resources", None):
+            out.append("- *readings:*")
+            for r in u.resources:
+                out.append("  " + _res_line(r))
+    if getattr(c, "resources", None):
+        out += ["", "## Course library"] + [_res_line(r) for r in c.resources]
+    out += ["", "## Assessment plan"]
+    for a in c.assessments:
+        out.append(f"- **{a.id}** ({a.type}, {a.modality}, ≥{a.bloom_target}) — {a.proof_gate}")
+    return "\n".join(out).rstrip() + "\n"
+
+
+# ---------------------------------------------------------------- resources (curated library)
+def render_resources(c: Course) -> str:
+    out = [f"# 📖 Resources — {c.id} {c.title}", ""]
+    if getattr(c, "primary_text", None):
+        out += ["## Primary text", _res_line(c.primary_text), ""]
+    if getattr(c, "resources", None):
+        out += ["## Course library"] + [_res_line(r) for r in c.resources] + [""]
+    out += ["## By unit"]
+    for u in sorted(c.units, key=lambda x: (x.semester, x.order_index)):
+        out.append(f"\n### Sem {u.semester} · {u.title}")
+        if getattr(u, "resources", None):
+            out += [_res_line(r) for r in u.resources]
+        else:
+            out.append("_(no unit-specific resources yet)_")
     return "\n".join(out).rstrip() + "\n"
 
 
@@ -180,6 +237,7 @@ def render_all(vault: str | Path, courses_dir: str | Path) -> list[str]:
     w("Catalog.md", render_catalog(list(modules.values())))
     for code, m in modules.items():
         w(f"Courses/{code}/Syllabus.md", render_syllabus(m))
+        w(f"Courses/{code}/Resources.md", render_resources(m))
     w("Registrar/Transcript.md", render_transcript(state, records))
     w("Registrar/Schedule.md", render_schedule(state))
     enrolled_modules = {k: modules[k] for k in state.courses if k in modules}

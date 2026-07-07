@@ -20,6 +20,44 @@ def test_render_catalog_lists_all_courses():
 def test_render_syllabus_has_units_and_grading():
     syl = docs.render_syllabus(load_course(CDIR / "CS250" / "course.yaml"))
     assert "Arrays & Hashing" in syl and "Grading policy" in syl and "proof:" in syl
+    assert "Weekly schedule" in syl and "Assessment plan" in syl   # upgraded syllabus
+
+
+def test_syllabus_and_resources_render_researched_materials():
+    from engine.course import Course, Resource
+    r = Resource(type="textbook", title="CLRS", locator="ch. 6", why="canonical", cost="paid")
+    c = Course.model_validate({
+        "id": "RX", "title": "Algo", "subject_domain": "cs", "credits": 3, "north_star": "n",
+        "description": "researched course", "primary_text": r.model_dump(),
+        "assessments": [{"id": "a1", "outcome_id": "o1", "type": "summative", "modality": "project",
+                         "bloom_target": "apply", "proof_gate": "ship it"}],
+        "units": [{"id": "u1", "title": "Heaps", "order_index": 1, "semester": 1, "est_weeks": 2,
+                   "summary": "priority queues", "resources": [r.model_dump()],
+                   "outcomes": [{"id": "o1", "statement": "s", "bloom_level": "apply", "proof": "a1"}]}],
+    })
+    syl = docs.render_syllabus(c)
+    assert "Primary text" in syl and "CLRS" in syl and "ch. 6" in syl and "paid" in syl
+    assert "Weeks 1–2" in syl and "priority queues" in syl and "readings" in syl
+    res = docs.render_resources(c)
+    assert "Resources — RX" in res and "By unit" in res and "Heaps" in res and "CLRS" in res
+
+
+def test_render_all_writes_resources(tmp_path):
+    (tmp_path / "Registrar").mkdir(parents=True)
+    fresh_state(name="M", timezone="UTC", started_on="2026-07-06").save(
+        tmp_path / "Registrar" / "state.json")
+    written = docs.render_all(tmp_path, CDIR)
+    assert "Courses/CS250/Resources.md" in written
+    assert (tmp_path / "Courses" / "CS250" / "Resources.md").exists()
+
+
+def test_course_validate_cli(capsys):
+    import json as _json
+
+    from engine.cli import main
+    rc = main(["course", "validate", "--file", str(CDIR / "CS250" / "course.yaml")])
+    out = _json.loads(capsys.readouterr().out)
+    assert rc == 0 and out["ok"] is True and out["id"] == "CS250" and out["outcomes"] >= 12
 
 
 def test_render_transcript_and_degree(tmp_path):

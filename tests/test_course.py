@@ -24,6 +24,34 @@ def test_template_loads():
     assert load_course(ROOT / "courses" / "_TEMPLATE" / "course.yaml").id == "XXNNN"
 
 
+def test_resources_schema_optional_and_typed():
+    from engine.course import Course, Resource
+    # existing courses validate WITHOUT resources (additive, non-breaking)
+    c = load_course(ROOT / "courses" / "CS250" / "course.yaml")
+    assert isinstance(c.resources, list)
+    # a fully-specified researched course carries typed resources on course + unit
+    r = Resource(type="textbook", title="CLRS", author="Cormen", locator="ch. 6",
+                 why="canonical", tier="core", cost="paid")
+    assert r.cost == "paid" and r.type == "textbook"
+    m = Course.model_validate({
+        "id": "RX", "title": "x", "subject_domain": "d", "credits": 1, "north_star": "n",
+        "description": "researched desc", "primary_text": r.model_dump(),
+        "assessments": [{"id": "a1", "outcome_id": "o1", "type": "summative", "modality": "project",
+                         "bloom_target": "apply", "proof_gate": "g"}],
+        "units": [{"id": "u", "title": "U", "order_index": 1, "semester": 1, "est_weeks": 2,
+                   "summary": "builds x", "resources": [r.model_dump()],
+                   "outcomes": [{"id": "o1", "statement": "s", "bloom_level": "apply", "proof": "a1"}]}],
+    })
+    assert m.primary_text.title == "CLRS" and m.units[0].est_weeks == 2
+    assert m.units[0].resources[0].locator == "ch. 6"
+
+
+def test_invalid_resource_type_rejected():
+    from engine.course import Resource
+    with pytest.raises(ValidationError):
+        Resource(type="tweet", title="x")
+
+
 @pytest.mark.parametrize("path", sorted((ROOT / "courses").glob("*/course.yaml")),
                          ids=lambda p: p.parent.name)
 def test_every_course_module_satisfies_contract(path):

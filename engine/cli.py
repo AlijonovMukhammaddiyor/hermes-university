@@ -70,6 +70,10 @@ def main(argv: list[str] | None = None) -> int:
     prd = sub.add_parser("render-docs")
     prd.add_argument("--vault", required=True); prd.add_argument("--courses", required=True)
 
+    # course validate — structural gate for professor-authored YAML (RFC-003 §4)
+    pcv = sub.add_parser("course").add_subparsers(dest="sub", required=True).add_parser("validate")
+    pcv.add_argument("--file", required=True)
+
     pv = sub.add_parser("proof").add_subparsers(dest="sub", required=True).add_parser("verify")
     pv.add_argument("--gate", required=True); pv.add_argument("--evidence", required=True)
 
@@ -158,6 +162,17 @@ def main(argv: list[str] | None = None) -> int:
         from . import docs
         written = docs.render_all(args.vault, args.courses)
         print(json.dumps({"rendered": written})); return 0
+    if args.cmd == "course" and args.sub == "validate":
+        from .course import load_course
+        try:
+            c = load_course(args.file)
+        except Exception as e:
+            print(json.dumps({"ok": False, "error": str(e)})); return 2
+        n_res = len(c.resources) + sum(len(u.resources) for u in c.units)
+        print(json.dumps({"ok": True, "id": c.id, "units": len(c.units),
+                          "outcomes": len(c.all_outcomes()), "resources": n_res,
+                          "no_resource_units": [u.id for u in c.units if not u.resources]}))
+        return 0
     if args.cmd == "promote":
         from pathlib import Path
         from . import registrar as R

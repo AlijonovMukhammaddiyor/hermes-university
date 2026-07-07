@@ -20,6 +20,18 @@ Bloom = Literal["remember", "understand", "apply", "analyze", "evaluate", "creat
 BLOOM_ORDER = ["remember", "understand", "apply", "analyze", "evaluate", "create"]
 
 
+class Resource(BaseModel):
+    """A concrete learning material (RFC-003 §3) — researched, not a topic label."""
+    type: Literal["textbook", "course", "paper", "docs", "video", "problemset", "reference"]
+    title: str
+    author: str | None = None
+    url: str | None = None
+    locator: str | None = None      # "ch. 3–4" | "Lectures 5–7" | "§2.1"
+    why: str | None = None          # why THIS resource for THIS topic/learner
+    tier: Literal["core", "supplementary"] = "core"
+    cost: Literal["free", "paid"] = "free"
+
+
 class Criterion(BaseModel):
     name: str
     target_descriptor: str
@@ -63,6 +75,9 @@ class Unit(BaseModel):
     order_index: int
     semester: int
     outcomes: list[Outcome]
+    summary: str | None = None                                # one-line what/why of the unit
+    resources: list[Resource] = Field(default_factory=list)   # per-unit reading list (researched)
+    est_weeks: int = 1                                         # schedule span
     prereq_outcomes: list[str] = Field(default_factory=list)
     entry_gate: float = 0.8
     exit_gate: float = 0.8
@@ -74,6 +89,9 @@ class Course(BaseModel):
     subject_domain: str
     credits: int
     north_star: str
+    description: str = ""                                      # syllabus/catalog prose (researched)
+    primary_text: Resource | None = None                      # the anchoring textbook/course
+    resources: list[Resource] = Field(default_factory=list)   # course-level library
     starting_tier: Literal["easy", "med", "hard"] = "easy"  # difficulty floor for a new learner
     runs_in: list[int] = Field(default_factory=lambda: [1, 2])
     active_default: bool = True          # inactive until activates_week if False

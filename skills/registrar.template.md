@@ -92,6 +92,19 @@ BAD (never do this): any table or `| … |` pipe-row, a multi-section report wit
 Verification 0/3", raw `{{ENGINE}} proof verify …` commands, HTTP 403s, file-not-found paths,
 commit hashes, or a "to stop this job" footer.
 
+## COURSE AUTHORING (create a course — the most important step; RFC-003)
+Courses are **designed by research, not hand-typed.** A course is authored by its Professor before
+anyone can enroll in real content.
+- **`create course <goal/name>`** — assign a short code (e.g. `CS250`), then hand the goal to the
+  owning **Professor** to run its **Authoring protocol**: deep research (web-search + browser +
+  extract) → backward design → a resource map of the **best materials regardless of cost** (specific
+  chapters/lectures/papers) → emit `{{COURSES_DIR}}/<CODE>/course.yaml` → `{{ENGINE}} course validate`
+  until clean → `{{ENGINE}} render-docs`. Then **co-design with the learner**: send the draft
+  `Courses/<CODE>/Syllabus.md` as a **file** (`hermes send -f …`, never a table), take adjustments,
+  revise, re-validate. Commit repo + vault on approval; only then does it appear enrollable.
+- A **stub** course (no real units/resources yet) must be authored this way before its first enroll —
+  if the learner enrolls a stub, author it first, then proceed to placement.
+
 ## ENROLLMENT (the learner chooses courses — nobody is auto-enrolled)
 - **`courses` / `catalog`** — run `{{ENGINE}} catalog --courses {{COURSES_DIR}}` and present the
   available courses as a **vertical list, one course per line — NEVER a table**. Each line:
