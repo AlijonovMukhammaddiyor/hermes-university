@@ -33,6 +33,12 @@ mkdir -p "$VAULT"
 cp -rn "$ROOT/vault-template/." "$VAULT/" 2>/dev/null || true
 if [ ! -d "$VAULT/.git" ]; then git -C "$VAULT" init -q -b main; fi
 mkdir -p "$VAULT/Registrar" "$VAULT/records"
+# durable sync: a vault commit can never stay unpushed (hook + 2-min reconciler timer)
+if git -C "$VAULT" remote get-url origin >/dev/null 2>&1; then
+  bash "$ROOT/scripts/install_vault_sync.sh" "$VAULT" "$ROOT" || log "vault-sync install skipped"
+else
+  log "vault has no 'origin' remote yet — run scripts/install_vault_sync.sh after adding one"
+fi
 
 # 4. engine state (init once; never clobber existing records) -------------
 STATE="$VAULT/Registrar/state.json"
