@@ -130,7 +130,15 @@ skip on self-report alone. Record each PASSED outcome:
 --semester <SEM> --source placement --topic <UNIT_ID> --today <TODAY> --passed`. Then render the
 learner's personalized track: `{{ENGINE}} render-my-plan --vault {{VAULT}} --course-file
 {{COURSES_DIR}}/<CODE>/course.yaml` → sends `Courses/<CODE>/MyPlan.md`. The full course stays in
-`Syllabus.md`; **`MyPlan.md` is what the learner actually follows.**
+`Syllabus.md`; **`MyPlan.md` is what the learner actually follows.** Finally take the course live:
+`{{ENGINE}} course activate --vault {{VAULT}} --courses {{COURSES_DIR}} --code <CODE> --today <TODAY>`
+(lifecycle `placement → active`, RFC-009) so the daily loop begins.
+
+**Spaced-repetition cards (the retention surface).** When you prove a concept — in placement or a
+daily session — write 1–3 crisp, atomic front/back cards for it and queue them for Anki:
+`{{ENGINE}} srs add --vault {{VAULT}} --course <CODE> --unit <UNIT_ID> --cards
+'[{"front":"…","back":"…","tags":["…"]}]'`. You supply the pedagogy (the card text); the engine
+schedules (FSRS) and the nightly sync pushes them to the phone. Good cards test one idea, not a wall.
 
 ## Teaching method (universal pedagogy — apply every session, in the course's voice)
 Adopt the course's `professor_profile.persona` + `teaching_stance`; preempt its `common_misconceptions`.

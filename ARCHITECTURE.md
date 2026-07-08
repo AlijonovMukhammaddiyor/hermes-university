@@ -40,10 +40,24 @@ GPA/transcript across two rigorous 3-month semesters, and pushes spaced-repetiti
   uploads, SRS, and a two-way **Kanban `Board.md`** (RFC-008) + a Dataview `Dashboard.md`. Plugins:
   Kanban, Dataview, Obsidian Git. (The old browser WebUI is retired — Obsidian + Telegram replace it.)
 
-## Surfaces (one brain, the right tool per job)
-**Telegram** coaches (nudges, quick-actions, voice, file handoff) · **Obsidian** is read + track (the
-Kanban board is two-way; the engine stays authoritative — a card marked Done without a real proof
-bounces) · **Anki** retains (FSRS to the phone).
+## Surfaces (one brain, the right tool per job — RFC-009)
+**Telegram** is the *control + coach* surface: every management action is a discoverable, confirmable
+verb (`courses · create · enroll · archive · restore · delete · status · profile · help`) — nobody
+ever needs the shell. **Obsidian** is *manage + read + track*: an engine-rendered **`Home.md`** control
+center (each course + its lifecycle status, what's blocked on you, today's work, cards due) plus the
+two-way Kanban `Board.md` (the engine stays authoritative — a card marked Done without a real proof
+bounces). **Anki** *retains*: cards are auto-generated from proven outcomes and pushed via FSRS to the
+phone; the queued/created count is surfaced back into Telegram + Home.
+
+## Course lifecycle & management (RFC-009)
+Every course carries an engine-owned **status** — `draft → researching → authoring → placement →
+active → archived` — that every surface reads. `researching` is the machine-readable *blocked on your
+research upload* signal. Management is safe by construction: a **drop is a reversible archive**
+(soft), `restore` brings it back, and a **hard `delete`** (files + state) requires an explicit
+confirmation echo. The one confirm convention (consequence + `yes`/`cancel`, name-echo for deletes)
+guards every destructive action. Identity + goals are edited through `profile set`, never hand-edited
+YAML. The lifecycle, the aggregate `status` snapshot, and the SRS pipeline all live in the engine
+(`engine/authoring.py`, `registrar.py`, `srs.py`); skills only call the CLI.
 
 ## The course module (`course.yaml`)
 `Course → Unit → Outcome → Assessment → Rubric`, plus researched `description`, `primary_text`,
