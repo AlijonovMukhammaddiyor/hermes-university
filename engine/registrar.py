@@ -109,7 +109,7 @@ def refresh_course_status(state: State, course_dir: str | Path, uploads_dir: str
     live 'active' or an 'archived' course. Returns the new status, or None if unchanged/absent."""
     from .authoring import authoring_status
     sc = state.courses.get(code)
-    if sc is None or sc.status not in ("researching", "authoring", "placement"):
+    if sc is None or sc.status not in ("draft", "researching", "authoring", "placement"):
         return None
     new = authoring_status(Path(course_dir) / code / "course.yaml", uploads_dir, code)
     if new != sc.status:

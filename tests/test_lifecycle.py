@@ -94,6 +94,15 @@ def test_refresh_course_status_only_moves_pipeline_courses():
     assert s.courses["GEN101"].status == "active"
 
 
+def test_refresh_reconciles_a_draft_course():
+    # a course loaded from an older state.json defaults to 'draft'; sync-status must re-derive it
+    s = _state()
+    R.enroll(s, FIXTURES, "GEN101")
+    s.courses["GEN101"].status = "draft"                    # simulate the pre-RFC-009 default
+    assert R.refresh_course_status(s, FIXTURES, FIXTURES / "no-up", "GEN101") == "placement"
+    assert s.courses["GEN101"].status == "placement"
+
+
 def test_delete_removes_state_entry():
     s = _state()
     R.enroll(s, FIXTURES, "GEN101")
