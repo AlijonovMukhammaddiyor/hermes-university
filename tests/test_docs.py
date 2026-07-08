@@ -13,8 +13,8 @@ def test_render_catalog_lists_all_courses():
     mods = [load_course(p) for p in sorted(CDIR.glob("*/course.yaml"))]
     cat = docs.render_catalog(mods)
     for code in ("GEN101", "GEN102"):
-        assert code in cat
-    assert "enroll GEN101" in cat and "credits" in cat
+        assert f"enroll {code}" in cat
+    assert "| Course | Credits | You'll be able to… | Units | Enroll |" in cat   # structured table
 
 
 def test_render_syllabus_is_a_complete_academic_plan():
@@ -189,6 +189,9 @@ def test_home_control_center_aggregates_status(tmp_path):
     home = docs.render_home(snap)
     assert "🏛️ Home — Ada" in home and "🟢 active" in home
     assert "waiting for your research report" in home and "[[Board]]" in home
+    # structured like the Board: callout boxes + a courses table
+    assert "> [!abstract]" in home and "> [!todo] Blocked on you" in home
+    assert "| Course | Status | Mastery |" in home
 
 
 def test_render_all_writes_home(tmp_path):

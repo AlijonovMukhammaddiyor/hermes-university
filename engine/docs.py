@@ -16,19 +16,19 @@ from .state import State
 
 # ---------------------------------------------------------------- catalog
 def render_catalog(courses: list[Course]) -> str:
-    out = ["# 📚 Course Catalog — Hermes University", ""]
+    out = ["# 📚 Course Catalog", "",
+           "> [!tip] Add or start a course",
+           "> Message the bot **`create course <goal>`** to research + build a new one, or "
+           "**`enroll <name>`** to begin one below.", ""]
+    if not courses:
+        out += ["> [!note] Your catalog is empty",
+                "> Nothing here yet — say **`create course <your goal>`** and it builds one for you."]
+        return "\n".join(out).rstrip() + "\n"
+    out += ["| Course | Credits | You'll be able to… | Units | Enroll |",
+            "|---|---|---|---|---|"]
     for c in sorted(courses, key=lambda x: x.id):
-        prereqs = ", ".join(c.prerequisites) if c.prerequisites else "none"
-        out += [f"## {c.id} — {c.title}  ·  {c.credits} credits",
-                f"*{c.north_star.strip()}*", ""]
-        if getattr(c, "description", ""):
-            out += [c.description.strip(), ""]
-        out += [f"- **Prerequisites:** {prereqs}",
-                f"- **Units ({len(c.units)}):** " + " → ".join(u.title for u in c.units)]
-        if getattr(c, "primary_text", None):
-            out += [f"- **Primary text:** {c.primary_text.title}"]
-        out += [f"- **Grading:** " + grading_line(c),
-                f"- **Enroll:** reply `enroll {c.id}`", ""]
+        goal = _cell(c.north_star.strip().rstrip("."))
+        out.append(f"| **{c.title}** | {c.credits} | {goal} | {len(c.units)} | `enroll {c.id}` |")
     return "\n".join(out).rstrip() + "\n"
 
 
@@ -418,53 +418,59 @@ def status_snapshot(vault: str | Path, courses_dir: str | Path, now=None) -> dic
 
 
 def render_home(snap: dict) -> str:
-    """The Obsidian control center `Home.md` — the visual mirror of the Telegram status surface.
-    Obsidian renders markdown, so headers/badges are fine here (unlike Telegram)."""
+    """The Obsidian control center `Home.md` — structured to match the Board: callout boxes + a course
+    table (Obsidian renders both richly). The visual mirror of the Telegram status surface."""
     active = [c for c in snap["courses"] if c["status"] != "archived"]
-    head = (f"**Semester {snap['semester']} · Week {snap['week']}/{snap['weeks_per_semester']}**"
-            f"  ·  Standing: {snap['standing']}")
+    where = (f"Semester {snap['semester']} · Week {snap['week']}/{snap['weeks_per_semester']} · "
+             f"Standing: {snap['standing']}")
     if snap["gpa_cumulative"] is not None:
-        head += f"  ·  GPA {_fmt(snap['gpa_semester'])} (cum {_fmt(snap['gpa_cumulative'])})"
+        where += f" · GPA {_fmt(snap['gpa_semester'])} (cum {_fmt(snap['gpa_cumulative'])})"
     if snap["streak"]:
-        head += f"  ·  🔥 {snap['streak']}-day streak"
-    out = [f"# 🏛️ Home — {snap['learner'] or 'Hermes University'}", "", head, ""]
+        where += f" · 🔥 {snap['streak']}-day streak"
+    out = [f"# 🏛️ Home — {snap['learner'] or 'Hermes University'}", "",
+           "> [!abstract] Where you are", f"> {where}", ""]
     if snap["hold"]:
-        out += [f"> ⚠️ **On hold:** {snap['hold']} — new material is paused until it clears.", ""]
+        out += [f"> [!warning] On hold: {snap['hold']}",
+                "> New material is paused until it clears.", ""]
 
-    out += ["## Your courses"]
+    out += ["## 📚 Courses"]
     if active:
+        out += ["| Course | Status | Mastery |", "|---|---|---|"]
         for c in active:
             badge = _STATUS_BADGE.get(c["status"], c["status"])
-            tail = f" · {c['mastery_pct']}% mastered" if c["status"] == "active" else ""
-            out.append(f"- **{c['title']}** — {badge}{tail}")
+            m = f"{c['mastery_pct']}%" if c["status"] == "active" else "—"
+            out.append(f"| **{c['title']}** | {badge} | {m} |")
     else:
-        out.append("_No courses yet. Message the bot `create course <your goal>` to begin._")
+        out += ["> [!note] No courses yet",
+                "> Message the bot **`create course <your goal>`** to begin."]
     out.append("")
 
-    out += ["## Blocked on you"]
     if snap["blocked"]:
+        out += ["> [!todo] Blocked on you"]
         for b in snap["blocked"]:
             who = f"**{b['title']}** — " if b.get("title") else ""
             hint = (f" → open `Uploads/{b['code']}/RESEARCH-PROMPT.md`, run it in Claude, drop the "
                     "report back") if b["reason"].startswith("waiting for your research") else ""
-            out.append(f"- {who}{b['reason']}{hint}")
+            out.append(f"> - {who}{b['reason']}{hint}")
     else:
-        out.append("_Nothing — you're all caught up._")
+        out += ["> [!success] You're all caught up", "> Nothing is waiting on you right now."]
     out.append("")
 
     if snap["today"]:
-        out += ["## Today"] + [f"- [ ] {t}" for t in snap["today"]] + [""]
+        out += ["## ✅ Today"] + [f"- [ ] {t}" for t in snap["today"]] + [""]
 
     if snap.get("review"):
-        out += ["## To review (slipping — proven before, refresh it)"]
-        out += [f"- {r['statement'] or r['outcome']}" for r in snap["review"]] + [""]
+        out += ["> [!question] To review — proven before, refresh it"]
+        out += [f"> - {r['statement'] or r['outcome']}" for r in snap["review"]] + [""]
 
     srs = snap["srs"]
     if srs["queued"] or srs["created"]:
-        out += ["## Cards",
-                f"- **{srs['queued']}** queued for Anki · {srs['created']} created all-time", ""]
+        line = f"> [!note] Anki: **{srs['queued']}** queued · {srs['created']} created"
+        if srs.get("review_due"):
+            line += f" · {srs['review_due']} to review"
+        out += [line, ""]
 
-    out += ["---", "[[Board]] · [[Catalog]] · [[Registrar/Transcript|Transcript]] · "
+    out += ["---", "[[Board]] · [[Catalog]] · [[Guide]] · [[Registrar/Transcript|Transcript]] · "
             "[[Registrar/DegreeProgress|Degree Progress]] · [[Registrar/Schedule|Schedule]]"]
     return "\n".join(out).rstrip() + "\n"
 
