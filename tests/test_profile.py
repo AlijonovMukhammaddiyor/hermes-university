@@ -1,13 +1,16 @@
 from pathlib import Path
 
+import yaml
+
 from engine.profile import Profile, load_profile
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_profile_example_loads_generic_defaults():
-    # the shipped example must be generic — no personal/org data
-    p = load_profile(ROOT)
+    # validate the SHIPPED example explicitly — not load_profile(ROOT), which prefers a private
+    # profile.yaml (so on a live host it would check the real profile, not the example).
+    p = Profile.model_validate(yaml.safe_load((ROOT / "profile.example.yaml").read_text()) or {})
     assert isinstance(p, Profile)
     assert p.name and p.goal and p.target_level and p.credential_name
     blob = (p.name + p.goal + p.target_level + p.credential_name).lower()
