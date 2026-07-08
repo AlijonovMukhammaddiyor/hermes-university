@@ -32,14 +32,24 @@ categories:
   - name: "Systems, backend & engineering craft"
     sources:
       - { title: "The Pragmatic Engineer — Gergely Orosz", url: "https://newsletter.pragmaticengineer.com/", rss: "https://newsletter.pragmaticengineer.com/feed", paid: true, weight: high }
-      - { title: "ByteByteGo — Alex Xu", url: "https://blog.bytebytego.com/", rss: "https://blog.bytebytego.com/feed" }
+      - { title: "ByteByteGo — Alex Xu", url: "https://blog.bytebytego.com/", rss: "https://blog.bytebytego.com/feed", weight: high }
       - { title: "Martin Kleppmann", url: "https://martin.kleppmann.com/" }                  # no RSS → fetch
-      - { title: "Dan Luu", url: "https://danluu.com/", rss: "https://danluu.com/atom.xml" }
+      - { title: "Dan Luu", url: "https://danluu.com/", rss: "https://danluu.com/atom.xml", weight: high }
       - { title: "Julia Evans — b0rk", url: "https://jvns.ca/", rss: "https://jvns.ca/atom.xml" }
       - { title: "Marc Brooker", url: "https://brooker.co.za/blog/", rss: "https://brooker.co.za/blog/rss.xml" }
       - { title: "Brendan Gregg", url: "https://www.brendangregg.com/blog/", rss: "https://www.brendangregg.com/blog/rss.xml" }
       - { title: "InfoQ", url: "https://www.infoq.com/", rss: "https://www.infoq.com/feed" }
       - { title: "The New Stack", url: "https://thenewstack.io/", rss: "https://thenewstack.io/feed/" }
+
+  - name: "General software engineering & languages"
+    sources:
+      - { title: "Martin Fowler — architecture & design", url: "https://martinfowler.com/", rss: "https://martinfowler.com/feed.atom", weight: high }
+      - { title: "Cloudflare Blog — deep systems", url: "https://blog.cloudflare.com/", rss: "https://blog.cloudflare.com/rss/", weight: high }
+      - { title: "The GitHub Blog — engineering", url: "https://github.blog/", rss: "https://github.blog/feed/" }
+      - { title: "Netflix TechBlog — distributed systems at scale", url: "https://netflixtechblog.com/", rss: "https://netflixtechblog.com/feed" }
+      - { title: "The Go Blog", url: "https://go.dev/blog/", rss: "https://go.dev/blog/feed.atom" }
+      - { title: "Rust Blog", url: "https://blog.rust-lang.org/", rss: "https://blog.rust-lang.org/feed.xml" }
+      - { title: "ACM Queue — rigorous CS/engineering", url: "https://queue.acm.org/", rss: "https://queue.acm.org/rss/feeds/queuecontent.xml" }
 
   - name: "Product, career & strategy"
     sources:
