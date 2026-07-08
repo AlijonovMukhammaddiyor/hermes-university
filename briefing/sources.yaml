@@ -49,6 +49,18 @@ categories:
       - { title: "Krebs on Security", url: "https://krebsonsecurity.com/", rss: "https://krebsonsecurity.com/feed/" }
       - { title: "tl;dr sec", url: "https://tldrsec.com/" }
 
+  # Developer newsletters & curated digests (via rockstardeveloperuniversity.com/best-developer-newsletters)
+  - name: "Developer newsletters & digests"
+    sources:
+      - { title: "JavaScript Weekly", url: "https://javascriptweekly.com/", rss: "https://javascriptweekly.com/rss" }
+      - { title: "StatusCode Weekly — backend/devops", url: "https://weekly.statuscode.com/" }
+      - { title: "The Developing Dev — Ryan Peterman (career)", url: "https://www.developing.dev/", rss: "https://www.developing.dev/feed" }
+      - { title: "Tech World with Milan — architecture", url: "https://newsletter.techworld-with-milan.com/", rss: "https://newsletter.techworld-with-milan.com/feed" }
+      - { title: "Pointer — curated engineering essays", url: "https://www.pointer.io/" }
+      - { title: "Programming Digest", url: "https://programmingdigest.net/" }
+      - { title: "rendezvous with cassidoo — web + challenges", url: "https://cassidoo.co/newsletter/", rss: "https://cassidoo.co/rss.xml" }
+      - { title: "The Engineering Manager", url: "https://www.theengineeringmanager.com/" }
+
 # Aggregators — scanned every day for the day's biggest stories.
 aggregators:
   - { title: "Hacker News (front page)", api: "https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=30", weight: high }
