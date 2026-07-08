@@ -85,7 +85,11 @@ def _assessment_marks(c) -> dict[tuple[int, int], str]:
         marks[(sem, end)] = "📝 Unit quiz"
     for sem, ends in by_sem.items():
         sem_end = max(ends)
-        marks[(sem, max(1, (sem_end + 1) // 2))] = "🎯 Midterm exam"   # mid-point (overrides a quiz)
+        # midterm at the UNIT boundary nearest the semester mid-point (after a completed unit — never
+        # mid-unit), never the final week; falls back to the mid-point if there's only one unit
+        inner = [e for e in sorted(set(ends)) if e < sem_end]
+        mid = min(inner, key=lambda e: abs(e - sem_end / 2)) if inner else max(1, (sem_end + 1) // 2)
+        marks[(sem, mid)] = "🎯 Midterm exam"                          # overrides that unit's quiz
         marks[(sem, sem_end)] = "🏁 Finals"                            # last week of the semester
     return marks
 

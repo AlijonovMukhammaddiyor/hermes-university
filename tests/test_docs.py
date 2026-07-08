@@ -152,6 +152,27 @@ def test_render_my_plan_prunes_and_renumbers():
     assert "Two pointers" in pruned and "| 1 |" in pruned   # intermediate now starts at week 1
 
 
+def test_assessment_calendar_snaps_midterm_to_a_unit_boundary():
+    from engine.course import Course
+
+    def unit(uid, order, weeks):
+        return {"id": uid, "title": uid, "order_index": order, "semester": 1, "est_weeks": weeks,
+                "outcomes": [{"id": f"{uid}.o", "statement": "s", "bloom_level": "apply",
+                              "proof": f"a.{uid}"}]}
+    # units end at weeks 4, 7, 10; the raw mid-point (5) is mid-unit — snap to the nearest end (4)
+    c = Course.model_validate({
+        "id": "MT", "title": "T", "subject_domain": "cs", "credits": 3, "north_star": "n",
+        "assessments": [{"id": f"a.{u}", "outcome_id": f"{u}.o", "type": "summative",
+                         "modality": "project", "bloom_target": "apply", "proof_gate": "p"}
+                        for u in ("A", "B", "C")],
+        "units": [unit("A", 1, 4), unit("B", 2, 3), unit("C", 3, 3)],
+    })
+    marks = docs._assessment_marks(c)
+    assert marks.get((1, 4)) == "🎯 Midterm exam"        # a unit boundary, not week 5 (mid-unit)
+    assert marks.get((1, 10)) == "🏁 Finals"             # last week
+    assert marks.get((1, 7)) == "📝 Unit quiz"           # other unit ends stay quizzes
+
+
 def test_home_control_center_aggregates_status(tmp_path):
     (tmp_path / "Registrar").mkdir(parents=True); (tmp_path / "records").mkdir()
     s = fresh_state(name="Ada", timezone="UTC", started_on="2026-07-06")
