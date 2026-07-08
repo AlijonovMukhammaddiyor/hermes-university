@@ -80,6 +80,12 @@ def main(argv: list[str] | None = None) -> int:
     prm.add_argument("--vault", required=True); prm.add_argument("--course-file", required=True)
     prm.add_argument("--tz", default="UTC")
 
+    # board — the two-way Obsidian Kanban surface (RFC-008): read current, write from a JSON spec
+    pbd = sub.add_parser("board").add_subparsers(dest="sub", required=True)
+    pbr = pbd.add_parser("read"); pbr.add_argument("--vault", required=True)
+    pbw = pbd.add_parser("write"); pbw.add_argument("--vault", required=True)
+    pbw.add_argument("--json", required=True)
+
     # course validate — structural gate for professor-authored YAML (RFC-003 §4)
     pcv = sub.add_parser("course").add_subparsers(dest="sub", required=True).add_parser("validate")
     pcv.add_argument("--file", required=True)
@@ -193,6 +199,20 @@ def main(argv: list[str] | None = None) -> int:
         R.save_state(vault, st)
         print(json.dumps({"semester": st.position.semester,
                           "week": st.position.week_in_semester, "activated": activated})); return 0
+    if args.cmd == "board" and args.sub == "read":
+        from pathlib import Path
+        from . import board as B
+        p = Path(args.vault) / "Board.md"
+        cols = B.parse_board(p.read_text() if p.exists() else "")
+        print(json.dumps({k: [c.model_dump() for c in v] for k, v in cols.items()})); return 0
+    if args.cmd == "board" and args.sub == "write":
+        from pathlib import Path
+        from . import board as B
+        spec = json.loads(args.json)
+        cols = {k: [B.Card.model_validate(c) for c in v] for k, v in spec.items()}
+        (Path(args.vault) / "Board.md").write_text(B.render_board(cols))
+        print(json.dumps({"written": "Board.md",
+                          "columns": {k: len(v) for k, v in cols.items()}})); return 0
     if args.cmd == "render-my-plan":
         from pathlib import Path
         from . import docs

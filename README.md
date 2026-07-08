@@ -1,54 +1,70 @@
-# Hermes University
+# 🎓 Hermes University
 
-> Give it a goal. It researches and builds you a real university course — syllabus, best-in-class
-> materials, and a path to mastery — then teaches it every day, grades proof-gated work, and tracks a
-> durable GPA across two rigorous semesters.
+**A self-driving personal university.** Tell it a goal; it **researches the field**, **builds you a
+real course** (full A–Z syllabus, best-in-class materials, week-by-week plan), then **teaches you every
+day** — tracking your progress on a Kanban board, coaching you over Telegram, and drilling you with
+spaced repetition. All on your own always-on box, with your own API keys.
 
-A **course-agnostic autonomous learning engine** on the [Hermes Agent](https://github.com/NousResearch/hermes-agent).
-A single **Faculty** professor authors any course by deep, cited research (never the model's memory)
-and teaches it; a **deterministic Registrar** owns every number (GPA, mastery, FSRS, promotion);
-spaced-repetition cards flow to your phone via Anki. Install it on your own always-on box, bring your
-own API keys, and manage it all from Telegram.
+> *"I want to be one of the best AI engineers."* → a researched 10-week course, a placement exam so it
+> skips what you already know, daily proof-gated tasks, and a transcript that means something.
 
-## Principles
-1. **Numbers are computed by code, not the model** — the engine owns GPA/streak/mastery/FSRS/standing.
-2. **No outcome without a proof** — every outcome is measurable, Bloom-tagged, and proof-gated.
-3. **A course is data, not code** — the whole curriculum + teaching profile + mastery model is one
-   `course.yaml`; the engine and professor never change per course.
-4. **Personalize to your goals, not your work.**
-5. **No hardcoded personal/organizational data** — identity lives in one git-ignored `profile.yaml`.
+<!-- SCREENSHOTS: (1) the Telegram create-course + research handoff, (2) the Obsidian Kanban board,
+     (3) a rendered Syllabus.md with the week-by-week plan. Drop GIFs/PNGs here — visuals sell it. -->
+
+---
+
+## Why it's different
+- **It researches, it doesn't hallucinate.** Course design is grounded in a real, cited research
+  report (you run a deep-research prompt in Claude; it authors from that) plus mandatory web search — a
+  machine-checked gate rejects any course built from the model's memory.
+- **It starts from fundamentals, then tests you out.** Every course is built complete from the
+  foundations up; a rigorous **placement exam** decides what to skip — never an assumption about your
+  level.
+- **The numbers are real.** A deterministic engine owns GPA, mastery, streak, standing, and promotion —
+  the LLM only teaches and grades to a rubric. No outcome without a proof.
+- **A course is data, not code.** One `course.yaml` holds the whole curriculum + teaching profile +
+  mastery model. One professor skill teaches *any* course. Add a subject, not a subsystem.
+
+## Three surfaces, one brain
+- **Telegram** — your coach: daily nudges, quick-actions, voice answers, file handoffs.
+- **Obsidian** — your workspace: a **Kanban board** you track work on, a live dashboard, and every
+  syllabus / resource / transcript. Two-way — drag a card to *Done* and the night audit verifies it.
+- **Anki** — retention: spaced-repetition cards to your phone (FSRS).
 
 ## Quickstart
 ```bash
 git clone <repo> hermes-university && cd hermes-university
 cp profile.example.yaml profile.yaml     # your name + goals (git-ignored)
 cp config.env.example config.env         # your API keys / infra (git-ignored)
-# fill both in — see PREREQUISITES.md for the keys/accounts you need
+# fill both in — see PREREQUISITES.md
 ./install.sh                             # idempotent; re-run to upgrade
 ```
-The catalog starts **empty**. Message the bot **`create course <your goal>`** (or `enroll <CODE>`) and
-the Faculty professor interviews you, researches the field, and authors the course.
+In Obsidian, install the **Kanban**, **Dataview**, and **Obsidian Git** plugins (see the vault README).
+Then message the bot **`create course <your goal>`** and it takes it from there.
 
-## How it works
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** — the canonical design (engine · skills · courses · lifecycle).
-- **[PREREQUISITES.md](PREREQUISITES.md)** — the third-party keys/accounts (LLM, Telegram, Anki, Calendar).
-- **`docs/RFC-00*.md`** — the historical design record.
-
-## Layout
+## How a course gets built
 ```
-engine/     deterministic authority (state, gradebook, FSRS, proof-gates, course schema, docs, CLI)
-skills/     registrar · professor (Faculty Handbook) · examiner   (rendered per instance)
-courses/    course modules — ships with only _TEMPLATE/ (author on demand; authored courses are private)
-profile.yaml   your identity + goals (git-ignored; ships as profile.example.yaml)
-tests/      pytest suite (fixtures under tests/fixtures — no personal data)
+create course <goal>
+   → short intake interview
+   → 📎 it hands you a deep-research prompt → you run it in Claude, upload the report
+   → it builds the FULL A–Z syllabus (fundamentals → advanced) with cited materials + a week-by-week plan
+   → placement exam (skip only what you prove at ≥B)
+   → your personalized MyPlan.md — and the daily loop begins
 ```
 
-## Develop
-```bash
-python3 -m venv .venv && .venv/bin/pip install -e .
-.venv/bin/pytest -q
-```
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+## Principles
+1. Numbers are computed by code, not the model. 2. No outcome without a proof. 3. A course is data,
+not code. 4. Personalize to your **goals**, never your work. 5. No hardcoded personal/organizational
+data — identity lives in one git-ignored `profile.yaml`.
+
+## Learn more
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** — how it works (engine · skills · courses · lifecycle).
+- **[PREREQUISITES.md](PREREQUISITES.md)** — the API keys/accounts + Obsidian plugins.
+- **`docs/RFC-00*.md`** — the design record. **[CONTRIBUTING.md](CONTRIBUTING.md)** to help.
+
+## Built on
+The [Hermes Agent](https://github.com/NousResearch/hermes-agent) (skills, cron, Telegram gateway) +
+a deterministic Python engine. Model-agnostic via the provider seam (DeepSeek by default).
 
 ## License
 [MIT](LICENSE).

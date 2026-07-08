@@ -35,8 +35,15 @@ GPA/transcript across two rigorous 3-month semesters, and pushes spaced-repetiti
 - **`courses/`** — course modules (data). Ships with only `_TEMPLATE/`; the catalog starts empty and
   you author courses on demand. Authored courses are private instance data (git-ignored).
 - **`profile.yaml`** — your identity + goals (git-ignored; ships as `profile.example.yaml`).
-- **the vault** — a git-synced Obsidian folder: rendered Catalog/Syllabus/Resources/Transcript/
-  Schedule/DegreeProgress docs, daily notes, exams, uploads, SRS. What you read; also the WebUI browses it.
+- **the vault** — a git-synced Obsidian folder and the learner's **workspace**: rendered
+  Catalog/Syllabus/Resources/MyPlan/Transcript/Schedule/DegreeProgress docs, daily notes, exams,
+  uploads, SRS, and a two-way **Kanban `Board.md`** (RFC-008) + a Dataview `Dashboard.md`. Plugins:
+  Kanban, Dataview, Obsidian Git. (The old browser WebUI is retired — Obsidian + Telegram replace it.)
+
+## Surfaces (one brain, the right tool per job)
+**Telegram** coaches (nudges, quick-actions, voice, file handoff) · **Obsidian** is read + track (the
+Kanban board is two-way; the engine stays authoritative — a card marked Done without a real proof
+bounces) · **Anki** retains (FSRS to the phone).
 
 ## The course module (`course.yaml`)
 `Course → Unit → Outcome → Assessment → Rubric`, plus researched `description`, `primary_text`,

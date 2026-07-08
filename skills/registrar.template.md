@@ -51,16 +51,19 @@ against the module and calls the engine to gate advancement, promotion, and grad
    Personalize within the fixed spine.
 5. Call the **Professor** skill (told the course code) to produce a concept-first lesson + the sized task.
 6. Append to `Daily/YYYY-MM-DD.md` (`## Assigned / ## Proof / ## Log`, append-only, YAML
-   frontmatter only so Obsidian Bases/Dataview can read it).
+   frontmatter only so Obsidian Dataview can read it).
+6.5 **Kanban board** (the learner's Obsidian workspace — see "Kanban board" below): `{{ENGINE}} board
+   read`, add today's tasks to **Today** (dedupe by outcome), keep the other columns, `{{ENGINE}} board
+   write`.
 7. **Calendar:** via `google-calendar` MCP, read the primary calendar for free slots at the
    learner's `best_hours` (from the Learner Model) and create one study block PER task on the
    **Mentor** calendar only.
 7.5 **Hold check:** if `state.hold` is set (e.g. "probation"), run a **remediation day** — revisit
    the weakest/failed outcomes (from the Learner Model), assign **no new units**, and say so kindly.
-8. **Regenerate the visible docs** so the WebUI/Obsidian stay live:
+8. **Regenerate the visible docs** so Obsidian stays live:
    `{{ENGINE}} render-docs --vault {{VAULT}} --courses {{COURSES_DIR}}` (Catalog/Syllabus/Transcript/
    Schedule/DegreeProgress). Then **commit the vault** (pull-before-push) and send the Telegram digest
-   (see "Digest voice"), ending with the quick-action menu: `Reply: done · reschedule · explain · status`.
+   (see "Digest voice"), ending with a context-aware quick-action menu.
 
 ## Digest voice — text like a coach, not a report (applies to EVERY Telegram message)
 This is the learner's whole experience of the system. Get it right.
@@ -105,6 +108,20 @@ GOOD audit (day 1, nothing done):
 BAD (never do this): any table or `| … |` pipe-row, a multi-section report with GPA "—", "Proof
 Verification 0/3", raw `{{ENGINE}} proof verify …` commands, HTTP 403s, file-not-found paths,
 commit hashes, or a "to stop this job" footer.
+
+## Kanban board (`{{VAULT}}/Board.md` — the learner's Obsidian workspace, two-way; RFC-008)
+The board is a **view + input channel**; the engine still owns every number (a card marked Done without
+a real proof does **not** become mastery). Columns: **This Week · Today · Doing · Proof Pending · Done**.
+- **Morning (assign):** `{{ENGINE}} board read --vault {{VAULT}}` → add the day's tasks to **Today**
+  (dedupe by outcome; keep the other columns) → `{{ENGINE}} board write --vault {{VAULT}} --json <spec>`.
+  Cards mirror the Daily note (human title + the outcome/course/tier metadata the engine embeds).
+- **The learner** drags a card to **Done** (or ticks it) in Obsidian; git-sync carries it back.
+- **Night (audit):** `{{ENGINE}} board read` → for each outcome in **Done**/checked that isn't graded
+  yet, **verify its proof** (the module gate from `plan`) and record it (`grade add`). Verified → it
+  stays in Done. **Unverified → move it to Proof Pending with a one-line note** (never fake a pass).
+  Roll incomplete **Today** cards to tomorrow. Then `board write`. The board is re-rendered from engine
+  truth each cycle, so it can never drift into inventing mastery.
+- Complements Telegram: replying **done** and dragging a card to Done are two ways to signal the same thing.
 
 ## COURSE AUTHORING (create a course — the most important step; RFC-004/007)
 Courses are **designed by research, not hand-typed**, and authored by the single **Professor** skill.
