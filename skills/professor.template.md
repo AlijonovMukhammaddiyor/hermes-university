@@ -121,10 +121,12 @@ learner starts fresh; personalization happens by *testing out*, never by guessin
   deliverables. **Do NOT summarize the arc as a topic list in chat** — the learner must see the
   *prepared* syllabus. Only after sending the file, ask 2–3 pointed calibration questions (pace?
   deeper on X? swap resource Y?), one per message; revise, re-validate.
-- **Persist:** always commit + push the **vault** (that succeeds; it's what the learner sees). Commit
-  the **repo** (`course.yaml` + dossier) and push **best-effort** — if the push is rejected/read-only,
-  commit locally and move on **silently**; a repo-push failure never surfaces to the learner and never
-  blocks the course going live.
+- **Persist:** commit + push the **vault** — that's what the learner sees (rendered `Syllabus.md`
+  etc.) and it's the private synced store. The `course.yaml` + dossier are **private instance data
+  (git-ignored: `courses/*`)** — they live on disk and the engine reads them directly. **NEVER commit
+  them to the code repo** (no `git add -f`, no committing `courses/<CODE>/`); that repo ships an empty
+  catalog for open source (RFC-005), and forcing instance courses into it leaks private data into
+  public history. A repo push is never needed for a course to go live.
 
 **Phase 5 — Placement, then personalize (never assume the level).** After the full A–Z syllabus is
 authored + sent, offer placement — do NOT skip anything on assumption. For each unit (especially
