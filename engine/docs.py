@@ -304,6 +304,112 @@ def render_diploma(state: State) -> str:
             f"Congratulations. 🎉\n")
 
 
+# ---------------------------------------------------------------- control center (RFC-009)
+_STATUS_BADGE = {
+    "draft": "📝 draft",
+    "researching": "🔬 researching — waiting on you",
+    "authoring": "✍️ authoring",
+    "placement": "🎯 placement",
+    "active": "🟢 active",
+    "archived": "🗄️ archived",
+}
+
+
+def status_snapshot(vault: str | Path, courses_dir: str | Path, now=None) -> dict:
+    """The one aggregate every surface reads (RFC-009): standing/GPA/streak, each course + lifecycle
+    status + mastery %, today's board items, what's blocked on the learner, and SRS counts. Pure
+    reaggregation of engine truth — no number is invented here."""
+    from datetime import datetime, timezone
+
+    from . import board as B
+    from . import srs as S
+    vault, courses_dir = Path(vault), Path(courses_dir)
+    modules = {c.id: c for c in
+               (load_course(p) for p in sorted(courses_dir.glob("*/course.yaml"))
+                if p.parent.name != "_TEMPLATE")}
+    state = State.load(vault / "Registrar" / "state.json")
+    records = load_records(vault / "records" / "grades.jsonl")
+    thr = {o.id: o.mastery_threshold for m in modules.values() for o in m.all_outcomes()}
+    passed = {r.outcome for r in records if band_meets(r.band, thr.get(r.outcome, 0.8))}
+
+    courses = []
+    for code, sc in state.courses.items():
+        outs = [o.id for o in modules[code].all_outcomes()] if code in modules else []
+        pct = int(round(100 * sum(1 for o in outs if o in passed) / len(outs))) if outs else 0
+        courses.append({"code": code, "title": sc.title, "status": sc.status,
+                        "active": sc.active, "mastery_pct": pct})
+
+    bpath = vault / "Board.md"
+    cols = B.parse_board(bpath.read_text()) if bpath.exists() else {}
+    today = [c.title for c in cols.get("Today", [])]
+    blocked = []
+    for c in courses:
+        if c["status"] == "researching":
+            blocked.append({"code": c["code"], "title": c["title"],
+                            "reason": "waiting for your research report"})
+    for card in cols.get("Proof Pending", []):
+        blocked.append({"code": card.course, "title": card.title, "reason": "proof needs rework"})
+    if state.hold:
+        blocked.append({"code": None, "title": None, "reason": f"hold: {state.hold}"})
+
+    return {"learner": state.learner.name, "semester": state.position.semester,
+            "week": state.position.week_in_semester,
+            "weeks_per_semester": state.program.weeks_per_semester,
+            "standing": state.standing, "hold": state.hold,
+            "gpa_semester": state.gpa.semester, "gpa_cumulative": state.gpa.cumulative,
+            "streak": state.streak.current, "courses": courses, "today": today,
+            "blocked": blocked,
+            "srs": S.due_count(vault, now or datetime.now(timezone.utc))}
+
+
+def render_home(snap: dict) -> str:
+    """The Obsidian control center `Home.md` — the visual mirror of the Telegram status surface.
+    Obsidian renders markdown, so headers/badges are fine here (unlike Telegram)."""
+    active = [c for c in snap["courses"] if c["status"] != "archived"]
+    head = (f"**Semester {snap['semester']} · Week {snap['week']}/{snap['weeks_per_semester']}**"
+            f"  ·  Standing: {snap['standing']}")
+    if snap["gpa_cumulative"] is not None:
+        head += f"  ·  GPA {_fmt(snap['gpa_semester'])} (cum {_fmt(snap['gpa_cumulative'])})"
+    if snap["streak"]:
+        head += f"  ·  🔥 {snap['streak']}-day streak"
+    out = [f"# 🏛️ Home — {snap['learner'] or 'Hermes University'}", "", head, ""]
+    if snap["hold"]:
+        out += [f"> ⚠️ **On hold:** {snap['hold']} — new material is paused until it clears.", ""]
+
+    out += ["## Your courses"]
+    if active:
+        for c in active:
+            badge = _STATUS_BADGE.get(c["status"], c["status"])
+            tail = f" · {c['mastery_pct']}% mastered" if c["status"] == "active" else ""
+            out.append(f"- **{c['title']}** — {badge}{tail}")
+    else:
+        out.append("_No courses yet. Message the bot `create course <your goal>` to begin._")
+    out.append("")
+
+    out += ["## Blocked on you"]
+    if snap["blocked"]:
+        for b in snap["blocked"]:
+            who = f"**{b['title']}** — " if b.get("title") else ""
+            hint = (f" → open `Uploads/{b['code']}/RESEARCH-PROMPT.md`, run it in Claude, drop the "
+                    "report back") if b["reason"].startswith("waiting for your research") else ""
+            out.append(f"- {who}{b['reason']}{hint}")
+    else:
+        out.append("_Nothing — you're all caught up._")
+    out.append("")
+
+    if snap["today"]:
+        out += ["## Today"] + [f"- [ ] {t}" for t in snap["today"]] + [""]
+
+    srs = snap["srs"]
+    if srs["queued"] or srs["created"]:
+        out += ["## Cards",
+                f"- **{srs['queued']}** queued for Anki · {srs['created']} created all-time", ""]
+
+    out += ["---", "[[Board]] · [[Catalog]] · [[Registrar/Transcript|Transcript]] · "
+            "[[Registrar/DegreeProgress|Degree Progress]] · [[Registrar/Schedule|Schedule]]"]
+    return "\n".join(out).rstrip() + "\n"
+
+
 # ---------------------------------------------------------------- orchestrator
 def render_all(vault: str | Path, courses_dir: str | Path) -> list[str]:
     """(Re)generate every visible document. Returns the list of paths written."""
@@ -332,6 +438,7 @@ def render_all(vault: str | Path, courses_dir: str | Path) -> list[str]:
     w("Registrar/DegreeProgress.md", render_degree_progress(state, records, enrolled_modules))
     if state.degree.awarded_on:
         w("Registrar/Diploma.md", render_diploma(state))
+    w("Home.md", render_home(status_snapshot(vault, courses_dir)))   # the control center (RFC-009)
     return written
 
 

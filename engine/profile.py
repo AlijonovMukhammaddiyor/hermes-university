@@ -32,3 +32,20 @@ def load_profile(root: str | Path) -> Profile:
         if p.exists():
             return Profile.model_validate(yaml.safe_load(p.read_text()) or {})
     return Profile()
+
+
+_INT_FIELDS = {"daily_task_cap"}
+
+
+def set_field(root: str | Path, field: str, value: str) -> Profile:
+    """Edit one profile field and persist to the private `profile.yaml` (RFC-009 §6). Starts from the
+    current profile so example defaults carry over. Rejects unknown fields (fail loud)."""
+    if field not in Profile.model_fields:
+        raise KeyError(f"unknown profile field {field!r}; valid: {sorted(Profile.model_fields)}")
+    prof = load_profile(root)
+    coerced: object = int(value) if field in _INT_FIELDS else value
+    updated = prof.model_copy(update={field: coerced})
+    Profile.model_validate(updated.model_dump())          # revalidate
+    (Path(root) / "profile.yaml").write_text(
+        yaml.safe_dump(updated.model_dump(), sort_keys=False, allow_unicode=True))
+    return updated

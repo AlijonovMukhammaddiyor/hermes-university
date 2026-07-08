@@ -11,7 +11,7 @@ from pathlib import Path
 
 from . import gradebook as gb
 from .gradebook import BAND_POINTS, GradeRecord
-from .state import SemesterRecord, State
+from .state import EnrollmentRecord, SemesterRecord, State
 
 PASS_BAND_POINTS = BAND_POINTS["B"]  # promotion/midterm gate = >= B
 
@@ -26,17 +26,21 @@ def register_courses(state: State, course_dir: str | Path) -> list[str]:
     for path in sorted(Path(course_dir).glob("*/course.yaml")):
         if path.parent.name == "_TEMPLATE":
             continue
+        from .authoring import authored_report
         c = load_course(path)
         first_unit = c.units[0].id if c.units else None
         active = c.active_default and (c.activates_week is None or
                                        state.position.week_in_semester >= c.activates_week)
         existing = state.courses.get(c.id)
+        status = (existing.status if existing else
+                  ("placement" if authored_report(c, path.parent)["authored"] else "researching"))
         state.courses[c.id] = StateCourse(
             title=c.title, credits=c.credits, runs_in=c.runs_in,
             active=active if existing is None else existing.active,
             unit=existing.unit if existing else first_unit,
             unit_index=existing.unit_index if existing else 0,
             activates_week=c.activates_week, grade_weights=c.grade_weights,
+            status=status, archived_on=existing.archived_on if existing else None,
         )
         if existing is None:
             added.append(c.id)
@@ -66,7 +70,7 @@ def enroll(state: State, course_dir: str | Path, code: str, today: str | None = 
     """Enroll in ONE course, enforcing registrar rules (RFC-002 §4). Returns 'enrolled'/'already'.
     Raises EnrollError with a human reason on prereq/credit-load/hold violations."""
     from .course import load_course
-    from .state import Course as StateCourse, EnrollmentRecord
+    from .state import Course as StateCourse
 
     if code in state.courses:
         return "already"
@@ -87,16 +91,79 @@ def enroll(state: State, course_dir: str | Path, code: str, today: str | None = 
 
     active = c.active_default and (c.activates_week is None or
                                    state.position.week_in_semester >= c.activates_week)
+    from .authoring import authored_report
+    status = "placement" if authored_report(c, path.parent)["authored"] else "researching"
     state.courses[code] = StateCourse(
         title=c.title, credits=c.credits, runs_in=c.runs_in, active=active,
         unit=(c.units[0].id if c.units else None), unit_index=0,
-        activates_week=c.activates_week, grade_weights=c.grade_weights, enrolled_on=today)
+        activates_week=c.activates_week, grade_weights=c.grade_weights, enrolled_on=today,
+        status=status)
     state.enrollment.records.append(EnrollmentRecord(code=code, enrolled_on=today or ""))
     return "enrolled"
 
 
-def drop(state: State, code: str) -> bool:
-    """Un-enroll a course. Returns True if it was enrolled."""
+def refresh_course_status(state: State, course_dir: str | Path, uploads_dir: str | Path,
+                          code: str) -> str | None:
+    """Re-derive a course's authoring-phase status from the filesystem (RFC-009). Only advances a
+    course still in the authoring pipeline (researching/authoring/placement) — never overrides a
+    live 'active' or an 'archived' course. Returns the new status, or None if unchanged/absent."""
+    from .authoring import authoring_status
+    sc = state.courses.get(code)
+    if sc is None or sc.status not in ("researching", "authoring", "placement"):
+        return None
+    new = authoring_status(Path(course_dir) / code / "course.yaml", uploads_dir, code)
+    if new != sc.status:
+        sc.status = new
+        return new
+    return None
+
+
+def activate_course(state: State, code: str) -> bool:
+    """Placement done → the course goes live (RFC-009). Returns True if it transitioned."""
+    sc = state.courses.get(code)
+    if sc and sc.status in ("placement", "authoring"):
+        sc.status = "active"
+        sc.active = True
+        return True
+    return False
+
+
+def archive(state: State, code: str, today: str | None = None) -> bool:
+    """Soft-drop: keep the record + files, hide from active views, reversible (RFC-009).
+    Returns True if the course was enrolled and not already archived."""
+    sc = state.courses.get(code)
+    if sc is None or sc.status == "archived":
+        return False
+    sc.status = "archived"
+    sc.active = False
+    sc.archived_on = today
+    for rec in state.enrollment.records:                 # close the audit record (dropped_on)
+        if rec.code == code and rec.dropped_on is None:
+            rec.dropped_on = today or ""
+    return True
+
+
+def restore(state: State, course_dir: str | Path, uploads_dir: str | Path, code: str,
+            today: str | None = None) -> bool:
+    """Un-archive: re-derive the course's authoring status from the filesystem (RFC-009).
+    Returns True if it was archived and is now restored."""
+    from .authoring import authoring_status
+    sc = state.courses.get(code)
+    if sc is None or sc.status != "archived":
+        return False
+    sc.archived_on = None
+    sc.status = authoring_status(Path(course_dir) / code / "course.yaml", uploads_dir, code)
+    state.enrollment.records.append(EnrollmentRecord(code=code, enrolled_on=today or ""))
+    return True
+
+
+def drop(state: State, code: str, today: str | None = None) -> bool:
+    """Back-compat alias — a drop is a soft archive (RFC-009), not a hard delete."""
+    return archive(state, code, today)
+
+
+def delete(state: State, code: str) -> bool:
+    """Remove a course from state entirely (hard delete; the CLI also removes the files)."""
     return state.courses.pop(code, None) is not None
 
 

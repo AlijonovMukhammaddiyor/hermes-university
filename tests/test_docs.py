@@ -149,6 +149,32 @@ def test_render_my_plan_prunes_and_renumbers():
     assert "Two pointers" in pruned and "| 1 |" in pruned   # intermediate now starts at week 1
 
 
+def test_home_control_center_aggregates_status(tmp_path):
+    (tmp_path / "Registrar").mkdir(parents=True); (tmp_path / "records").mkdir()
+    s = fresh_state(name="Ada", timezone="UTC", started_on="2026-07-06")
+    R.enroll(s, CDIR, "GEN102", today="2026-07-06")        # not authored -> researching (blocked)
+    R.enroll(s, CDIR, "GEN101", today="2026-07-06")        # authored -> placement
+    R.activate_course(s, "GEN101")
+    s.save(tmp_path / "Registrar" / "state.json")
+    (tmp_path / "records" / "grades.jsonl").write_text("")
+    snap = docs.status_snapshot(tmp_path, CDIR)
+    assert snap["learner"] == "Ada" and snap["semester"] == 1
+    by = {c["code"]: c for c in snap["courses"]}
+    assert by["GEN101"]["status"] == "active" and by["GEN102"]["status"] == "researching"
+    assert any(b["code"] == "GEN102" for b in snap["blocked"])   # research handoff shows as blocked
+    home = docs.render_home(snap)
+    assert "🏛️ Home — Ada" in home and "🟢 active" in home
+    assert "waiting for your research report" in home and "[[Board]]" in home
+
+
+def test_render_all_writes_home(tmp_path):
+    (tmp_path / "Registrar").mkdir(parents=True)
+    fresh_state(name="M", timezone="UTC", started_on="2026-07-06").save(
+        tmp_path / "Registrar" / "state.json")
+    written = docs.render_all(tmp_path, CDIR)
+    assert "Home.md" in written and (tmp_path / "Home.md").exists()
+
+
 def test_render_transcript_and_degree(tmp_path):
     s = fresh_state(name="M", timezone="UTC", started_on="2026-07-06")
     R.enroll(s, CDIR, "GEN101", today="2026-07-06")

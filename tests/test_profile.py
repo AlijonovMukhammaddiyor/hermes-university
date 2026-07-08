@@ -50,3 +50,20 @@ def test_profile_yaml_overrides_example(tmp_path):
         "name: Ada\ngoal: master systems\ntarget_level: staff\ndaily_task_cap: 2\n")
     p = load_profile(tmp_path)
     assert p.name == "Ada" and p.target_level == "staff" and p.daily_task_cap == 2
+
+
+def test_set_field_persists_and_coerces(tmp_path):
+    from engine.profile import set_field
+    p = set_field(tmp_path, "goal", "become a great researcher")
+    assert p.goal == "become a great researcher"
+    assert (tmp_path / "profile.yaml").exists()             # written to the private file
+    assert load_profile(tmp_path).goal == "become a great researcher"
+    p2 = set_field(tmp_path, "daily_task_cap", "3")         # coerced to int
+    assert p2.daily_task_cap == 3 and load_profile(tmp_path).goal == "become a great researcher"
+
+
+def test_set_field_rejects_unknown_field(tmp_path):
+    import pytest
+    from engine.profile import set_field
+    with pytest.raises(KeyError):
+        set_field(tmp_path, "employer", "anything")

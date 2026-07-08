@@ -86,9 +86,40 @@ def main(argv: list[str] | None = None) -> int:
     pbw = pbd.add_parser("write"); pbw.add_argument("--vault", required=True)
     pbw.add_argument("--json", required=True)
 
-    # course validate — structural gate for professor-authored YAML (RFC-003 §4)
-    pcv = sub.add_parser("course").add_subparsers(dest="sub", required=True).add_parser("validate")
-    pcv.add_argument("--file", required=True)
+    # course — validate + lifecycle ops (RFC-009). Surfaces call these; they never touch fs/git logic.
+    pco = sub.add_parser("course").add_subparsers(dest="sub", required=True)
+    pcv = pco.add_parser("validate"); pcv.add_argument("--file", required=True)
+    pcn = pco.add_parser("new")           # scaffold a stub module (create-course entry)
+    pcn.add_argument("--courses", required=True); pcn.add_argument("--code", required=True)
+    pcn.add_argument("--title", required=True); pcn.add_argument("--goal", default="")
+    pcn.add_argument("--domain", default="general"); pcn.add_argument("--credits", type=int, default=3)
+    for _name in ("archive", "restore", "activate"):   # soft lifecycle transitions
+        _px = pco.add_parser(_name)
+        _px.add_argument("--vault", required=True); _px.add_argument("--courses", required=True)
+        _px.add_argument("--code", required=True); _px.add_argument("--today", default=None)
+    pcd = pco.add_parser("delete")        # HARD delete — removes files + state; --yes required
+    pcd.add_argument("--vault", required=True); pcd.add_argument("--courses", required=True)
+    pcd.add_argument("--code", required=True); pcd.add_argument("--yes", action="store_true")
+    pcss = pco.add_parser("sync-status")  # re-derive authoring statuses from the filesystem
+    pcss.add_argument("--vault", required=True); pcss.add_argument("--courses", required=True)
+
+    # status — the aggregate control-center snapshot every surface reads (RFC-009)
+    pstat = sub.add_parser("status")
+    pstat.add_argument("--vault", required=True); pstat.add_argument("--courses", required=True)
+
+    # srs — the Anki forward pipeline (RFC-009 §5): queue cards, count what's due
+    psr = sub.add_parser("srs").add_subparsers(dest="sub", required=True)
+    psra = psr.add_parser("add")
+    psra.add_argument("--vault", required=True); psra.add_argument("--course", required=True)
+    psra.add_argument("--deck", default="Hermes"); psra.add_argument("--unit", default="")
+    psra.add_argument("--cards", required=True)     # JSON: [{"front":..,"back":..,"tags":[..]}]
+    psrd = psr.add_parser("due"); psrd.add_argument("--vault", required=True)
+
+    # profile — view/edit the learner's identity + goals (RFC-009 §6); never hand-edited YAML
+    ppf = sub.add_parser("profile").add_subparsers(dest="sub", required=True)
+    ppf.add_parser("show")
+    ppfset = ppf.add_parser("set")
+    ppfset.add_argument("--field", required=True); ppfset.add_argument("--value", required=True)
 
     pv = sub.add_parser("proof").add_subparsers(dest="sub", required=True).add_parser("verify")
     pv.add_argument("--gate", required=True); pv.add_argument("--evidence", required=True)
@@ -181,9 +212,86 @@ def main(argv: list[str] | None = None) -> int:
         from pathlib import Path
         from . import registrar as R
         vault = Path(args.vault)
-        st = R.load_state(vault); dropped = R.drop(st, args.code); R.save_state(vault, st)
-        print(json.dumps({"code": args.code, "dropped": dropped,
-                          "enrolled": sorted(st.courses)})); return 0
+        st = R.load_state(vault); dropped = R.drop(st, args.code)   # soft archive (RFC-009)
+        R.save_state(vault, st)
+        print(json.dumps({"code": args.code, "dropped": dropped, "archived": dropped,
+                          "enrolled": sorted(c for c, s in st.courses.items()
+                                             if s.status != "archived")})); return 0
+    if args.cmd == "course" and args.sub in ("archive", "restore", "activate"):
+        from pathlib import Path
+        from . import docs
+        from . import registrar as R
+        vault = Path(args.vault)
+        st = R.load_state(vault)
+        up = vault / "Uploads"
+        if args.sub == "archive":
+            ok = R.archive(st, args.code, args.today)
+        elif args.sub == "restore":
+            ok = R.restore(st, args.courses, up, args.code, args.today)
+        else:
+            ok = R.activate_course(st, args.code)
+        R.save_state(vault, st)
+        docs.render_all(vault, args.courses)
+        sc = st.courses.get(args.code)
+        print(json.dumps({"code": args.code, "ok": ok,
+                          "status": sc.status if sc else None})); return 0
+    if args.cmd == "course" and args.sub == "sync-status":
+        from pathlib import Path
+        from . import registrar as R
+        vault = Path(args.vault)
+        st = R.load_state(vault); up = vault / "Uploads"
+        changed = {c: R.refresh_course_status(st, args.courses, up, c) for c in list(st.courses)}
+        changed = {c: v for c, v in changed.items() if v}
+        R.save_state(vault, st)
+        print(json.dumps({"changed": changed})); return 0
+    if args.cmd == "course" and args.sub == "new":
+        from pathlib import Path
+
+        from .scaffold import scaffold_course
+        path = scaffold_course(args.courses, args.code, args.title, args.goal,
+                               args.domain, args.credits)
+        print(json.dumps({"code": args.code, "created": str(path)})); return 0
+    if args.cmd == "course" and args.sub == "delete":
+        import shutil
+        from pathlib import Path
+        from . import docs
+        from . import registrar as R
+        if not args.yes:
+            print(json.dumps({"ok": False, "error": "hard delete needs --yes"})); return 2
+        vault = Path(args.vault)
+        st = R.load_state(vault)
+        title = st.courses[args.code].title if args.code in st.courses else args.code
+        R.delete(st, args.code); R.save_state(vault, st)
+        removed = []
+        for d in (Path(args.courses) / args.code, vault / "Courses" / args.code):
+            if d.exists():
+                shutil.rmtree(d); removed.append(str(d))
+        docs.render_all(vault, args.courses)
+        print(json.dumps({"code": args.code, "title": title, "deleted": True,
+                          "removed": removed})); return 0
+    if args.cmd == "status":
+        from pathlib import Path
+        from . import docs
+        print(json.dumps(docs.status_snapshot(Path(args.vault), Path(args.courses)))); return 0
+    if args.cmd == "srs" and args.sub == "add":
+        from pathlib import Path
+        from .srs import queue_cards
+        n = queue_cards(Path(args.vault), args.course, args.deck, args.unit,
+                        json.loads(args.cards), _now())
+        print(json.dumps({"queued": n})); return 0
+    if args.cmd == "srs" and args.sub == "due":
+        from pathlib import Path
+        from .srs import due_count
+        print(json.dumps(due_count(Path(args.vault), _now()))); return 0
+    if args.cmd == "profile" and args.sub == "show":
+        from pathlib import Path as _P
+        from .profile import load_profile
+        print(load_profile(_P(__file__).resolve().parents[1]).model_dump_json(indent=2)); return 0
+    if args.cmd == "profile" and args.sub == "set":
+        from pathlib import Path as _P
+        from .profile import set_field
+        prof = set_field(_P(__file__).resolve().parents[1], args.field, args.value)
+        print(prof.model_dump_json(indent=2)); return 0
     if args.cmd == "render-docs":
         from . import docs
         written = docs.render_all(args.vault, args.courses)
@@ -229,38 +337,18 @@ def main(argv: list[str] | None = None) -> int:
         path.write_text(docs.render_my_plan(c, mastered))
         print(json.dumps({"rendered": rel, "placed_out": sorted(mastered)})); return 0
     if args.cmd == "course" and args.sub == "validate":
+        from pathlib import Path as _P
+
+        from .authoring import authored_report
         from .course import load_course
         try:
             c = load_course(args.file)
         except Exception as e:
             print(json.dumps({"ok": False, "error": str(e)})); return 2
-        import re as _re
-        from pathlib import Path as _P
         n_res = len(c.resources) + sum(len(u.resources) for u in c.units)
-        teaching = [u for u in c.units if not u.id.endswith("finals")]
-        # Dossier gate (RFC-007): real cited research, not a memory dump. Require ≥5 distinct source
-        # URLs + confidence tags + an "open questions / couldn't verify" section.
-        dossier = _P(args.file).parent / "research" / "dossier.md"
-        dtext = dossier.read_text() if dossier.exists() else ""
-        n_urls = len(set(_re.findall(r"https?://[^\s)\]>]+", dtext)))
-        has_dossier = (n_urls >= 5 and "confidence" in dtext.lower()
-                       and any(s in dtext.lower() for s in
-                               ("open question", "couldn't verify", "could not verify", "cannot verify")))
-        mm = c.mastery_model
-        has_mastery = bool(mm and mm.excellence_bar and mm.staying_current)
-        missing = []
-        if not c.description: missing.append("description")
-        if not all(u.resources for u in teaching): missing.append("unit-resources")
-        if not all(u.sessions for u in teaching): missing.append("weekly-plan")
-        if not c.professor_profile: missing.append("professor_profile")
-        if not has_mastery: missing.append("mastery_model")
-        if not has_dossier:
-            missing.append("research-dossier(needs ≥5 cited URLs + confidence + open-questions)")
-        authored = not missing
+        rep = authored_report(c, _P(args.file).parent)   # the one authored gate (RFC-007)
         print(json.dumps({"ok": True, "id": c.id, "units": len(c.units),
-                          "outcomes": len(c.all_outcomes()), "resources": n_res,
-                          "authored": authored, "missing_for_authored": missing,
-                          "no_resource_units": [u.id for u in c.units if not u.resources]}))
+                          "outcomes": len(c.all_outcomes()), "resources": n_res, **rep}))
         return 0
     if args.cmd == "promote":
         from pathlib import Path

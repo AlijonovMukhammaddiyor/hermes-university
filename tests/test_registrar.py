@@ -37,8 +37,14 @@ def test_enroll_and_drop():
     assert R.enroll(s, _fixtures(), "GEN101") == "already"   # idempotent
     R.enroll(s, _fixtures(), "GEN102")
     assert set(R.active_courses(s)) == {"GEN101", "GEN102"}
-    assert R.drop(s, "GEN101") is True and "GEN101" not in s.courses
-    assert R.drop(s, "GEN101") is False
+    # drop = soft archive (RFC-009): the record is kept, hidden from active views, reversible
+    assert R.drop(s, "GEN101") is True
+    assert s.courses["GEN101"].status == "archived" and s.courses["GEN101"].active is False
+    assert "GEN101" not in R.active_courses(s)
+    assert R.drop(s, "GEN101") is False                    # already archived
+    # restore re-derives status from the filesystem; GEN101 is authored -> placement
+    assert R.restore(s, _fixtures(), _fixtures() / "no-uploads", "GEN101") is True
+    assert s.courses["GEN101"].status == "placement"
 
 
 def test_enroll_unknown_course_raises():

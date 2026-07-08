@@ -11,6 +11,11 @@ from pydantic import BaseModel, Field, NonNegativeInt
 SCHEMA_VERSION = 3
 Standing = Literal["good", "honors", "probation"]
 Persona = Literal["guide", "collaborator", "peer", "launcher"]
+# Course lifecycle (RFC-009). Engine-owned; surfaces read it, never set it directly.
+#   draft: enrolled, not yet authored · researching: blocked on the learner's research upload
+#   authoring: report in, building · placement: authored, awaiting placement · active: live
+#   archived: dropped (soft, reversible)
+CourseStatus = Literal["draft", "researching", "authoring", "placement", "active", "archived"]
 
 
 class Program(BaseModel):
@@ -53,6 +58,8 @@ class Course(BaseModel):
     activates_week: int | None = None
     grade_weights: dict[str, float] = Field(default_factory=dict)  # copied from the module at enroll
     enrolled_on: str | None = None
+    status: CourseStatus = "draft"                # lifecycle (RFC-009); advanced only by the engine
+    archived_on: str | None = None               # set when moved to archived (soft drop)
 
 
 class Assessments(BaseModel):

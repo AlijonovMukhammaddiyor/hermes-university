@@ -18,6 +18,8 @@ RATING = {1: Rating.Again, 2: Rating.Hard, 3: Rating.Good, 4: Rating.Easy}
 
 def new_card(now: datetime | None = None) -> dict:
     card = Card()
+    if now is not None:                       # honor the explicit clock (module contract) — a fresh
+        card.due = _aware(now)                # card is due at `now`, not at import/real time
     return card.to_dict()
 
 
