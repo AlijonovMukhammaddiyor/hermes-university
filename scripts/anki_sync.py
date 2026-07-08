@@ -43,11 +43,16 @@ def main(vault: str, coll_path: str) -> int:
 
         auth = col.sync_login(os.environ["AW_USER"], os.environ["AW_PASS"], None)
         out = col.sync_collection(auth, False)
-        if out.required in (2, 3, 4):                 # FULL_SYNC/DOWNLOAD/UPLOAD
+        # Safety: a headless card-pusher must NEVER overwrite AnkiWeb (the phone's collection).
+        # On a required full sync, only DOWNLOAD is safe; refuse a full UPLOAD and fail loud so a
+        # human seeds the collection (sync once from Anki) instead of silently clobbering it.
+        if out.required in (2, 4):                     # FULL_SYNC (ambiguous) / FULL_UPLOAD
+            raise SystemExit("refusing a full-upload sync — it would overwrite AnkiWeb. Seed the "
+                             "droplet collection by syncing once from your Anki, then retry.")
+        if out.required == 3:                          # FULL_DOWNLOAD — safe (pulls remote in)
             if out.new_endpoint:
                 auth.endpoint = out.new_endpoint
-            col.full_upload_or_download(auth=auth, server_usn=out.server_media_usn,
-                                        upload=(out.required != 3))
+            col.full_upload_or_download(auth=auth, server_usn=out.server_media_usn, upload=False)
     finally:
         col.close()
 
