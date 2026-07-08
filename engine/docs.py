@@ -59,21 +59,38 @@ def _cell(s: str) -> str:
     return (s or "").replace("|", "/").replace("\n", " ").strip()
 
 
+def _unit_spans(c) -> dict[str, tuple[int, int, int]]:
+    """The one calendar spine (RFC-006): unit.id -> (semester, start_week, end_week), from est_weeks
+    accumulated per semester. Both the week-by-week table and the Units section read this, so they
+    can never disagree."""
+    spans: dict[str, tuple[int, int, int]] = {}
+    cursor: dict[int, int] = {}
+    for u in sorted(c.units, key=lambda x: (x.semester, x.order_index)):
+        start = cursor.get(u.semester, 1)
+        end = start + max(1, getattr(u, "est_weeks", 1)) - 1
+        cursor[u.semester] = end + 1
+        spans[u.id] = (u.semester, start, end)
+    return spans
+
+
 def _week_plan_table(c) -> list[str]:
-    """Ivy-grade week-by-week plan (RFC-006): Week · Focus · Readings · Deliverable. Markdown table —
-    fine in vault docs (Obsidian/WebUI render it); the Telegram no-table rule is separate."""
+    """Ivy-grade week-by-week plan (RFC-006): Week · Focus · Readings · Deliverable. Absolute weeks
+    come from the same spine as the Units section (_unit_spans) — session.week is a within-unit
+    offset — so the two always agree. Markdown table — fine in vault docs; Telegram no-table is separate."""
+    spans = _unit_spans(c)
     rows = []
     for u in sorted(c.units, key=lambda x: (x.semester, x.order_index)):
-        for s in getattr(u, "sessions", []) or []:
+        sem, start, _ = spans[u.id]
+        for i, s in enumerate(sorted(getattr(u, "sessions", []) or [], key=lambda s: s.week)):
             reads = "; ".join(
                 _cell(r.title + (f" {r.locator}" if r.locator else "")) for r in s.readings) or "—"
-            rows.append((s.week, _cell(s.focus), reads, _cell(s.deliverable) or "—"))
+            rows.append((sem, start + i, _cell(s.focus), reads, _cell(s.deliverable) or "—"))
     if not rows:
         return []
     out = ["## Week-by-week plan", "", "| Week | Focus | Readings | Deliverable |",
            "|---|---|---|---|"]
-    for wk, focus, reads, deliv in sorted(rows, key=lambda r: r[0]):
-        out.append(f"| {wk} | {focus} | {reads} | {deliv} |")
+    for sem, wk, focus, reads, deliv in sorted(rows, key=lambda r: (r[0], r[1])):
+        out.append(f"| S{sem} W{wk} | {focus} | {reads} | {deliv} |")
     return out + [""]
 
 
@@ -113,11 +130,9 @@ def render_syllabus(c: Course) -> str:
     out += _week_plan_table(c)
     out += ["## Units, outcomes & proofs"]
     assess = {a.id: a for a in c.assessments}
-    week: dict[int, int] = {}
+    spans = _unit_spans(c)
     for u in sorted(c.units, key=lambda x: (x.semester, x.order_index)):
-        start = week.get(u.semester, 1)
-        end = start + max(1, getattr(u, "est_weeks", 1)) - 1
-        week[u.semester] = end + 1
+        _, start, end = spans[u.id]
         span = f"Week {start}" if start == end else f"Weeks {start}–{end}"
         out.append(f"\n### Sem {u.semester} · {span} · {u.title}")
         if getattr(u, "summary", None):

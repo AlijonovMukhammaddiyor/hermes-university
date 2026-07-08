@@ -27,6 +27,34 @@ def test_render_syllabus_has_units_and_grading():
     assert "problem set 1" in syl and "timed mock" in syl
 
 
+def test_week_plan_weeks_agree_with_unit_calendar():
+    """The week-by-week table and the Units section share one calendar spine (_unit_spans), so a
+    session.week authored as a within-unit offset still renders to the correct absolute week and
+    never collapses (the AG201 bug: 12 units' first sessions all stamped 'Week 1')."""
+    from engine.course import Course
+
+    def unit(uid, order, weeks, n_sessions):
+        return {"id": uid, "title": uid, "order_index": order, "semester": 1, "est_weeks": weeks,
+                "outcomes": [{"id": f"{uid}.o", "statement": "s", "bloom_level": "apply",
+                              "proof": f"a.{uid}"}],
+                # sessions authored with WITHIN-UNIT weeks (1..n), like AG201
+                "sessions": [{"week": w, "focus": f"{uid} wk{w}"} for w in range(1, n_sessions + 1)]}
+
+    c = Course.model_validate({
+        "id": "RX", "title": "T", "subject_domain": "cs", "credits": 3, "north_star": "n",
+        "assessments": [{"id": f"a.{u}", "outcome_id": f"{u}.o", "type": "summative",
+                         "modality": "project", "bloom_target": "apply", "proof_gate": "p"}
+                        for u in ("A", "B")],
+        "units": [unit("A", 1, 2, 2), unit("B", 2, 3, 3)],
+    })
+    syl = docs.render_syllabus(c)
+    # A spans weeks 1–2, B spans 3–5 — five distinct absolute weeks, no collapse
+    for wk in ("S1 W1", "S1 W2", "S1 W3", "S1 W4", "S1 W5"):
+        assert f"| {wk} |" in syl, wk
+    assert syl.count("| S1 W1 |") == 1                     # not one-per-unit
+    assert "### Sem 1 · Weeks 3–5 · B" in syl               # Units header agrees
+
+
 def test_syllabus_and_resources_render_researched_materials():
     from engine.course import Course, Resource
     r = Resource(type="textbook", title="CLRS", locator="ch. 6", why="canonical", cost="paid")

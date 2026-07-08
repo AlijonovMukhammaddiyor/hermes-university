@@ -87,6 +87,27 @@ def test_foundational_flag_loads():
     assert next(u for u in c.units if u.id == "intermediate").foundational is False
 
 
+def test_session_count_must_match_est_weeks():
+    """The week-by-week plan must map 1:1 onto the unit's scheduled weeks, else the rendered plan
+    drifts from the Units calendar (RFC-006). A mismatch fails loud at load time."""
+    from engine.course import Course
+    base = {
+        "id": "SX", "title": "x", "subject_domain": "d", "credits": 1, "north_star": "x",
+        "assessments": [{"id": "a", "outcome_id": "o", "type": "summative", "modality": "project",
+                         "bloom_target": "apply", "proof_gate": "p"}],
+        "units": [{"id": "u", "title": "U", "order_index": 1, "semester": 1, "est_weeks": 3,
+                   "outcomes": [{"id": "o", "statement": "s", "bloom_level": "apply", "proof": "a"}],
+                   "sessions": [{"week": 1, "focus": "f"}, {"week": 2, "focus": "f"}]}],  # 2 != 3
+    }
+    with pytest.raises(ValidationError):
+        Course.model_validate(base)
+    base["units"][0]["sessions"].append({"week": 3, "focus": "f"})   # now 3 == est_weeks
+    assert Course.model_validate(base).units[0].est_weeks == 3
+    # a unit with NO sessions is exempt (sessions are optional)
+    base["units"][0]["sessions"] = []
+    assert Course.model_validate(base).units[0].sessions == []
+
+
 def test_dag_drives_next_topic():
     c = load_course(FIXTURES / "GEN101" / "course.yaml")
     units = c.dag()

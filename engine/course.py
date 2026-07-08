@@ -176,6 +176,11 @@ class Course(BaseModel):
             for dep in o.depends_on:
                 if dep not in outcomes:
                     raise ValueError(f"outcome {o.id!r} depends_on missing {dep!r}")
+        for u in self.units:  # week-by-week plan must map 1:1 onto the unit's scheduled weeks
+            if u.sessions and len(u.sessions) != max(1, u.est_weeks):
+                raise ValueError(
+                    f"unit {u.id!r}: {len(u.sessions)} sessions but est_weeks={u.est_weeks} "
+                    "(one session per scheduled week, else the week-by-week plan drifts)")
         _assert_acyclic(outcomes)
         return self
 
