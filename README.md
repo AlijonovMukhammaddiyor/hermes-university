@@ -58,6 +58,7 @@ not code. 4. Personalize to your **goals**, never your work. 5. No hardcoded per
 data — identity lives in one git-ignored `profile.yaml`.
 
 ## Learn more
+- **[GUIDE.md](GUIDE.md)** — how to use & manage it day-to-day (commands, the daily loop, surfaces).
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — how it works (engine · skills · courses · lifecycle).
 - **[PREREQUISITES.md](PREREQUISITES.md)** — the API keys/accounts + Obsidian plugins.
 - **`docs/RFC-00*.md`** — the design record. **[CONTRIBUTING.md](CONTRIBUTING.md)** to help.
