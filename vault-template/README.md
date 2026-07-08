@@ -3,6 +3,8 @@
 This folder **is** your university — the syllabus, your task board, your transcript. The agent writes
 to it and it syncs to your phone/desktop via **Obsidian Git**.
 
+> 👉 New here? Open **[[Guide]]** for how to use it, and **[[Home]]** for your control center.
+
 ## Install these Obsidian community plugins
 - **Kanban** — renders `Board.md` as your task board (your daily workspace). Drag a card to **Done**
   when you finish it; the night audit verifies the proof and records it.
