@@ -51,6 +51,13 @@ class MasteryModel(BaseModel):
     deliberate_practice: str = ""                        # the regimen to reach the bar
 
 
+class Audience(BaseModel):
+    """Who a course is for — and honestly, who it is NOT for (RFC-009). Authored from research so the
+    learner can self-select before investing months."""
+    good_fit: list[str] = Field(default_factory=list)   # who benefits + the assumed starting point
+    not_a_fit: list[str] = Field(default_factory=list)  # who should look elsewhere (say where)
+
+
 class Criterion(BaseModel):
     name: str
     target_descriptor: str
@@ -116,6 +123,7 @@ class Course(BaseModel):
     credits: int
     north_star: str
     description: str = ""                                      # syllabus/catalog prose (researched)
+    audience: Audience | None = None                          # who it's for / not for (RFC-009)
     primary_text: Resource | None = None                      # the anchoring textbook/course
     resources: list[Resource] = Field(default_factory=list)   # course-level library
     professor_profile: ProfessorProfile | None = None         # researched teaching character (RFC-004)

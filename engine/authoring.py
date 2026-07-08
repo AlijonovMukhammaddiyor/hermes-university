@@ -28,9 +28,13 @@ def authored_report(course: Course, course_dir: Path) -> dict:
                            ("open question", "couldn't verify", "could not verify", "cannot verify")))
     mm = course.mastery_model
     has_mastery = bool(mm and mm.excellence_bar and mm.staying_current)
+    aud = course.audience
+    has_audience = bool(aud and aud.good_fit and aud.not_a_fit)
     missing: list[str] = []
     if not course.description:
         missing.append("description")
+    if not has_audience:
+        missing.append("audience(who-it's-for + not-for)")
     if not all(u.resources for u in teaching):
         missing.append("unit-resources")
     if not all(u.sessions for u in teaching):

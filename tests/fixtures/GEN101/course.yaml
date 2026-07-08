@@ -9,6 +9,12 @@ north_star: "Solve unfamiliar problems by decomposing them and choosing the righ
 description: >
   A generic example course used by the test-suite to exercise the engine end-to-end. Builds core
   problem-solving: recognize the pattern, pick the structure, analyze the cost.
+audience:
+  good_fit:
+    - "You can write basic code but freeze on unfamiliar problems."
+    - "You want durable problem-solving, not memorized templates."
+  not_a_fit:
+    - "You've already mastered core patterns — take an advanced algorithms course instead."
 primary_text: { type: textbook, title: "Introduction to Algorithms", author: "CLRS",
   locator: "ch. 1-6", why: "the canonical reference", tier: core, cost: paid }
 resources: []

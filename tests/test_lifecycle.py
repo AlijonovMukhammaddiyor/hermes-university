@@ -24,6 +24,15 @@ def test_authored_report_gates_on_full_depth():
     assert rep["authored"] is False and rep["missing_for_authored"]
 
 
+def test_authored_gate_requires_audience():
+    # a course missing who-for/not-for is NOT authored (RFC-009)
+    c = load_course(FIXTURES / "GEN101" / "course.yaml")
+    full = c.model_copy(update={"audience": None})
+    rep = authored_report(full, FIXTURES / "GEN101")
+    assert rep["authored"] is False
+    assert any("audience" in m for m in rep["missing_for_authored"])
+
+
 def test_report_present_ignores_scaffold_markers(tmp_path):
     up = tmp_path / "AG201"
     up.mkdir()

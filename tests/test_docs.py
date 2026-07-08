@@ -17,13 +17,16 @@ def test_render_catalog_lists_all_courses():
     assert "enroll GEN101" in cat and "credits" in cat
 
 
-def test_render_syllabus_has_units_and_grading():
+def test_render_syllabus_is_a_complete_academic_plan():
     syl = docs.render_syllabus(load_course(CDIR / "GEN101" / "course.yaml"))
-    assert "Basics" in syl and "Grading policy" in syl and "proof:" in syl
+    assert "Basics" in syl and "Assessment & grading" in syl and "proof:" in syl
     assert "Assessment plan" in syl
     assert "What the best in this field can do" in syl and "How this course is taught" in syl
-    # RFC-006: Ivy-grade week-by-week plan with readings + deliverables
-    assert "Week-by-week plan" in syl and "| Week | Focus | Readings | Deliverable |" in syl
+    # RFC-009: who it's for / not for
+    assert "Who this course is for" in syl and "Not for" in syl
+    # RFC-009: the week-by-week table is a full calendar — assignments + assessment slots
+    assert "| Week | Focus | Readings | Assignment (take-home) | Assessment |" in syl
+    assert "Unit quiz" in syl and "🏁 Finals" in syl and "🎯 Midterm exam" in syl
     assert "problem set 1" in syl and "timed mock" in syl
 
 

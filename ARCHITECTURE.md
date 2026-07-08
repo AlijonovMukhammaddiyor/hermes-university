@@ -60,13 +60,17 @@ YAML. The lifecycle, the aggregate `status` snapshot, and the SRS pipeline all l
 (`engine/authoring.py`, `registrar.py`, `srs.py`); skills only call the CLI.
 
 ## The course module (`course.yaml`)
-`Course → Unit → Outcome → Assessment → Rubric`, plus researched `description`, `primary_text`,
-per-unit `resources` (best materials, specific locators), a `professor_profile` (the teaching character
-for the field), and a `mastery_model` (excellence bar · expert practices · frontier · how to stay
-current · signature work). The validator enforces: every outcome has a proof, Bloom target ≥ outcome,
-prereqs form a DAG, rubrics exist. `hu-engine course validate` also reports `authored` — true only when
-the course has a description, per-unit resources, a professor profile, a mastery model, and a research
-dossier. Nothing shallow ships.
+`Course → Unit → Outcome → Assessment → Rubric`, plus researched `description`, an `audience`
+(who-it's-for / who-it's-**not**-for, so the learner self-selects), `primary_text`, per-unit
+`resources` (best materials, specific locators), a `professor_profile` (the teaching character for the
+field), and a `mastery_model` (excellence bar · expert practices · frontier · how to stay current ·
+signature work). The rendered `Syllabus.md` is a **complete academic plan**: the week-by-week table
+carries each week's readings, its take-home **assignment**, and the **assessment calendar** the engine
+derives — a quiz at each unit's end, a midterm mid-semester, finals in the last week — alongside the
+grading breakdown. The validator enforces: every outcome has a proof, Bloom target ≥ outcome, prereqs
+form a DAG, rubrics exist. `hu-engine course validate` also reports `authored` — true only when the
+course has a description, an audience, per-unit resources, a professor profile, a mastery model, and a
+research dossier. Nothing shallow ships.
 
 ## Lifecycle
 ```

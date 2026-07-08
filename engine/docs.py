@@ -73,24 +73,64 @@ def _unit_spans(c) -> dict[str, tuple[int, int, int]]:
     return spans
 
 
-def _week_plan_table(c) -> list[str]:
-    """Ivy-grade week-by-week plan (RFC-006): Week · Focus · Readings · Deliverable. Absolute weeks
-    come from the same spine as the Units section (_unit_spans) — session.week is a within-unit
-    offset — so the two always agree. Markdown table — fine in vault docs; Telegram no-table is separate."""
+def _assessment_marks(c) -> dict[tuple[int, int], str]:
+    """The assessment calendar (RFC-009): which (semester, week) carries a quiz/midterm/finals. Derived
+    from the unit spine + semester length so it always lines up with the week-by-week plan and matches
+    what the Examiner administers — a quiz at each unit's end, a midterm mid-semester, finals last week."""
     spans = _unit_spans(c)
+    marks: dict[tuple[int, int], str] = {}
+    by_sem: dict[int, list[int]] = {}
+    for sem, _start, end in spans.values():
+        by_sem.setdefault(sem, []).append(end)
+        marks[(sem, end)] = "📝 Unit quiz"
+    for sem, ends in by_sem.items():
+        sem_end = max(ends)
+        marks[(sem, max(1, (sem_end + 1) // 2))] = "🎯 Midterm exam"   # mid-point (overrides a quiz)
+        marks[(sem, sem_end)] = "🏁 Finals"                            # last week of the semester
+    return marks
+
+
+def _grading_section(c) -> list[str]:
+    """Full grading breakdown + how assessment works — so the syllabus is a complete academic plan."""
+    labels = {"hw": "Assignments (take-home)", "quiz": "Quizzes", "exam": "Unit exams",
+              "midterm": "Midterm", "finals": "Finals"}
+    w = getattr(c, "grade_weights", None) or {}
+    if not w:
+        return []
+    parts = [f"**{labels.get(k, k.title())}** {int(round(v * 100))}%" for k, v in w.items() if v]
+    return ["## Assessment & grading", " · ".join(parts), "",
+            "How it works: every week ships a **take-home assignment** (the deliverable in the plan "
+            "below). Each unit closes with a **quiz**; there's a **midterm** at the semester mid-point "
+            "and **finals** in the last week. Every graded item maps to an outcome and is scored "
+            "against its rubric — no grade without a proof.", ""]
+
+
+def _week_plan_table(c) -> list[str]:
+    """Ivy-grade week-by-week academic calendar (RFC-006/009): Week · Focus · Readings · Assignment
+    (take-home) · Assessment (quiz/midterm/finals slots). Absolute weeks come from the same spine as
+    the Units section (_unit_spans), so everything lines up. Markdown table — Obsidian renders it."""
+    spans = _unit_spans(c)
+    marks = _assessment_marks(c)
     rows = []
     for u in sorted(c.units, key=lambda x: (x.semester, x.order_index)):
         sem, start, _ = spans[u.id]
         for i, s in enumerate(sorted(getattr(u, "sessions", []) or [], key=lambda s: s.week)):
             reads = "; ".join(
                 _cell(r.title + (f" {r.locator}" if r.locator else "")) for r in s.readings) or "—"
-            rows.append((sem, start + i, _cell(s.focus), reads, _cell(s.deliverable) or "—"))
+            wk = start + i
+            rows.append((sem, wk, _cell(s.focus), reads, _cell(s.deliverable) or "—",
+                         marks.get((sem, wk), "—")))
     if not rows:
         return []
-    out = ["## Week-by-week plan", "", "| Week | Focus | Readings | Deliverable |",
-           "|---|---|---|---|"]
-    for sem, wk, focus, reads, deliv in sorted(rows, key=lambda r: (r[0], r[1])):
-        out.append(f"| S{sem} W{wk} | {focus} | {reads} | {deliv} |")
+    covered = {(sem, wk) for sem, wk, *_ in rows}      # show exam weeks even without a weekly session
+    for (sem, wk), label in marks.items():
+        if (sem, wk) not in covered:
+            rows.append((sem, wk, "Assessment week", "—", "—", label))
+    out = ["## Week-by-week plan", "",
+           "| Week | Focus | Readings | Assignment (take-home) | Assessment |",
+           "|---|---|---|---|---|"]
+    for sem, wk, focus, reads, deliv, assess in sorted(rows, key=lambda r: (r[0], r[1])):
+        out.append(f"| S{sem} W{wk} | {focus} | {reads} | {deliv} | {assess} |")
     return out + [""]
 
 
@@ -101,6 +141,12 @@ def render_syllabus(c: Course) -> str:
         out += [c.description.strip(), ""]
     out += [f"**Credits:** {c.credits}  ·  **Domain:** {c.subject_domain}  ·  "
             f"**Prereqs:** {', '.join(c.prerequisites) or 'none'}", ""]
+    aud = getattr(c, "audience", None)
+    if aud and (aud.good_fit or aud.not_a_fit):
+        out += ["## Who this course is for"] + [f"- {x}" for x in aud.good_fit]
+        if aud.not_a_fit:
+            out += ["", "**Not for — look elsewhere if:**"] + [f"- {x}" for x in aud.not_a_fit]
+        out += [""]
     if getattr(c, "primary_text", None):
         out += ["## Primary text", _res_line(c.primary_text), ""]
     mm = getattr(c, "mastery_model", None)
@@ -126,7 +172,7 @@ def render_syllabus(c: Course) -> str:
                    [f"- {m}" for m in pp.common_misconceptions] + [""]
     if c.enduring_understandings:
         out += ["## Enduring understandings"] + [f"- {e}" for e in c.enduring_understandings] + [""]
-    out += ["## Grading policy", grading_line(c), ""]
+    out += _grading_section(c)
     out += _week_plan_table(c)
     out += ["## Units, outcomes & proofs"]
     assess = {a.id: a for a in c.assessments}

@@ -11,6 +11,13 @@ north_star: >
 description: >
   2–4 sentences from RESEARCH: what the course covers, why it matters for the learner's future
   (highest-ROI topics for the target role), and how it's assessed. Not vibes — grounded in the dossier.
+# Who it's for — and honestly, who it is NOT for (required to be 'authored'). Lets the learner
+# self-select before committing months. Say where the not-fit should go instead.
+audience:
+  good_fit:
+    - "Who benefits + the assumed starting point (e.g. 'comfortable with X, new to Y')."
+  not_a_fit:
+    - "Who should look elsewhere, and where (e.g. 'already ships Y → take the advanced track')."
 prerequisites: []
 enduring_understandings:
   - 3–7 transferable big ideas the course keeps returning to.

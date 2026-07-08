@@ -83,7 +83,9 @@ confidence tags + an open-questions section** — so a from-memory dossier canno
 **Phase 2 — Design the FULL A–Z curriculum (fundamentals ALWAYS included).** Backward from the
 excellence bar: enduring understandings → **measurable A-SMART outcomes** (Bloom-tagged) → **prereq
 DAG** → unit sequence (`order_index`, `semester`, `est_weeks`) → assessments + rubrics → one proof gate
-per outcome. **Start from fundamentals**: the field's foundations are the early units, marked
+per outcome. Also write **`audience`** from the research — `good_fit` (who this is for + the assumed
+starting point) and `not_a_fit` (who should look elsewhere, and where). Be honest; it's required to be
+`authored` and it lets the learner self-select before committing months. **Start from fundamentals**: the field's foundations are the early units, marked
 `foundational: true`. **NEVER drop or skip a fundamental because you assume the learner knows it** —
 that decision belongs to the placement exam (Phase 5), not to you. Design the complete course as if the
 learner starts fresh; personalization happens by *testing out*, never by guessing.
@@ -101,15 +103,18 @@ learner starts fresh; personalization happens by *testing out*, never by guessin
 - **Week-by-week plan (Ivy-grade — everything prepared).** For EACH teaching unit fill `sessions`:
   one entry per week it spans, with `week` (number within the course), `focus`, the **exact `readings`
   for that week** (specific resources with locators, drawn from the unit's pool — divide them, don't
-  dump the whole list), and a concrete `deliverable` (the assignment/artifact due). Plan the *entire*
-  term so a learner opens the syllabus and knows exactly what to read and do each week. The engine's
-  `authored` gate requires `sessions` on every teaching unit — a course with only topics is NOT done.
+  dump the whole list), and a concrete `deliverable` (the **take-home assignment/artifact due** that
+  week). Plan the *entire* term so a learner opens the syllabus and knows exactly what to read and do
+  each week. The engine's `authored` gate requires `sessions` on every teaching unit — a course with
+  only topics is NOT done. The engine renders the **assessment calendar automatically** from this
+  (weekly take-home assignments + a quiz at each unit's end + a midterm mid-semester + finals in the
+  last week); size `est_weeks` and unit boundaries so those slots land sensibly.
 
 **Phase 4 — Validate, co-design, persist.**
 - Write `{{COURSES_DIR}}/<CODE>/course.yaml` (copy the schema from `{{COURSES_DIR}}/_TEMPLATE/course.yaml`).
 - **Validate until `authored: true`:** `{{ENGINE}} course validate --file {{COURSES_DIR}}/<CODE>/course.yaml`.
-  The engine reports `missing_for_authored` — fix every item (description, per-unit resources,
-  professor_profile, mastery_model, research dossier) and every structural error before proceeding.
+  The engine reports `missing_for_authored` — fix every item (description, audience, per-unit
+  resources, professor_profile, mastery_model, research dossier) and every structural error first.
 - Regenerate docs: `{{ENGINE}} render-docs --vault {{VAULT}} --courses {{COURSES_DIR}}`.
 - **Active co-design** (when interactive): **send the full `Syllabus.md` FILE** (`hermes send -f
   {{VAULT}}/Courses/<CODE>/Syllabus.md`) — it contains the week-by-week plan with readings +
