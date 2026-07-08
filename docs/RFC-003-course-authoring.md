@@ -10,7 +10,7 @@ Today a course is a static `course.yaml` I hand-authored, and its "syllabus" is 
 + proof gates. The learner asked for the one thing a real university does before anything else:
 **design the course.** Course creation must become the single most important, most rigorous step —
 a *world-class professor* who **researches the field deeply**, decides contents by **usefulness and
-future prospects for this learner** (the learner's stated goal), and produces a **full university
+future prospects for this learner** (calibrated to the learner's stated goal), and produces a **full university
 syllabus with real materials** (specific textbooks/chapters, courses/lectures, papers, problem sets),
 not just topic labels.
 

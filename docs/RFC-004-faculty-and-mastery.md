@@ -1,6 +1,6 @@
 # RFC-004 — Faculty Handbook, Researched Professors & the Mastery Model
 
-Status: **ACCEPTED — implementing** · Owner: the maintainer · Date: 2026-07-07
+Status: **ACCEPTED — implementing** · Date: 2026-07-07
 Supersedes the per-course-professor design in RFC-003. Builds on RFC-001/002/003.
 
 ## 0. The mission (owner's words, binding)

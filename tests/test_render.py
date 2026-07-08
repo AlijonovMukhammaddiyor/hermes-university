@@ -23,8 +23,8 @@ def test_render_file(tmp_path):
 
 def test_load_config_env(tmp_path):
     f = tmp_path / "config.env"
-    f.write_text('# comment\nLEARNER_NAME="the maintainer"\nTIMEZONE=Asia/Tashkent\n\nEMPTY=""\n')
+    f.write_text('# comment\nLEARNER_NAME="Ada Lovelace"\nTIMEZONE=UTC\n\nEMPTY=""\n')
     cfg = render.load_config_env(f)
-    assert cfg["LEARNER_NAME"] == "the maintainer"
-    assert cfg["TIMEZONE"] == "Asia/Tashkent"
+    assert cfg["LEARNER_NAME"] == "Ada Lovelace"
+    assert cfg["TIMEZONE"] == "UTC"
     assert cfg["EMPTY"] == ""
