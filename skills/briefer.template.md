@@ -45,8 +45,11 @@ exclude the rest).
 ## INTERACTIVE
 - **`briefing` / `today's reads` / `what should I read`** — if today's note exists, send its top picks;
   else run the daily flow now.
+- **`sources`** — show the current source list (grouped by category, mark paid ones). It lives at
+  `{{BRIEFING_SOURCES}}` **in the vault**, so the learner can also open/edit it in Obsidian.
 - **`add source <url>` / `remove source <…>`** — edit `{{BRIEFING_SOURCES}}` (append under the best
-  category / delete the line), confirm warmly. It takes effect next briefing.
+  category with a `title`+`url`; delete the line to remove), confirm warmly. The vault auto-syncs the
+  change; it takes effect next briefing.
 - **`more on <topic>`** — a focused `web-search-plus` + fetch pass on that topic across the sources.
 
 ## Voice

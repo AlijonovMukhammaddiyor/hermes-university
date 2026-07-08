@@ -32,7 +32,8 @@ def main(argv: list[str]) -> int:
         "VAULT": vault,
         "ENGINE": engine,
         "COURSES_DIR": str(root / "courses"),
-        "BRIEFING_SOURCES": str(root / "briefing" / "sources.yaml"),
+        # source list lives in the VAULT (Obsidian-editable, auto-synced) — seeded from vault-template
+        "BRIEFING_SOURCES": str(Path(vault) / "Briefing" / "sources.yaml"),
     }
     # registrar + examiner + professor (Faculty Handbook: the single professor teaches every course by
     # reading its module — RFC-004) + briefer (the daily digest — RFC-010).

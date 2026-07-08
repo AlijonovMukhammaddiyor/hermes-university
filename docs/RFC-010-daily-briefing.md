@@ -12,8 +12,9 @@ broken half-course. So the Briefing is its own lightweight subsystem on the **sa
 (Telegram + Obsidian + Home), with a different engine.
 
 ## 1. Shape
-- **Sources are data** — `briefing/sources.yaml`, editable anytime (categories of blogs/newsletters +
-  aggregators). `rss`/`api` preferred (reliable); `paid: true` = titles/teasers only; `weight: high` =
+- **Sources are data, in the vault** — `<vault>/Briefing/sources.yaml` (seeded from
+  `vault-template/Briefing/`), editable in Obsidian or via the bot (`add source`/`remove source`) and
+  auto-synced. `rss`/`api` preferred (reliable); `paid: true` = titles/teasers only; `weight: high` =
   always scanned.
 - **A daily cron** (`uni-briefing`) runs the **briefer** skill: gather recent items (RSS/HN-API first,
   then fetch/web-search), summarize, then **curate** — the **3–5 genuinely worth-reading** items with a

@@ -32,7 +32,8 @@ GPA/transcript across two rigorous 3-month semesters, and pushes spaced-repetiti
     **authors** new courses by deep, cited, multi-source research (never the model's memory).
   - **Examiner** — runs quizzes, unit exams, midterm, and data-driven finals; calls the engine to gate
     advancement, promotion, and graduation.
-  - **Briefer** — the daily tech/AI/engineering briefing (RFC-010): scans a curated `briefing/sources.yaml`,
+  - **Briefer** — the daily tech/AI/engineering briefing (RFC-010): scans a curated, vault-hosted
+    `Briefing/sources.yaml` (Obsidian-editable),
     summarizes what's new, and curates the few things worth reading (top picks + headlines) → a
     `Briefing/<date>` note + a Telegram digest. A recurring digest, **not** a course.
 - **`courses/`** — course modules (data). Ships with only `_TEMPLATE/`; the catalog starts empty and
