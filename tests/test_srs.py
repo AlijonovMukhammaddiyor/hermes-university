@@ -23,10 +23,36 @@ def test_queue_cards_writes_push_queue_and_ledger(tmp_path):
 
 
 def test_due_count_reflects_queue_and_ledger(tmp_path):
-    assert due_count(tmp_path, NOW) == {"queued": 0, "created": 0, "due": 0}
+    assert due_count(tmp_path, NOW) == {"queued": 0, "created": 0, "due": 0, "review_due": 0}
     queue_cards(tmp_path, "CS101", "Hermes", "", [{"front": "q", "back": "a"}], NOW)
     d = due_count(tmp_path, NOW)
     assert d["queued"] == 1 and d["created"] == 1 and d["due"] == 1
     # appends accumulate the ledger; the push queue is cleared by the syncer (not tested here)
     queue_cards(tmp_path, "CS101", "Hermes", "", [{"front": "q2", "back": "a2"}], NOW)
     assert due_count(tmp_path, NOW)["created"] == 2
+
+
+def test_cards_are_tagged_with_the_outcome(tmp_path):
+    from engine.srs import outcome_tag
+    queue_cards(tmp_path, "CS101", "Hermes", "u1", [{"front": "q", "back": "a"}], NOW,
+                outcome="f1.apply")
+    import json
+    card = json.loads((tmp_path / "SRS" / "pending.jsonl").read_text().splitlines()[0])
+    assert outcome_tag("f1.apply") in card["tags"]                  # review-back linkage survives
+    led = json.loads((tmp_path / "SRS" / "ledger.jsonl").read_text().splitlines()[0])
+    assert led["outcome"] == "f1.apply"
+
+
+def test_review_ingest_flags_and_clears_review_due(tmp_path):
+    from engine.srs import ingest_reviews, review_due
+    # a lapse (Again=1) marks the outcome review-due; GPA/transcript are untouched here by design
+    r = ingest_reviews(tmp_path, [{"outcome": "f1.apply", "ease": 1, "ts": "2026-07-08T01:00"}])
+    assert r["ingested"] == 1 and review_due(tmp_path) == ["f1.apply"]
+    # a later Good (3) clears it (recovered)
+    ingest_reviews(tmp_path, [{"outcome": "f1.apply", "ease": 3, "ts": "2026-07-08T02:00"}])
+    assert review_due(tmp_path) == []
+    # counters accumulate; due_count surfaces the review-due total
+    ingest_reviews(tmp_path, [{"outcome": "f2.apply", "ease": 1, "ts": "2026-07-08T03:00"}])
+    assert due_count(tmp_path, NOW)["review_due"] == 1
+    from engine.srs import load_retention
+    assert load_retention(tmp_path)["f1.apply"]["reviews"] == 2

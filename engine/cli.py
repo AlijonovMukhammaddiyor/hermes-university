@@ -112,8 +112,13 @@ def main(argv: list[str] | None = None) -> int:
     psra = psr.add_parser("add")
     psra.add_argument("--vault", required=True); psra.add_argument("--course", required=True)
     psra.add_argument("--deck", default="Hermes"); psra.add_argument("--unit", default="")
+    psra.add_argument("--outcome", default="")      # links card reviews back to this outcome
     psra.add_argument("--cards", required=True)     # JSON: [{"front":..,"back":..,"tags":[..]}]
     psrd = psr.add_parser("due"); psrd.add_argument("--vault", required=True)
+    psrr = psr.add_parser("review")                 # ingest Anki review results (review-back)
+    psrr.add_argument("--vault", required=True)
+    psrr.add_argument("--events", required=True)     # JSON: [{"outcome":..,"ease":1-4,"ts":..}]
+    psrrd = psr.add_parser("review-due"); psrrd.add_argument("--vault", required=True)
 
     # profile — view/edit the learner's identity + goals (RFC-009 §6); never hand-edited YAML
     ppf = sub.add_parser("profile").add_subparsers(dest="sub", required=True)
@@ -277,12 +282,20 @@ def main(argv: list[str] | None = None) -> int:
         from pathlib import Path
         from .srs import queue_cards
         n = queue_cards(Path(args.vault), args.course, args.deck, args.unit,
-                        json.loads(args.cards), _now())
+                        json.loads(args.cards), _now(), outcome=args.outcome)
         print(json.dumps({"queued": n})); return 0
     if args.cmd == "srs" and args.sub == "due":
         from pathlib import Path
         from .srs import due_count
         print(json.dumps(due_count(Path(args.vault), _now()))); return 0
+    if args.cmd == "srs" and args.sub == "review":
+        from pathlib import Path
+        from .srs import ingest_reviews
+        print(json.dumps(ingest_reviews(Path(args.vault), json.loads(args.events)))); return 0
+    if args.cmd == "srs" and args.sub == "review-due":
+        from pathlib import Path
+        from .srs import review_due
+        print(json.dumps({"review_due": review_due(Path(args.vault))})); return 0
     if args.cmd == "profile" and args.sub == "show":
         from pathlib import Path as _P
         from .profile import load_profile

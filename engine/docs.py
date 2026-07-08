@@ -352,13 +352,18 @@ def status_snapshot(vault: str | Path, courses_dir: str | Path, now=None) -> dic
     if state.hold:
         blocked.append({"code": None, "title": None, "reason": f"hold: {state.hold}"})
 
+    # review-back (RFC-009 §5): outcomes that lapsed in Anki → surface for review (transcript stands)
+    o2c = {o.id: (code, o.statement) for code, m in modules.items() for o in m.all_outcomes()}
+    review = [{"outcome": oid, "course": o2c.get(oid, (None, None))[0],
+               "statement": o2c.get(oid, (None, None))[1]} for oid in S.review_due(vault)]
+
     return {"learner": state.learner.name, "semester": state.position.semester,
             "week": state.position.week_in_semester,
             "weeks_per_semester": state.program.weeks_per_semester,
             "standing": state.standing, "hold": state.hold,
             "gpa_semester": state.gpa.semester, "gpa_cumulative": state.gpa.cumulative,
             "streak": state.streak.current, "courses": courses, "today": today,
-            "blocked": blocked,
+            "blocked": blocked, "review": review,
             "srs": S.due_count(vault, now or datetime.now(timezone.utc))}
 
 
@@ -399,6 +404,10 @@ def render_home(snap: dict) -> str:
 
     if snap["today"]:
         out += ["## Today"] + [f"- [ ] {t}" for t in snap["today"]] + [""]
+
+    if snap.get("review"):
+        out += ["## To review (slipping — proven before, refresh it)"]
+        out += [f"- {r['statement'] or r['outcome']}" for r in snap["review"]] + [""]
 
     srs = snap["srs"]
     if srs["queued"] or srs["created"]:
