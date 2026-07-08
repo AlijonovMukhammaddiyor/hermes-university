@@ -21,5 +21,6 @@ to it and it syncs to your phone/desktop via **Obsidian Git**.
   personalized, placement-pruned track).
 - **`Registrar/`** — `Transcript.md`, `Schedule.md`, `DegreeProgress.md` (engine-rendered; read-only).
 - **`Daily/`** — your daily notes.
+- **`Briefing/`** — your daily tech/news briefing (`Briefing/<date>`) — top picks + headlines.
 - **`Uploads/<CODE>/`** — drop your Claude Deep Research reports + any course materials here.
 - **`Exams/`**, **`SRS/`** — assessments and spaced-repetition source.

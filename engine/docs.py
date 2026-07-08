@@ -407,13 +407,17 @@ def status_snapshot(vault: str | Path, courses_dir: str | Path, now=None) -> dic
     review = [{"outcome": oid, "course": o2c.get(oid, (None, None))[0],
                "statement": o2c.get(oid, (None, None))[1]} for oid in S.review_due(vault)]
 
+    bdir = vault / "Briefing"                     # latest daily briefing note (RFC-010)
+    briefings = sorted(bdir.glob("20*.md")) if bdir.exists() else []
+    latest_briefing = briefings[-1].stem if briefings else None
+
     return {"learner": state.learner.name, "semester": state.position.semester,
             "week": state.position.week_in_semester,
             "weeks_per_semester": state.program.weeks_per_semester,
             "standing": state.standing, "hold": state.hold,
             "gpa_semester": state.gpa.semester, "gpa_cumulative": state.gpa.cumulative,
             "streak": state.streak.current, "courses": courses, "today": today,
-            "blocked": blocked, "review": review,
+            "blocked": blocked, "review": review, "briefing": latest_briefing,
             "srs": S.due_count(vault, now or datetime.now(timezone.utc))}
 
 
@@ -432,6 +436,8 @@ def render_home(snap: dict) -> str:
     if snap["hold"]:
         out += [f"> [!warning] On hold: {snap['hold']}",
                 "> New material is paused until it clears.", ""]
+    if snap.get("briefing"):
+        out += [f"> [!tip] Today's reads → [[Briefing/{snap['briefing']}|{snap['briefing']}]]", ""]
 
     out += ["## 📚 Courses"]
     if active:

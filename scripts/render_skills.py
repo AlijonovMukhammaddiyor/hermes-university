@@ -32,10 +32,11 @@ def main(argv: list[str]) -> int:
         "VAULT": vault,
         "ENGINE": engine,
         "COURSES_DIR": str(root / "courses"),
+        "BRIEFING_SOURCES": str(root / "briefing" / "sources.yaml"),
     }
-    # registrar + examiner + professor — ONE each (Faculty Handbook: the single professor teaches
-    # every course by reading its module; no per-course professor artifacts — RFC-004).
-    for name in ("registrar", "examiner", "professor"):
+    # registrar + examiner + professor (Faculty Handbook: the single professor teaches every course by
+    # reading its module — RFC-004) + briefer (the daily digest — RFC-010).
+    for name in ("registrar", "examiner", "professor", "briefer"):
         render_file(root / "skills" / f"{name}.template.md",
                     out / name / "SKILL.md", base)
         print(f"rendered {name}")

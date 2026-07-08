@@ -194,6 +194,19 @@ def test_home_control_center_aggregates_status(tmp_path):
     assert "| Course | Status | Mastery |" in home
 
 
+def test_home_links_the_latest_briefing(tmp_path):
+    (tmp_path / "Registrar").mkdir(parents=True); (tmp_path / "records").mkdir()
+    fresh_state(name="M", timezone="UTC", started_on="2026-07-06").save(
+        tmp_path / "Registrar" / "state.json")
+    (tmp_path / "records" / "grades.jsonl").write_text("")
+    (tmp_path / "Briefing").mkdir()
+    (tmp_path / "Briefing" / "2026-07-07.md").write_text("# old")
+    (tmp_path / "Briefing" / "2026-07-08.md").write_text("# today")     # latest wins
+    snap = docs.status_snapshot(tmp_path, CDIR)
+    assert snap["briefing"] == "2026-07-08"
+    assert "Today's reads → [[Briefing/2026-07-08" in docs.render_home(snap)
+
+
 def test_render_all_writes_home(tmp_path):
     (tmp_path / "Registrar").mkdir(parents=True)
     fresh_state(name="M", timezone="UTC", started_on="2026-07-06").save(

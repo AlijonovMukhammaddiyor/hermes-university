@@ -46,5 +46,11 @@ Prove a concept → a card is queued → it syncs to your phone. Review as norma
 concept comes back under **"To review"** on [[Home]]. (Your grades aren't touched by lapses — they
 record what you *proved*.)
 
+## Daily briefing
+Each morning the bot scans a curated set of tech/AI/engineering blogs & news and gives you the **few
+things worth reading** — top picks with *why*, plus quick headlines. It lands in **`Briefing/<date>`**
+(and [[Home]] links the latest). Ask **`briefing`** / **`what should I read`** anytime, or **`add
+source <url>`** / **`remove source <…>`** to tune the list.
+
 ---
 See also: [[Home]] · [[Board]] · [[Catalog]]

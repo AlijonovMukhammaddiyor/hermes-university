@@ -32,6 +32,9 @@ GPA/transcript across two rigorous 3-month semesters, and pushes spaced-repetiti
     **authors** new courses by deep, cited, multi-source research (never the model's memory).
   - **Examiner** — runs quizzes, unit exams, midterm, and data-driven finals; calls the engine to gate
     advancement, promotion, and graduation.
+  - **Briefer** — the daily tech/AI/engineering briefing (RFC-010): scans a curated `briefing/sources.yaml`,
+    summarizes what's new, and curates the few things worth reading (top picks + headlines) → a
+    `Briefing/<date>` note + a Telegram digest. A recurring digest, **not** a course.
 - **`courses/`** — course modules (data). Ships with only `_TEMPLATE/`; the catalog starts empty and
   you author courses on demand. Authored courses are private instance data (git-ignored).
 - **`profile.yaml`** — your identity + goals (git-ignored; ships as `profile.example.yaml`).
