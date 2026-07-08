@@ -52,6 +52,29 @@ create course <goal>
    → your personalized MyPlan.md — and the daily loop begins
 ```
 
+## Using it every day
+**One rule: talk to the bot to *do* things · open Obsidian to *see* things · open Anki to *review*.**
+You never need a terminal for anything routine.
+
+**The daily loop** — morning it assigns your tasks onto the Board's **Today**; you do them and drag a
+card to **Done** (or reply `done`, or answer by voice); night it verifies each **proof** — unverified
+work bounces to *Proof Pending*, never a fake pass — and proven concepts become Anki cards. Ask
+`status` (or open `Home.md`) anytime for where you are and what's blocked on you.
+
+**Manage everything from Telegram, by course name:**
+
+| Say | It does |
+|---|---|
+| `courses` · `status` · `profile` | list courses · where you are · view/edit your goals |
+| `create course <goal>` · `enroll <name>` | research + build · enroll (authors, then placement) |
+| `archive <name>` / `restore <name>` | soft-drop (reversible) / bring it back |
+| `delete <name>` | permanent — asks you to echo `delete <name>` to confirm |
+| `tailor <name>` · `pause` / `resume <name>` | re-run placement, adjust pace · stop/restart assignments |
+
+Every destructive action **confirms first** (`yes` / `cancel`; a hard delete needs the name echo).
+Courses move through a visible lifecycle: `🔬 researching → ✍️ authoring → 🎯 placement → 🟢 active →
+🗄️ archived` (🔬 = waiting on your research upload). **Full manual: [GUIDE.md](GUIDE.md).**
+
 ## Principles
 1. Numbers are computed by code, not the model. 2. No outcome without a proof. 3. A course is data,
 not code. 4. Personalize to your **goals**, never your work. 5. No hardcoded personal/organizational
