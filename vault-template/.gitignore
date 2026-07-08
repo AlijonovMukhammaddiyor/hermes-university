@@ -1,0 +1,5 @@
+# Engine SRS runtime (plumbing, not Obsidian content — don't sync to the phone)
+SRS/pending.jsonl
+SRS/ledger.jsonl
+SRS/retention.json
+SRS/.revlog_watermark
