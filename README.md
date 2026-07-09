@@ -80,6 +80,17 @@ Courses move through a visible lifecycle: `🔬 researching → ✍️ authoring
 not code. 4. Personalize to your **goals**, never your work. 5. No hardcoded personal/organizational
 data — identity lives in one git-ignored `profile.yaml`.
 
+## Backup & redeploy (never lose progress)
+Your progress is durable by design (RFC-011): the **vault** git repo holds your state/grades and — via
+a daily backup — your **authored course sources** and an **encrypted secrets bundle** (`_source/`). To
+move to a new droplet, on a box with the Hermes Agent installed:
+```bash
+./bootstrap.sh <code-repo-url> <vault-repo-url>   # clones both, decrypts secrets, restores, installs
+```
+It asks for your **backup passphrase** (saved when the first backup ran — keep it in a password
+manager; it's the one thing not recoverable from git). Everything else — courses, GPA, streak, crons,
+config — comes back from the vault.
+
 ## Learn more
 - **[GUIDE.md](GUIDE.md)** — how to use & manage it day-to-day (commands, the daily loop, surfaces).
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — how it works (engine · skills · courses · lifecycle).

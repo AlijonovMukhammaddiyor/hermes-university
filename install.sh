@@ -40,6 +40,14 @@ else
   log "vault has no 'origin' remote yet — run scripts/install_vault_sync.sh after adding one"
 fi
 
+# disaster-recovery backup: course sources + encrypted secrets into the vault, daily (RFC-011)
+log "installing DR backup timer"
+bash "$ROOT/scripts/install_backup.sh" "$ROOT" "$VAULT" || log "backup install skipped"
+
+# Anki push + review-back sync (needs the bundled Anki desktop python; warns + skips if absent)
+log "installing Anki sync timer"
+bash "$ROOT/scripts/install_anki_sync.sh" "$ROOT" "$VAULT" || log "anki-sync install skipped"
+
 # 4. engine state (init once; never clobber existing records) -------------
 STATE="$VAULT/Registrar/state.json"
 if [ ! -f "$STATE" ]; then
@@ -62,14 +70,17 @@ else
   log "hermes CLI not found — rendered to $BUILD (install on the droplet to deploy)"
 fi
 
-# 6. [PHASE 4] register MCPs (leetcode, google-calendar; genanki needs none)
-log "[PHASE 4] MCP registration — not yet implemented"
+# 6. crons — on a RESTORE they come back with ~/.hermes/cron/jobs.json (from the encrypted bundle,
+#    via bootstrap.sh). On a first install, create them with `hermes cron create` (see README runbook).
+if [ -f "$HERMES_HOME/cron/jobs.json" ]; then
+  log "crons present ($(python3 -c "import json;print(len(json.load(open('$HERMES_HOME/cron/jobs.json'))['jobs']))" 2>/dev/null || echo '?') jobs)"
+else
+  log "no crons yet — create uni-assign/audit/week/monthly/briefing via 'hermes cron create' (README)"
+fi
 
-# 7. [PHASE 2] create cron jobs (assign/audit/week/monthly/cookie-check) ---
-log "[PHASE 2] cron creation — not yet implemented"
-
-# 8. [PHASE 4] interactive one-time setup (Google OAuth, AnkiWeb login) ----
-log "[PHASE 4] interactive OAuth/AnkiWeb — not yet implemented"
+# 7. externals — restored from the bundle where possible; re-auth only if expired.
+[ -d /usr/local/share/anki ] || log "Anki desktop not installed — SRS sync disabled until you install it"
+log "Google Calendar / AnkiWeb — tokens restored from backup if present; re-auth if expired"
 
 # 9. verify ---------------------------------------------------------------
 log "verifying engine"
