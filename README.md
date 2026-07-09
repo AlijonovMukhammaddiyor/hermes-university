@@ -89,7 +89,7 @@ move to a new droplet, on a box with the Hermes Agent installed:
 ```
 It asks for your **backup passphrase** (saved when the first backup ran — keep it in a password
 manager; it's the one thing not recoverable from git). Everything else — courses, GPA, streak, crons,
-config — comes back from the vault.
+config — comes back from the vault. Exact steps: **[docs/REDEPLOY-runbook.md](docs/REDEPLOY-runbook.md)**.
 
 ## Learn more
 - **[GUIDE.md](GUIDE.md)** — how to use & manage it day-to-day (commands, the daily loop, surfaces).
