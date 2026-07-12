@@ -40,11 +40,10 @@ def test_enroll_and_drop():
     assert s.courses["GEN101"].active is True and s.courses["GEN101"].unit == "basics"
     assert R.enroll(s, _fixtures(), "GEN101") == "already"  # idempotent
     R.enroll(s, _fixtures(), "GEN102")
-    assert set(R.active_courses(s)) == {"GEN101", "GEN102"}
+    assert s.courses["GEN101"].active and s.courses["GEN102"].active
     # drop = soft archive (RFC-009): the record is kept, hidden from active views, reversible
     assert R.drop(s, "GEN101") is True
     assert s.courses["GEN101"].status == "archived" and s.courses["GEN101"].active is False
-    assert "GEN101" not in R.active_courses(s)
     assert R.drop(s, "GEN101") is False  # already archived
     # restore re-derives status from the filesystem; GEN101 is authored -> placement
     assert R.restore(s, _fixtures(), _fixtures() / "no-uploads", "GEN101") is True
@@ -156,11 +155,79 @@ def test_promote_activation_agrees_with_weekly_cron():
     assert promote_active == cron_active
 
 
-def test_graduation_on_semester_2_finals():
+def test_graduation_on_semester_2_finals_awards_the_degree():
     s = _state()
     s.position.semester = 2
-    _, status = R.promote_or_graduate(s, "A", "2027-01-01", [rec("x.apply", 0.95, semester=2)])
+    s2, status = R.promote_or_graduate(s, "A", "2027-01-01", [rec("x.apply", 0.95, semester=2)])
     assert status == "graduated"
+    assert s2.degree.awarded_on == "2027-01-01"  # the whole point of graduating — must be set
+
+
+def test_final_finals_failure_does_not_award_the_degree():
+    # failing the final semester's finals → remediation, and NO degree is awarded (guards the
+    # `sem >= total_semesters and passed` half of the award condition)
+    s = _state()
+    s.position.semester = 2
+    s2, status = R.promote_or_graduate(s, "F", "2027-01-01", [rec("x.apply", 0.5, semester=2)])
+    assert status == "remediation"
+    assert s2.degree.awarded_on is None
+
+
+def test_activate_due_courses_deactivates_stale_semester_course():
+    # a semester-1-only course must be deactivated once the learner is in semester 2 (the branch the
+    # weekly `advance` cron relies on to retire courses that no longer run)
+    s = _state()
+    s.courses["S1ONLY"] = Course(title="S1", credits=2, runs_in=[1], active=True)
+    s.position.semester = 2
+    R.activate_due_courses(s)
+    assert s.courses["S1ONLY"].active is False
+
+
+def test_archived_course_is_never_reactivated():
+    # regression: a soft-dropped course must stay dropped through both the weekly `advance` cron and
+    # promotion — otherwise its credits silently re-enter the cap and block a replacement enrollment.
+    s = fresh_state(name="M", timezone="UTC", started_on="2026-07-06")
+    R.enroll(s, _fixtures(), "GEN101")  # 3cr, active
+    assert R.archive(s, "GEN101") is True
+    R.activate_due_courses(s)  # weekly cron
+    assert s.courses["GEN101"].active is False and s.courses["GEN101"].status == "archived"
+    s2, status = R.promote_or_graduate(s, "B", "2026-10-01", [rec("x.apply", 0.9, semester=1)])
+    assert status == "promoted"
+    assert s2.courses["GEN101"].active is False  # promotion must not resurrect it
+    # …so its credits don't count against the cap and a replacement still enrolls
+    s2.enrollment.credit_cap = 3
+    assert R.enroll(s2, _fixtures(), "GEN102") == "enrolled"
+
+
+def test_advance_cli_records_streak_and_advances_week(tmp_path):
+    # end-to-end coverage of the record_day tuple-unpacking + advance_week + activate_due_courses
+    # wiring the `day close` / `advance` CLIs drive (previously untested).
+    from engine.cli import main
+
+    out = tmp_path / "Registrar" / "state.json"
+    out.parent.mkdir(parents=True)
+    main(
+        [
+            "state",
+            "init",
+            "--name",
+            "M",
+            "--tz",
+            "UTC",
+            "--started",
+            "2026-07-06",
+            "--out",
+            str(out),
+        ]
+    )
+    assert (
+        main(["day", "close", "--vault", str(tmp_path), "--today", "2026-07-06", "--all-done"]) == 0
+    )
+    s = R.load_state(tmp_path)
+    assert s.streak.current == 1 and s.streak.last_completed_date == "2026-07-06"
+    assert main(["advance", "--vault", str(tmp_path), "--weeks", "1"]) == 0
+    s = R.load_state(tmp_path)
+    assert s.position.week_in_semester == 2 and s.position.absolute_week == 2
 
 
 def test_write_dashboard_emits_frontmatter(tmp_path):

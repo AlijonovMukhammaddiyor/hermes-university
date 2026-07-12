@@ -70,3 +70,31 @@ def test_review_ingest_flags_and_clears_review_due(tmp_path):
     from engine.srs import load_retention
 
     assert load_retention(tmp_path)["f1.apply"]["reviews"] == 2
+
+
+def test_review_ingest_drops_malformed_events_without_raising(tmp_path):
+    from engine.srs import ingest_reviews, load_retention
+
+    events = [
+        {"outcome": "f1.apply", "ease": 3, "ts": "2026-07-08T01:00"},  # valid
+        {"outcome": "f1.apply", "ease": 0, "ts": "2026-07-08T02:00"},  # ease out of 1..4
+        {"outcome": "f1.apply", "ease": 5, "ts": "2026-07-08T03:00"},  # ease out of 1..4
+        {"ease": 3, "ts": "2026-07-08T04:00"},  # missing outcome
+        {"outcome": "f1.apply", "ts": "2026-07-08T05:00"},  # missing ease
+    ]
+    r = ingest_reviews(tmp_path, events)  # must not raise
+    assert r["ingested"] == 1  # only the valid one counted
+    assert load_retention(tmp_path)["f1.apply"]["reviews"] == 1
+
+
+def test_review_ingest_tolerates_null_ts_without_dropping_the_batch(tmp_path):
+    # a single event with an explicit JSON null ts must not abort the whole batch — the sort key
+    # used to compare None < str and raise TypeError, discarding every valid review with it.
+    from engine.srs import ingest_reviews
+
+    events = [
+        {"outcome": "a.apply", "ease": 3, "ts": None},
+        {"outcome": "b.apply", "ease": 1, "ts": "2026-01-01"},
+    ]
+    r = ingest_reviews(tmp_path, events)  # must not raise
+    assert r["ingested"] == 2

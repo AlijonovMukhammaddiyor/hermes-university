@@ -206,10 +206,6 @@ def delete(state: State, code: str) -> bool:
     return state.courses.pop(code, None) is not None
 
 
-def active_courses(state: State) -> list[str]:
-    return [k for k, c in state.courses.items() if c.active]
-
-
 def refresh(state: State, records: list[GradeRecord]) -> State:
     """Recompute semester + cumulative GPA and standing from the grade log."""
     sem = state.position.semester
@@ -252,9 +248,12 @@ def record_day(state: State, today: str, all_done: bool) -> State:
 
 def activate_due_courses(state: State) -> list[str]:
     """Activate courses whose semester is current and whose activation week has arrived.
-    Returns the list of course codes newly activated."""
+    Returns the list of course codes newly activated. Archived (soft-dropped) courses are skipped —
+    they stay inactive until an explicit restore()."""
     newly: list[str] = []
     for code, course in state.courses.items():
+        if course.status == "archived":
+            continue
         if state.position.semester not in course.runs_in:
             course.active = False
             continue
@@ -301,6 +300,8 @@ def promote_or_graduate(
         state.gpa.semester = None
         # activate next-semester courses (week resets to 1) — same gate as activate_due_courses
         for course in state.courses.values():
+            if course.status == "archived":
+                continue  # a soft-dropped course stays dropped across promotion
             course.active = (sem + 1) in course.runs_in and _activation_due(
                 course.activates_week, state.position.week_in_semester
             )

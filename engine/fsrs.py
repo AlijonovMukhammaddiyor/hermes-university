@@ -35,12 +35,6 @@ def review(card_dict: dict, rating: int, now: datetime) -> dict:
     return card.to_dict()
 
 
-def retrievability(card_dict: dict, now: datetime) -> float:
-    """Current recall probability (0..1)."""
-    card = Card.from_dict(card_dict)
-    return float(_scheduler.get_card_retrievability(card, current_datetime=_aware(now)))
-
-
 def due(card_dict: dict) -> datetime:
     return Card.from_dict(card_dict).due
 

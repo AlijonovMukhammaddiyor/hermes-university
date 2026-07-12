@@ -305,7 +305,8 @@ teaching choices but never fabricates it.
 
 **Engine module:** `engine/learner_model.py` — reads `grades.jsonl` + review logs + completion
 timestamps, writes `learner_model.json`, and exposes queries the skills call
-(`next_topic(course)`, `difficulty_for(outcome)`, `best_slot(date)`, `weak_areas()`). Built in
+(`next_topic(course)`, `difficulty_for(outcome)`, `weak_areas()`, plus the `routine.best_hours`
+field for scheduling). Built in
 **phase 1** alongside the gradebook.
 
 ## 16. Open (co-design) items — NOT decided here

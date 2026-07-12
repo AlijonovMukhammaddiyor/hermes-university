@@ -96,7 +96,7 @@ def ingest_reviews(vault: str | Path, events: list[dict]) -> dict:
     ease 1 = Again → a lapse → review-due; ease ≥ 3 (Good/Easy) → recovered. Returns a summary."""
     ret = load_retention(vault)
     ingested = 0
-    for ev in sorted(events, key=lambda e: e.get("ts", "")):
+    for ev in sorted(events, key=lambda e: e.get("ts") or ""):  # a present-but-null ts sorts first
         o = ev.get("outcome")
         ease = ev.get("ease")
         if not o or ease not in (1, 2, 3, 4):

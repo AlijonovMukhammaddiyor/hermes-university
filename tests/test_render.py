@@ -21,12 +21,3 @@ def test_render_file(tmp_path):
     dst = tmp_path / "out" / "t.md"
     render.render_file(src, dst, {"LEARNER_NAME": "M"})
     assert dst.read_text() == "name: M"
-
-
-def test_load_config_env(tmp_path):
-    f = tmp_path / "config.env"
-    f.write_text('# comment\nLEARNER_NAME="Ada Lovelace"\nTIMEZONE=UTC\n\nEMPTY=""\n')
-    cfg = render.load_config_env(f)
-    assert cfg["LEARNER_NAME"] == "Ada Lovelace"
-    assert cfg["TIMEZONE"] == "UTC"
-    assert cfg["EMPTY"] == ""

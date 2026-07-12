@@ -38,13 +38,6 @@ def render_catalog(courses: list[Course]) -> str:
     return "\n".join(out).rstrip() + "\n"
 
 
-def grading_line(c: Course) -> str:
-    w = getattr(c, "grade_weights", None) or {}
-    if not w:
-        return "per syllabus"
-    return " · ".join(f"{k} {int(round(v * 100))}%" for k, v in w.items() if v)
-
-
 def _res_line(r) -> str:
     """One Markdown bullet for a Resource (single line so it nests cleanly under readings)."""
     head = f"**{r.title}**"
@@ -333,12 +326,22 @@ def render_transcript(state: State, records: list[GradeRecord]) -> str:
 
 
 # ---------------------------------------------------------------- degree progress
+def _mastered_outcomes(records: list[GradeRecord], thr: dict[str, float]) -> set[str]:
+    """Outcomes mastered by their LATEST grade — not ever-passed. A later failing retake un-masters,
+    so Home/DegreeProgress agree with the learner model's per-outcome band (MyPlan/next_topic) and
+    can never over-report mastery after a regression. The single 'what's mastered' definition."""
+    latest: dict[str, GradeRecord] = {}
+    for r in sorted(records, key=lambda x: x.ts):
+        latest[r.outcome] = r
+    return {oid for oid, r in latest.items() if band_meets(r.band, thr.get(oid, 0.8))}
+
+
 def render_degree_progress(
     state: State, records: list[GradeRecord], modules: dict[str, Course]
 ) -> str:
     # an outcome counts as achieved only at its mastery threshold (default ≥B), matching promotion
     thr = {o.id: o.mastery_threshold for m in modules.values() for o in m.all_outcomes()}
-    passed = {r.outcome for r in records if band_meets(r.band, thr.get(r.outcome, 0.8))}
+    passed = _mastered_outcomes(records, thr)
     total = req = 0
     for code, c in state.courses.items():
         m = modules.get(code)
@@ -468,7 +471,7 @@ def status_snapshot(vault: str | Path, courses_dir: str | Path, now=None) -> dic
     records = load_records(vault / "records" / "grades.jsonl")
     objective = load_profile(courses_dir.parent).goal  # the single objective everything serves
     thr = {o.id: o.mastery_threshold for m in modules.values() for o in m.all_outcomes()}
-    passed = {r.outcome for r in records if band_meets(r.band, thr.get(r.outcome, 0.8))}
+    passed = _mastered_outcomes(records, thr)
 
     courses = []
     for code, sc in state.courses.items():

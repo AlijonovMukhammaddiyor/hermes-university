@@ -172,10 +172,6 @@ def difficulty_for(model: LearnerModel, topic: str, baseline: str = "easy") -> s
     return max(tier, baseline, key=TIER_ORDER.index)
 
 
-def best_slot(model: LearnerModel) -> str | None:
-    return model.routine.best_hours[0] if model.routine.best_hours else None
-
-
 def next_topic(units: list[dict], mastered: set[str]) -> str | None:
     """First outcome whose prereqs are all mastered and itself is not, respecting the DAG.
     `units`: ordered [{"outcome": id, "depends_on": [ids]}]. Returns an outcome id or None."""

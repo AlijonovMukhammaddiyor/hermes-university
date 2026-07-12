@@ -92,7 +92,3 @@ def parse_board(md: str) -> dict[str, list[Card]]:
             if card:
                 cols[cur].append(card)
     return cols
-
-
-def empty_board() -> str:
-    return render_board({c: [] for c in COLUMNS})

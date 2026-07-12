@@ -316,6 +316,18 @@ def test_render_transcript_and_degree(tmp_path):
     assert "Degree Progress" in dp and "Outcomes mastered" in dp
 
 
+def test_mastery_uses_latest_grade_not_ever_passed():
+    # regression: a passed-then-failed outcome (a lapsed retake) must NOT still count as mastered.
+    # Home/DegreeProgress both route through _mastered_outcomes, so they agree with the learner model
+    # (MyPlan/next_topic use the latest band) and never over-report after a regression.
+    passed_then_failed = [
+        rec("f1.apply", 0.95, kind="hw", ts="2026-07-06T10:00:00+00:00"),
+        rec("f1.apply", 0.40, kind="hw", ts="2026-07-08T10:00:00+00:00"),
+    ]
+    assert docs._mastered_outcomes(passed_then_failed, {"f1.apply": 0.8}) == set()
+    assert docs._mastered_outcomes(passed_then_failed[:1], {"f1.apply": 0.8}) == {"f1.apply"}
+
+
 def test_schedule_has_real_dates():
     s = fresh_state(name="M", timezone="UTC", started_on="2026-07-06")
     sch = docs.render_schedule(s)

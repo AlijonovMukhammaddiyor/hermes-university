@@ -30,13 +30,14 @@ set -a
 . "$CFG"
 set +a
 
-# in-place upsert of KEY="value" in config.env (python handles any value safely)
+# in-place upsert of KEY=value in config.env (shell-quoted so any value — quotes, $, `, \ — round-trips)
 set_key() {
   python3 - "$CFG" "$1" "$2" <<'PY'
+import shlex
 import sys
 path, key, val = sys.argv[1], sys.argv[2], sys.argv[3]
 lines = open(path).read().splitlines()
-line = f'{key}="{val}"'
+line = f"{key}={shlex.quote(val)}"
 for i, l in enumerate(lines):
     if l.startswith(key + "="):
         lines[i] = line

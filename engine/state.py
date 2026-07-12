@@ -18,7 +18,9 @@ CourseStatus = Literal["draft", "researching", "authoring", "placement", "active
 
 
 class Program(BaseModel):
-    total_semesters: int = 2
+    # The engine is built around exactly two semesters (phase logic, the s1_/s2_ Assessments fields,
+    # the Degree requirement) — so this is fixed, not a knob. Literal[2] rejects any other value loudly.
+    total_semesters: Literal[2] = 2
     weeks_per_semester: int = 12
     started_on: str | None = None  # YYYY-MM-DD
 
@@ -123,7 +125,6 @@ def fresh_state(
     name: str,
     timezone: str,
     started_on: str,
-    total_semesters: int = 2,
     weeks_per_semester: int = 12,
     credential_name: str | None = None,
 ) -> State:
@@ -131,7 +132,6 @@ def fresh_state(
     degree = Degree(name=credential_name) if credential_name else Degree()
     return State(
         program=Program(
-            total_semesters=total_semesters,
             weeks_per_semester=weeks_per_semester,
             started_on=started_on,
         ),

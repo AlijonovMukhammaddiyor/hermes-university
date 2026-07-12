@@ -1,6 +1,5 @@
 from engine.learner_model import (
     LearnerModel,
-    best_slot,
     difficulty_for,
     next_topic,
     recompute,
@@ -50,12 +49,20 @@ def test_difficulty_baseline_floors_a_strong_learner():
     assert difficulty_for(m3, "dp", baseline="med") == "med"  # floored up to baseline
 
 
-def test_best_slot_from_completion_hours():
+def test_best_hours_from_completion_hours():
     # 22:00 Tashkent == 17:00 UTC ; put 3 records there, 1 elsewhere
     recs = [rec("x.apply", 0.9, ts="2026-07-06T17:00:00+00:00") for _ in range(3)]
     recs.append(rec("y.apply", 0.9, ts="2026-07-06T05:00:00+00:00"))
     m = build(recs)
-    assert best_slot(m) == "22:00-00:00"
+    assert m.routine.best_hours[0] == "22:00-00:00"  # the slot skills/docs read for scheduling
+
+
+def test_proficiency_falls_back_to_all_time_when_window_empty():
+    # every record predates the 14-day trend window → the windowed list is empty and recompute must
+    # fall back to all-time (`or recs`), not crash on len([])/0 for an inactive learner.
+    recs = [rec("dp.apply", 0.9, ts="2026-06-01T20:00:00+00:00")]
+    m = build(recs, now="2026-07-10T00:00:00+00:00")
+    assert m.topics["dp"].proficiency == 0.9
 
 
 def test_pace_task_cap_and_rest_day():

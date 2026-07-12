@@ -29,9 +29,11 @@ def main(vault: str, coll_path: str) -> int:
     cards = [json.loads(line) for line in open(pending) if line.strip()]
 
     col = Collection(coll_path)
+    added_ids: list[int] = []
+    # uploaded → our adds reached AnkiWeb; downloaded → remote replaced local (our adds gone)
+    uploaded = downloaded = False
     try:
         basic = col.models.by_name("Basic")
-        added = 0
         for c in cards:
             did = col.decks.id(c["deck"])
             note = col.new_note(basic)
@@ -40,7 +42,7 @@ def main(vault: str, coll_path: str) -> int:
             for t in c.get("tags", []):
                 note.add_tag(t)
             col.add_note(note, did)
-            added += 1
+            added_ids.append(note.id)
 
         auth = col.sync_login(os.environ["AW_USER"], os.environ["AW_PASS"], None)
         out = col.sync_collection(auth, False)
@@ -52,15 +54,27 @@ def main(vault: str, coll_path: str) -> int:
                 "refusing a full-upload sync — it would overwrite AnkiWeb. Seed the "
                 "droplet collection by syncing once from your Anki, then retry."
             )
-        if out.required == 3:  # FULL_DOWNLOAD — safe (pulls remote in)
+        if out.required == 3:  # FULL_DOWNLOAD — safe (pulls remote in, discarding our local adds)
             if out.new_endpoint:
                 auth.endpoint = out.new_endpoint
             col.full_upload_or_download(auth=auth, server_usn=out.server_media_usn, upload=False)
+            downloaded = True
+        else:
+            uploaded = True  # a normal sync pushed our new notes to AnkiWeb
     finally:
+        # Atomicity: unless a normal sync actually pushed the notes, undo them so a refused/failed run
+        # leaves the collection exactly as it was — the queue is preserved and re-added next run, never
+        # duplicated. (A full DOWNLOAD already replaced the local collection, so there's nothing to undo.)
+        if not uploaded and not downloaded and added_ids:
+            col.remove_notes(added_ids)
         col.close()
 
-    open(pending, "w").close()  # clear queue only after a clean sync
-    print(f"synced {added} cards to AnkiWeb")
+    if uploaded:
+        open(pending, "w").close()  # clear the queue only once its cards are on AnkiWeb
+        print(f"synced {len(added_ids)} cards to AnkiWeb")
+        return 0
+    # a full download just seeded the local collection; the cards weren't uploaded — keep them queued
+    print("seeded local collection from AnkiWeb; cards remain queued for the next sync")
     return 0
 
 

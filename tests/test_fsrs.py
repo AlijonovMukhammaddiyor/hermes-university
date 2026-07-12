@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from engine import fsrs
 from tests.conftest import dt
@@ -7,8 +7,13 @@ from tests.conftest import dt
 def test_new_card_is_serializable_dict():
     c = fsrs.new_card()
     assert isinstance(c, dict)
-    # round-trips through the library
-    assert isinstance(fsrs.due(c), object)
+    # due round-trips through the library as a real datetime (is_due/review compare on it)
+    assert isinstance(fsrs.due(c), datetime)
+
+
+def test_new_card_honors_explicit_clock():
+    now = dt("2026-07-06T20:00:00+00:00")
+    assert fsrs.due(fsrs.new_card(now)) == now  # a fresh card is due at `now`, not import time
 
 
 def test_review_advances_due_into_future():
@@ -16,15 +21,6 @@ def test_review_advances_due_into_future():
     c = fsrs.new_card()
     c2 = fsrs.review(c, 3, now)  # Good
     assert fsrs.due(c2) > now
-
-
-def test_retrievability_high_just_after_review_and_decays():
-    now = dt("2026-07-06T20:00:00+00:00")
-    c = fsrs.review(fsrs.new_card(), 3, now)
-    r_now = fsrs.retrievability(c, now)
-    r_later = fsrs.retrievability(c, now + timedelta(days=90))
-    assert 0.5 <= r_now <= 1.0
-    assert r_later < r_now
 
 
 def test_is_due_toggle():

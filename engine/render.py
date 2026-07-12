@@ -74,15 +74,3 @@ def _frontmatter(content: str) -> dict:
     ) as e:  # e.g. an unquoted colon in a description — fail loud, not a raw traceback
         raise ValueError(f"invalid SKILL.md frontmatter YAML: {e}") from e
     return fm if isinstance(fm, dict) else {}
-
-
-def load_config_env(path: str | Path) -> dict[str, str]:
-    """Parse a dotenv-style config.env into a flat dict (KEY=VALUE, quotes stripped)."""
-    out: dict[str, str] = {}
-    for line in Path(path).read_text().splitlines():
-        line = line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        k, v = line.split("=", 1)
-        out[k.strip()] = v.strip().strip('"').strip("'")
-    return out

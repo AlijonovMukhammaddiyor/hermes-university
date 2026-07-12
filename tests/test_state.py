@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from engine.state import Course, State, fresh_state
+from engine.state import Course, Program, State, fresh_state
 
 
 def test_fresh_state_defaults():
@@ -33,3 +33,9 @@ def test_rejects_bad_schema_version(tmp_path):
 def test_rejects_bad_standing():
     with pytest.raises(ValidationError):
         State(standing="excellent")  # not in Literal
+
+
+def test_program_rejects_non_two_semester_config():
+    # the engine is built around exactly two semesters — the schema must reject any other value loudly
+    with pytest.raises(ValidationError):
+        Program(total_semesters=3)

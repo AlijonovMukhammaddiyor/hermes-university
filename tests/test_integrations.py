@@ -48,6 +48,54 @@ def test_registry_holds_the_real_integrations():
     assert {"llm", "telegram", "web-search", "google-calendar", "anki"} <= names
 
 
+def test_anki_probe_none_when_a_desktop_is_installed(monkeypatch):
+    from pathlib import Path
+
+    from engine.integrations import _anki_probe
+
+    monkeypatch.setattr(Path, "exists", lambda self: True)
+    assert _anki_probe({}) is None  # a desktop path exists → config is enough
+
+
+def test_anki_probe_unavailable_when_no_desktop(monkeypatch):
+    from pathlib import Path
+
+    from engine.integrations import _anki_probe
+
+    monkeypatch.setattr(Path, "exists", lambda self: False)
+    st = _anki_probe({})
+    assert st is not None and st.status == "unavailable"
+
+
+def test_calendar_probe_unavailable_when_creds_file_missing(tmp_path):
+    from engine.integrations import _calendar_probe
+
+    st = _calendar_probe({"GOOGLE_OAUTH_CREDENTIALS": str(tmp_path / "missing.json")})
+    assert st is not None and st.status == "unavailable"
+
+
+def test_calendar_probe_ok_when_no_token_yet(tmp_path, monkeypatch):
+    from pathlib import Path
+
+    from engine.integrations import _calendar_probe
+
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)  # no tokens.json under this home
+    st = _calendar_probe({})
+    assert st is not None and st.status == "ok" and "authorize" in st.detail
+
+
+def test_calendar_probe_none_when_authorized(tmp_path, monkeypatch):
+    from pathlib import Path
+
+    from engine.integrations import _calendar_probe
+
+    tokens = tmp_path / ".config/google-calendar-mcp/tokens.json"
+    tokens.parent.mkdir(parents=True)
+    tokens.write_text("{}")
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    assert _calendar_probe({}) is None  # token present → configured + reachable
+
+
 def test_load_env_file_overlays_and_parses(tmp_path):
     f = tmp_path / "config.env"
     f.write_text('# comment\nSERPER_API_KEY="abc"\nLLM_MODEL=deepseek-chat\n\n')
