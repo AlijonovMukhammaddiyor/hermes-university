@@ -643,8 +643,8 @@ def main(argv: list[str] | None = None) -> int:
 
         p = Path(args.vault) / "records" / "learner_model.json"
         m = LM.load(p)
-        if args.sub == "observe":
-            try:
+        try:
+            if args.sub == "observe":
                 obs = LM.observe(
                     m,
                     args.aspect,
@@ -654,17 +654,17 @@ def main(argv: list[str] | None = None) -> int:
                     confidence=args.confidence,
                     source=args.source,
                 )
-            except ValueError as e:
-                print(json.dumps({"ok": False, "error": str(e)}))
-                return 2
-            out = {"ok": True, "observed": obs.model_dump()}
-        elif args.sub == "forget":
-            out = {"ok": True, "forgot": LM.forget(m, args.aspect, args.value)}
-        elif args.sub == "consolidate":
-            out = {"ok": True, "dropped": LM.consolidate(m, _now())}
-        else:
-            LM.reset(m)
-            out = {"ok": True, "reset": True}
+                out = {"ok": True, "observed": obs.model_dump()}
+            elif args.sub == "forget":
+                out = {"ok": True, "forgot": LM.forget(m, args.aspect, args.value)}
+            elif args.sub == "consolidate":
+                out = {"ok": True, "dropped": LM.consolidate(m, _now())}
+            else:
+                LM.reset(m)
+                out = {"ok": True, "reset": True}
+        except ValueError as e:  # unknown aspect (observe/forget) — reject, don't persist
+            print(json.dumps({"ok": False, "error": str(e)}))
+            return 2
         LM.save(m, p)
         print(json.dumps(out))
         return 0

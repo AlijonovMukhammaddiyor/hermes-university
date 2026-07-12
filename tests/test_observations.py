@@ -132,13 +132,22 @@ def test_cli_consolidate_runs(tmp_path, capsys):
 
 
 # ---- visible surface ----
-def test_render_learner_model_shows_beliefs_and_facts():
+def test_render_learner_model_shows_beliefs_evidence_and_facts():
     m = LearnerModel()
-    LM.observe(m, "format", "worked examples", now=_now(), confidence=0.7, source="chat")
+    LM.observe(
+        m,
+        "format",
+        "worked examples",
+        now=_now(),
+        confidence=0.7,
+        source="chat",
+        evidence="said so on 2026-07-12",
+    )
     m.routine.best_hours = ["20:00-22:00"]
     md = docs.render_learner_model(m)
     assert "What I've learned about you" in md
     assert "worked examples" in md and "chat" in md and "70%" in md
+    assert "said so on 2026-07-12" in md  # evidence is shown — the audit safety net (RFC-013)
     assert "Best hours" in md and "20:00-22:00" in md
 
 
@@ -174,3 +183,67 @@ def test_check_skill_caps_ok_warn_and_reject(tmp_path):
     p.write_text("---\nname: prof\ndescription: ok\n---\n" + "y" * 100_001)
     with pytest.raises(ValueError):
         check_skill_caps(p)
+
+
+# ---- regressions from the adversarial review ----
+def test_consolidate_is_idempotent_across_nightly_runs():
+    # decay must track days since last reinforcement, not how many times consolidate runs
+    m = LearnerModel()
+    LM.observe(m, "format", "video", now=_now("2026-06-01"), confidence=0.6)
+    nightly = LearnerModel.model_validate(m.model_dump())
+    for d in range(2, 31):  # once per night for ~29 days
+        LM.consolidate(nightly, _now(f"2026-06-{d:02d}"))
+    once = LearnerModel.model_validate(m.model_dump())
+    LM.consolidate(once, _now("2026-06-30"))
+    assert "format" in nightly.preferences  # survives (the bug dropped it ~day 8)
+    a, b = nightly.preferences["format"].confidence, once.preferences["format"].confidence
+    assert abs(a - b) < 0.01
+
+
+def test_confidence_is_clamped_to_unit_interval():
+    m = LearnerModel()
+    LM.observe(m, "format", "x", now=_now(), confidence=60)  # 0-100 scale slip
+    LM.observe(m, "interest", "y", now=_now(), confidence=-0.3)
+    assert m.preferences["format"].confidence == 1.0 and m.interests[0].confidence == 0.0
+    md = docs.render_learner_model(m)
+    assert "6000%" not in md and "-30%" not in md
+
+
+def test_forget_rejects_unknown_aspect():
+    with pytest.raises(ValueError):
+        LM.forget(LearnerModel(), "fromat")
+
+
+def test_cli_forget_rejects_bad_aspect(tmp_path, capsys):
+    code = cli.main(["learner", "forget", "--vault", str(tmp_path), "--aspect", "fromat"])
+    assert code == 2 and json.loads(capsys.readouterr().out)["ok"] is False
+
+
+def test_check_skill_caps_bad_frontmatter_fails_loud(tmp_path):
+    p = tmp_path / "s" / "SKILL.md"
+    p.parent.mkdir()
+    p.write_text("---\nname: s\ndescription: Use this: for grading\n---\nbody")  # unquoted colon
+    with pytest.raises(ValueError):
+        check_skill_caps(p)
+
+
+def test_check_skill_caps_rejects_long_description(tmp_path):
+    p = tmp_path / "s" / "SKILL.md"
+    p.parent.mkdir()
+    p.write_text("---\nname: s\ndescription: " + "z" * 1025 + "\n---\nbody")
+    with pytest.raises(ValueError):
+        check_skill_caps(p)
+
+
+def test_persist_preserves_observations(tmp_path):
+    from engine import registrar as R
+    from tests.conftest import rec
+
+    p = tmp_path / "records" / "learner_model.json"
+    m = LearnerModel()
+    LM.observe(m, "format", "worked examples", now=_now())
+    LM.save(m, p)
+    R.persist_learner_model(tmp_path, [rec("f1.apply", 0.9, course="X")], "UTC", _now())
+    reloaded = LM.load(p)
+    assert reloaded.preferences["format"].value == "worked examples"  # observation survived
+    assert reloaded.topics  # grade-derived stats were recomputed

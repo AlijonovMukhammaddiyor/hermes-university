@@ -659,10 +659,11 @@ def render_learner_model(model) -> str:
     ]
     obs = LM.all_observations(model)
     if obs:
-        out += ["| Aspect | What | Confidence | From |", "|---|---|---|---|"]
+        out += ["| Aspect | What | Why | Confidence | From |", "|---|---|---|---|---|"]
         for o in sorted(obs, key=lambda x: (x.aspect, -x.confidence)):
             out.append(
-                f"| {o.aspect} | {_cell(o.value)} | {int(round(o.confidence * 100))}% | {o.source} |"
+                f"| {o.aspect} | {_cell(o.value)} | {_cell(o.evidence) or '—'} | "
+                f"{int(round(o.confidence * 100))}% | {o.source} |"
             )
         out.append("")
     else:

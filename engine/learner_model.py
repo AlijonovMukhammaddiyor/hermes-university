@@ -58,10 +58,13 @@ class Observation(BaseModel):
     aspect: str
     value: str
     evidence: str = ""
-    confidence: float = 0.5
+    confidence: float = Field(0.5, ge=0.0, le=1.0)
     source: str = "chat"  # chat | calendar | timing | grades
     first_seen: str = ""
     last_seen: str = ""
+    decayed_on: str = (
+        ""  # last consolidate date — decay anchors here so nightly runs stay idempotent
+    )
 
 
 class LearnerModel(BaseModel):
@@ -206,6 +209,7 @@ def observe(
     single-valued ones (format/energy_window/motivation/pace) overwrite, keeping the original date."""
     if aspect not in ASPECTS:
         raise ValueError(f"unknown aspect {aspect!r}; valid: {', '.join(ASPECTS)}")
+    confidence = min(1.0, max(0.0, confidence))  # LLMs sometimes emit a 0-100 scale
     day = now.date().isoformat()
     obs = Observation(
         aspect=aspect,
@@ -220,7 +224,7 @@ def observe(
         for o in _list_store(model, aspect):
             if o.value.lower() == value.lower():
                 o.confidence = round(min(1.0, max(o.confidence, confidence) + 0.1), 4)
-                o.last_seen, o.evidence = day, evidence or o.evidence
+                o.last_seen, o.evidence, o.decayed_on = day, evidence or o.evidence, ""
                 return o
         _list_store(model, aspect).append(obs)
     else:
@@ -232,6 +236,8 @@ def observe(
 
 def forget(model: LearnerModel, aspect: str, value: str | None = None) -> int:
     """Drop observations for an aspect (all of it, or just a matching value). Returns count removed."""
+    if aspect not in ASPECTS:
+        raise ValueError(f"unknown aspect {aspect!r}; valid: {', '.join(ASPECTS)}")
     if aspect in _LIST_ASPECTS:
         store = _list_store(model, aspect)
         before = len(store)
@@ -260,10 +266,18 @@ def consolidate(
     """Decay each observation by days since last seen; drop those below the floor. Returns count dropped."""
     dropped = 0
 
+    today = now.date()
+
     def survive(o: Observation) -> bool:
         nonlocal dropped
-        days = (now.date() - date.fromisoformat(o.last_seen)).days if o.last_seen else 0
+        anchor = (
+            o.decayed_on or o.last_seen
+        )  # decay from the last consolidation, else last reinforcement
+        days = (today - date.fromisoformat(anchor)).days if anchor else 0
         o.confidence = round(o.confidence * (decay ** max(0, days)), 4)
+        o.decayed_on = (
+            today.isoformat()
+        )  # so a repeated (nightly) run doesn't re-decay the same days
         if o.confidence < floor:
             dropped += 1
             return False

@@ -67,7 +67,12 @@ def _frontmatter(content: str) -> dict:
     end = content.find("\n---", 3)
     if end < 0:
         return {}
-    fm = yaml.safe_load(content[3:end])
+    try:
+        fm = yaml.safe_load(content[3:end])
+    except (
+        yaml.YAMLError
+    ) as e:  # e.g. an unquoted colon in a description — fail loud, not a raw traceback
+        raise ValueError(f"invalid SKILL.md frontmatter YAML: {e}") from e
     return fm if isinstance(fm, dict) else {}
 
 
