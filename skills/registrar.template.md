@@ -57,9 +57,9 @@ against the module and calls the engine to gate advancement, promotion, and grad
 6.5 **Kanban board** (the learner's Obsidian workspace — see "Kanban board" below): `{{ENGINE}} board
    read`, add today's tasks to **Today** (dedupe by outcome), keep the other columns, `{{ENGINE}} board
    write`.
-7. **Calendar:** via `google-calendar` MCP, read the primary calendar for free slots at the
-   learner's `best_hours` (from the Learner Model) and create one study block PER task on the
-   **Mentor** calendar only.
+7. **Calendar:** via `google-calendar` MCP, read the primary calendar for free slots at the learner's
+   `energy_window`/`best_hours` (from `learner show`), **never inside a recorded `constraint`**, and
+   create one study block PER task on the **Mentor** calendar only.
 7.5 **Hold check:** if `state.hold` is set (e.g. "probation"), run a **remediation day** — revisit
    the weakest/failed outcomes (from the Learner Model), assign **no new units**, and say so kindly.
 8. **Regenerate the visible docs** so Obsidian stays live:
@@ -68,10 +68,14 @@ against the module and calls the engine to gate advancement, promotion, and grad
    the Telegram digest (see "Digest voice"), ending with a context-aware quick-action menu.
 
 ## Learn the learner (RFC-013)
-Throughout — assigning, the night audit, and every chat — notice what you learn about *how* this learner
-learns and record it (the engine keeps a decaying, correctable model). **On the night audit especially**,
-compare the blocks you booked to what actually happened — calendar-adherence and timing signals. Read the
-model before you personalise. Full protocol, aspects, and the command: `references/observe-the-learner.md`.
+**Record** what you learn about *how* this learner learns — while assigning, on the night audit, and in
+every chat (the engine keeps a decaying, correctable model). On the night audit, compare the blocks you
+booked to what actually happened (calendar-adherence + timing). Protocol, aspects, and command:
+`references/observe-the-learner.md`.
+**Apply** it every day: read `{{ENGINE}} learner show --vault {{VAULT}}` first, then book study at the
+recorded `energy_window` (else `best_hours`), **never inside a `constraint`**, size the day to `pace`, and
+lean tasks toward their `interest`. **End the night audit** by decaying stale beliefs:
+`{{ENGINE}} learner consolidate --vault {{VAULT}}`.
 
 ## Digest voice — text like a coach, not a report (applies to EVERY Telegram message)
 This is the learner's whole experience of the system. Get it right.

@@ -211,6 +211,8 @@ def main(argv: list[str] | None = None) -> int:
     plr.add_argument("--vault", required=True)
     plc = pl.add_parser("consolidate")  # decay stale observations (nightly)
     plc.add_argument("--vault", required=True)
+    pls = pl.add_parser("show")  # what's known about the learner, for skills to personalize
+    pls.add_argument("--vault", required=True)
 
     # plan — the engine's per-course "what to teach next + at what difficulty" (drives assign)
     pp = sub.add_parser("plan")
@@ -635,6 +637,24 @@ def main(argv: list[str] | None = None) -> int:
         recs = gb.load_records(args.records)
         m = recompute(LearnerModel(), recs, tz=args.tz, now=_now())
         print(json.dumps({"weak_areas": weak_areas(m)}))
+        return 0
+    if args.cmd == "learner" and args.sub == "show":
+        from pathlib import Path
+
+        from . import learner_model as LM
+
+        m = LM.load(Path(args.vault) / "records" / "learner_model.json")
+        print(
+            json.dumps(
+                {
+                    "preferences": {a: o.model_dump() for a, o in m.preferences.items()},
+                    "constraints": [o.model_dump() for o in m.constraints],
+                    "interests": [o.model_dump() for o in m.interests],
+                    "best_hours": m.routine.best_hours,
+                    "weak_areas": weak_areas(m),
+                }
+            )
+        )
         return 0
     if args.cmd == "learner" and args.sub in ("observe", "forget", "reset", "consolidate"):
         from pathlib import Path

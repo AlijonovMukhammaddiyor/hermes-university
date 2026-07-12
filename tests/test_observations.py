@@ -131,6 +131,26 @@ def test_cli_consolidate_runs(tmp_path, capsys):
     assert "dropped" in json.loads(capsys.readouterr().out)
 
 
+def test_cli_learner_show(tmp_path, capsys):
+    v = str(tmp_path)
+    cli.main(
+        ["learner", "observe", "--vault", v, "--aspect", "format", "--value", "worked examples"]
+    )
+    cli.main(
+        ["learner", "observe", "--vault", v, "--aspect", "constraint", "--value", "no mornings"]
+    )
+    cli.main(
+        ["learner", "observe", "--vault", v, "--aspect", "interest", "--value", "transformers"]
+    )
+    capsys.readouterr()
+    assert cli.main(["learner", "show", "--vault", v]) == 0
+    out = json.loads(capsys.readouterr().out)
+    assert out["preferences"]["format"]["value"] == "worked examples"
+    assert out["constraints"][0]["value"] == "no mornings"
+    assert out["interests"][0]["value"] == "transformers"
+    assert "best_hours" in out and "weak_areas" in out
+
+
 # ---- visible surface ----
 def test_render_learner_model_shows_beliefs_evidence_and_facts():
     m = LearnerModel()

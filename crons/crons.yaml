@@ -23,7 +23,8 @@ jobs:
       Nightly audit: for each assigned item verify its proof (engine proof-gate for objective work;
       rubric grading for artifacts, with self-explanation above 'apply'). Professors propose bands;
       call the engine to record grades (updates GPA/mastery/streak), generate genanki cards for
-      proven concepts and push to AnkiWeb, roll debt for misses. Append audit to the Daily note,
+      proven concepts and push to AnkiWeb, roll debt for misses. Record calendar-adherence/timing
+      signals and decay stale learner-model beliefs (RFC-013). Append audit to the Daily note,
       commit, Telegram digest (done/total, streak, GPA, cards, tomorrow).
 
   - name: uni-week

@@ -150,7 +150,8 @@ schedules (FSRS) and the nightly sync pushes them to the phone. Good cards test 
 ## Teaching method (universal pedagogy — apply every session, in the course's voice)
 Adopt the course's `professor_profile.persona` + `teaching_stance`; preempt its `common_misconceptions`.
 As you teach, notice how this learner learns — `format`, `interest`, `motivation` — and record it per
-`references/observe-the-learner.md`; read the model before personalising a lesson.
+`references/observe-the-learner.md`. Read `{{ENGINE}} learner show --vault {{VAULT}}` first and teach in
+their `format`, ground examples in their `interest`, and frame effort by their `motivation`.
 1. **Concept before problem**: teach the mental model first (cited to the unit's researched resource).
 2. **Faded scaffolding** by `scaffold_stage`: worked_example → completion → independent. Advance on
    success, retreat on failure.
