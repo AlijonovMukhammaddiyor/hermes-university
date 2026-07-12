@@ -1,9 +1,11 @@
 # 🎓 Hermes University
 
-**A self-driving personal university that runs on your own server.** Tell it a goal; it **researches the
-field**, **builds you a real course** (full A–Z syllabus, best-in-class materials, week-by-week plan),
-then **teaches you every day** — coaching you over Telegram, tracking mastery with a real engine, and
-drilling you with spaced repetition. Your box, your API keys, no SaaS.
+**A personal university that molds to your life — not the other way around.** Tell it a goal; it
+**researches the field** and **builds you a real course** (full A–Z syllabus, best-in-class materials),
+a **placement exam** skips what you already know, and it **teaches you day by day on your own schedule** —
+coaching over Telegram, tracking real mastery with an engine. No cohort, no someone-else's calendar to
+keep up with. Everything personalizes to *you*: your goals, your level, your hours. Your server, your
+API keys, no SaaS.
 
 <p align="left">
   <img alt="license: MIT" src="https://img.shields.io/badge/license-MIT-green.svg">
@@ -19,21 +21,22 @@ drilling you with spaced repetition. Your box, your API keys, no SaaS.
      (3) a rendered Syllabus.md with the week-by-week plan. Add GIFs/PNGs here — visuals sell it. -->
 
 ```mermaid
-flowchart TB
-  You([you]) -->|"chat · do things"| TG["Telegram<br/>coach + control"]
-  You -->|"read · track"| OB["Obsidian<br/>board · syllabus · home"]
-  You -->|"review"| AK["Anki<br/>spaced repetition"]
-  subgraph host["your always-on server — your keys"]
-    ENG["Deterministic engine<br/>GPA · mastery · proofs · schedule"]
-    VAULT[("Vault<br/>git-synced")]
+flowchart LR
+  You([you]) <==>|"chat — do everything"| TG["📱 Telegram<br/>coach + control"]
+  subgraph brain["your always-on server — your keys"]
+    ENG["⚙️ Deterministic engine<br/>research · GPA · mastery · proofs · schedule"]
+    VAULT[("📓 Vault<br/>git-synced")]
     ENG <--> VAULT
   end
   TG <--> ENG
-  OB <--> VAULT
-  AK <--> ENG
+  ENG -.->|"see + track"| OB["🗂️ Obsidian<br/>board · syllabus · home"]
+  ENG -.->|"optional"| AK["🔁 Anki<br/>spaced repetition"]
 ```
 
 ## Why it's different
+- **Built around your life, not a fixed schedule.** No cohort to join, no course calendar to fall behind
+  — it plans around your real days and your pace, and adapts as you go. Level, workload, timing, subject:
+  all personalized to you.
 - **It researches, it doesn't hallucinate.** Course design is grounded in a real, cited research report
   (you run a deep-research prompt in Claude; it authors from that) plus mandatory web search — a
   machine-checked gate rejects any course built from the model's memory.
@@ -57,15 +60,17 @@ flowchart LR
   F --> G["your MyPlan.md<br/>the daily loop begins"]
 ```
 
-## Three surfaces, one brain
-- **Telegram** — your coach *and* your control panel: daily nudges, every command, voice answers, files.
-- **Obsidian** — your workspace: a **Kanban board** you track work on, a live **Home** dashboard, and
+## One brain, three surfaces
+The engine is the brain; you reach it three ways — most of the time, just the first:
+- **Telegram — where you live.** Your coach *and* control panel: daily nudges, every command, voice
+  answers, files. Routine work never needs anything else.
+- **Obsidian — where you look.** A **Kanban board** you track work on, a live **Home** dashboard, and
   every syllabus / resource / transcript. Two-way — drag a card to *Done* and the night audit verifies it.
-- **Anki** — retention: cards auto-made from proven concepts, pushed to your phone (FSRS); lapses come
-  back for review.
+- **Anki — optional retention.** Turn it on and proven concepts become spaced-repetition cards on your
+  phone (FSRS), lapses coming back for review. Leave it off and everything else still works.
 
-Plus: a **daily tech/AI/engineering briefing** (curated blogs + news, the few things worth reading), a
-**Google-Calendar** study schedule, and **spaced-repetition** that closes the loop.
+Plus, both optional: a **daily tech/AI/engineering briefing** (curated blogs + news — the few things
+worth reading) and a **Google-Calendar** study schedule that plans around *your* days.
 
 ## Quickstart
 ```bash
