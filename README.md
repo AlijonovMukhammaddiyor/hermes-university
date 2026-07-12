@@ -1,11 +1,10 @@
 # 🎓 Hermes University
 
-**A personal university that molds to your life — not the other way around.** Tell it a goal; it
-**researches the field** and **builds you a real course** (full A–Z syllabus, best-in-class materials),
-a **placement exam** skips what you already know, and it **plans your week straight onto your own Google
-Calendar** — around your real life, at your best hours — then coaches you through it day by day over
-Telegram. No cohort, no someone-else's calendar to keep up with; the routine forms around *you*: your
-goals, your level, your hours. Your server, your API keys, no SaaS.
+**A personal university with one student and one objective — you, and the single thing you want to
+become great at.** Tell a Telegram bot your goal; it researches the field, builds you a real *cited*
+curriculum, books the work onto your own calendar around your actual days, and coaches you toward that
+one objective every day — with a deterministic engine tracking real mastery, never guesswork. No cohort,
+no fixed schedule to fall behind, no SaaS: your server, your keys.
 
 <p align="left">
   <img alt="license: MIT" src="https://img.shields.io/badge/license-MIT-green.svg">
@@ -14,11 +13,61 @@ goals, your level, your hours. Your server, your API keys, no SaaS.
   <img alt="status: pre-1.0" src="https://img.shields.io/badge/status-pre--1.0-orange.svg">
 </p>
 
-> *"I want to be one of the best AI engineers."* → a researched, cited course; a placement exam so it
-> skips what you already know; daily proof-gated tasks; and a transcript that actually means something.
+## What it's like
+You talk to a Telegram bot. Everything else happens around you.
 
-<!-- SCREENSHOTS: (1) Telegram create-course + research handoff · (2) the Obsidian Kanban board ·
-     (3) a rendered Syllabus.md with the week-by-week plan. Add GIFs/PNGs here — visuals sell it. -->
+```text
+You  ▸  create course  become a great AI engineer
+
+Bot  ▸  Love it — a few quick questions so I build this around *you*:
+        where are you with ML now, how many hours a week, and by when?
+        …
+Bot  ▸  📎 Here's a deep-research prompt. Run it in Claude and drop the report
+        back — I design the course from real sources, never from memory.
+
+You  ▸  «uploads the research report»
+
+Bot  ▸  Built  AI Engineering  — 2 semesters · 8 units · cited materials and a
+        week-by-week plan. Want a short placement exam to skip what you know?
+
+───────────────  next morning, 8:00  ───────────────
+
+Bot  ▸  ☀️ Today — booked 20:00–21:30 on your calendar (your best hours):
+        1.  Read  — "Attention Is All You Need", §3
+        2.  Build — a toy self-attention head, ≤ 40 lines
+        Reply `done` with a link when the proof is in.
+
+You  ▸  done  github.com/…/attention.py
+
+Bot  ▸  ✓ Verified against the rubric. 🔥 6-day streak · Anki card queued.
+        Tomorrow: multi-head attention.
+```
+
+<!-- SCREENSHOTS: drop GIFs/PNGs here — (1) the exchange above in Telegram · (2) the Obsidian Kanban
+     board · (3) a rendered Syllabus.md. Real visuals sell it. -->
+
+## Why it's different
+- **One objective, not a course catalog.** You don't browse subjects — you name the single thing you
+  want to become, and everything (the curriculum, the schedule, the daily tasks, the whole transcript)
+  exists only to get you there.
+- **Built around your life, not a fixed schedule.** It reads your real calendar, finds your free time,
+  and books each day's study at your best hours on a dedicated *Mentor* calendar — then re-paces the plan
+  month over month from how you're actually doing. No cohort, no course calendar to fall behind.
+- **It researches, it doesn't hallucinate.** Course design is grounded in a real, cited research report
+  (you run a deep-research prompt in Claude; it authors from that) plus mandatory web search — a
+  machine-checked gate rejects any course built from the model's memory.
+- **It starts from fundamentals, then tests you out.** Every course is built complete from the ground up;
+  a rigorous **placement exam** decides what to skip — never an assumption about your level.
+- **The numbers are real.** A deterministic engine owns GPA, mastery, streak, standing, and promotion —
+  the LLM only teaches and grades to a rubric. **No outcome without a proof.**
+- **A course is data, not code.** One `course.yaml` holds the whole curriculum + teaching profile +
+  mastery model. One professor skill teaches *any* course. Add a subject, not a subsystem.
+- **You own it end-to-end.** Self-hosted on the open [Hermes Agent](https://github.com/NousResearch/hermes-agent),
+  your keys, model-agnostic (DeepSeek by default). Progress is git-backed and portable.
+
+## How it works
+One brain — a deterministic engine on your server — and a few ways to reach it. Most of the time you
+only touch the first.
 
 ```mermaid
 flowchart LR
@@ -34,47 +83,14 @@ flowchart LR
   ENG -.->|"optional"| AK["🔁 Anki<br/>spaced repetition"]
 ```
 
-## Why it's different
-- **Built around your life, not a fixed schedule.** It reads your real calendar, finds your free time,
-  and books each day's study at your best hours on a dedicated *Mentor* calendar — then re-paces the plan
-  month over month from how you're actually doing. No cohort, no course calendar to fall behind; the
-  routine forms around you.
-- **It researches, it doesn't hallucinate.** Course design is grounded in a real, cited research report
-  (you run a deep-research prompt in Claude; it authors from that) plus mandatory web search — a
-  machine-checked gate rejects any course built from the model's memory.
-- **It starts from fundamentals, then tests you out.** Every course is built complete from the ground up;
-  a rigorous **placement exam** decides what to skip — never an assumption about your level.
-- **The numbers are real.** A deterministic engine owns GPA, mastery, streak, standing, and promotion —
-  the LLM only teaches and grades to a rubric. **No outcome without a proof.**
-- **A course is data, not code.** One `course.yaml` holds the whole curriculum + teaching profile +
-  mastery model. One professor skill teaches *any* course. Add a subject, not a subsystem.
-- **You own it end-to-end.** Self-hosted on the open [Hermes Agent](https://github.com/NousResearch/hermes-agent),
-  your keys, model-agnostic (DeepSeek by default). Progress is git-backed and portable.
-
-## How a course gets built
-```mermaid
-flowchart LR
-  A["create course<br/>(your goal)"] --> B[intake]
-  B --> C["📎 research prompt<br/>→ run in Claude"]
-  C --> D["upload the report"]
-  D --> E["full A–Z syllabus<br/>cited materials + weekly plan"]
-  E --> F["placement exam<br/>skip only what you prove ≥B"]
-  F --> G["your MyPlan.md<br/>the daily loop begins"]
-```
-
-## One brain, three surfaces
-The engine is the brain; you reach it three ways — most of the time, just the first:
 - **Telegram — where you live.** Your coach *and* control panel: daily nudges, every command, voice
   answers, files. Routine work never needs anything else.
+- **Google Calendar — where your routine lives.** The engine reads your real schedule, finds your free
+  hours, and books each day's study on a dedicated calendar you can toggle or wipe.
 - **Obsidian — where you look.** A **Kanban board** you track work on, a live **Home** dashboard, and
   every syllabus / resource / transcript. Two-way — drag a card to *Done* and the night audit verifies it.
 - **Anki — optional retention.** Turn it on and proven concepts become spaced-repetition cards on your
-  phone (FSRS), lapses coming back for review. Leave it off and everything else still works.
-
-**Your routine lives on your calendar.** The engine reads your real schedule, finds your free hours, and
-books each day's study on a dedicated **Google Calendar** you can toggle or wipe — the personalization
-made concrete. Plus an optional **daily tech/AI/engineering briefing** (curated blogs + news — the few
-things worth reading).
+  phone (FSRS). Leave it off and everything else still works. *(Plus an optional daily tech/AI briefing.)*
 
 ## Quickstart
 ```bash
@@ -82,18 +98,16 @@ git clone https://github.com/AlijonovMukhammaddiyor/hermes-university.git
 cd hermes-university
 ./setup.sh        # guided: enters your keys, wires the agent, installs everything
 ```
-See **[PREREQUISITES.md](PREREQUISITES.md)** for the accounts/keys to get first (an always-on Linux host
-with the Hermes Agent, an LLM key, a Telegram bot, a web-search key; Anki/Calendar optional). Then in
-Obsidian install the **Kanban · Dataview · Obsidian Git** plugins, and message the bot
-**`create course <your goal>`** — it takes it from there.
+You'll need an always-on Linux host with the [Hermes Agent](https://github.com/NousResearch/hermes-agent),
+an LLM key, a Telegram bot, and a web-search key (Calendar/Anki optional) — full list in
+**[PREREQUISITES.md](PREREQUISITES.md)**. Then install the **Kanban · Dataview · Obsidian Git** plugins
+in Obsidian, and message the bot **`create course <your goal>`** — it takes it from there.
 
 ## Using it
-**One rule: talk to the bot to *do* things · open Obsidian to *see* things · open Anki to *review*.** You
-never touch a terminal for routine work. Morning it assigns your tasks; you do them and drag a card to
-**Done** (or reply `done`); night it verifies the proof — unverified work bounces, never a fake pass —
-and proven concepts become Anki cards. Manage everything by course name from Telegram
-(`courses · status · create · enroll · archive · delete · profile`), each destructive action confirmed.
-**Full command manual → [GUIDE.md](GUIDE.md).**
+**Talk to the bot to *do* things · open Obsidian to *see* things · open Anki to *review*.** You never
+touch a terminal for routine work, and every destructive action is confirmed. Manage everything by course
+name from Telegram (`courses · status · create · enroll · archive · delete · profile`). **Full command
+manual → [GUIDE.md](GUIDE.md).**
 
 ## Never lose progress
 Your state, grades, authored courses, and an encrypted secrets bundle are backed up to a private git
