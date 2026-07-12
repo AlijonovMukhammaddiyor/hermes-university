@@ -50,7 +50,8 @@ if [ -d "$V/_source/courses" ]; then
 fi
 
 echo "== 4/6 run install.sh (venv · skills · systemd · sync/backup/anki timers · hooks) =="
-( cd "$R" && bash install.sh ) || echo "  install.sh reported issues — review above."
+# pass the restored vault path explicitly, else install.sh would scaffold a fresh empty vault
+( cd "$R" && HERMES_UNIVERSITY_VAULT="$V" bash install.sh ) || echo "  install.sh reported issues — review above."
 
 echo "== 5/6 re-auth externals (only what can't be restored) =="
 echo "  - AnkiWeb: collection re-syncs on first push (creds already restored)."

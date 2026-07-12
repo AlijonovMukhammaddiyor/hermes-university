@@ -5,7 +5,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VAULT="${HERMES_UNIVERSITY_VAULT:-$HOME/hermes-vault}"
+VAULT="${HERMES_UNIVERSITY_VAULT:-$HOME/vault}"   # canonical path — matches bootstrap + all sync/backup scripts
 HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
 
 log() { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
@@ -24,7 +24,7 @@ log "config + profile loaded"
 log "installing deterministic engine"
 python3 -m venv "$ROOT/.venv"
 "$ROOT/.venv/bin/pip" -q install --upgrade pip >/dev/null
-"$ROOT/.venv/bin/pip" -q install -e "$ROOT" >/dev/null
+"$ROOT/.venv/bin/pip" -q install -e "$ROOT[dev]" >/dev/null   # [dev] = pytest, needed by the verify step below
 ENGINE="$ROOT/.venv/bin/hu-engine"
 
 # 3. vault scaffold + git -------------------------------------------------

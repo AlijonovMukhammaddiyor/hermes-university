@@ -28,9 +28,13 @@ fi
 [ -f "$KEY" ] || {
   umask 077; head -c 32 /dev/urandom | base64 | tr -d '\n' > "$KEY"
   echo "════════════════════════════════════════════════════════════════════════"
-  echo " NEW BACKUP PASSPHRASE generated ($KEY) — SAVE THIS in a password manager."
-  echo " It is the ONLY key that decrypts your redeploy backup:"
-  echo "     $(cat "$KEY")"
+  echo " NEW BACKUP PASSPHRASE generated at $KEY — SAVE IT in a password manager."
+  echo " It is the ONLY key that decrypts your redeploy backup."
+  if [ -t 1 ]; then                      # print the secret ONLY to an interactive terminal…
+    echo "     $(cat "$KEY")"
+  else                                   # …never from the systemd timer, where stdout is the journal
+    echo "     (read it on the server with:  cat $KEY   — kept out of logs)"
+  fi
   echo "════════════════════════════════════════════════════════════════════════"
 }
 FILES=("$R/profile.yaml" "$R/config.env" "$HR/.env" "$HR/config.yaml" "$HR/auth.json" \
