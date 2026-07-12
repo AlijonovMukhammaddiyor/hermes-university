@@ -1,105 +1,110 @@
 # 🎓 Hermes University
 
-**A self-driving personal university.** Tell it a goal; it **researches the field**, **builds you a
-real course** (full A–Z syllabus, best-in-class materials, week-by-week plan), then **teaches you every
-day** — tracking your progress on a Kanban board, coaching you over Telegram, and drilling you with
-spaced repetition. All on your own always-on box, with your own API keys.
+**A self-driving personal university that runs on your own server.** Tell it a goal; it **researches the
+field**, **builds you a real course** (full A–Z syllabus, best-in-class materials, week-by-week plan),
+then **teaches you every day** — coaching you over Telegram, tracking mastery with a real engine, and
+drilling you with spaced repetition. Your box, your API keys, no SaaS.
 
-> *"I want to be one of the best AI engineers."* → a researched 10-week course, a placement exam so it
-> skips what you already know, daily proof-gated tasks, and a transcript that means something.
+<p align="left">
+  <img alt="license: MIT" src="https://img.shields.io/badge/license-MIT-green.svg">
+  <img alt="python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-blue.svg">
+  <img alt="runs on the Hermes Agent" src="https://img.shields.io/badge/runtime-Hermes%20Agent-8A2BE2.svg">
+  <img alt="status: pre-1.0" src="https://img.shields.io/badge/status-pre--1.0-orange.svg">
+</p>
 
-<!-- SCREENSHOTS: (1) the Telegram create-course + research handoff, (2) the Obsidian Kanban board,
-     (3) a rendered Syllabus.md with the week-by-week plan. Drop GIFs/PNGs here — visuals sell it. -->
+> *"I want to be one of the best AI engineers."* → a researched, cited course; a placement exam so it
+> skips what you already know; daily proof-gated tasks; and a transcript that actually means something.
 
----
+<!-- SCREENSHOTS: (1) Telegram create-course + research handoff · (2) the Obsidian Kanban board ·
+     (3) a rendered Syllabus.md with the week-by-week plan. Add GIFs/PNGs here — visuals sell it. -->
+
+```mermaid
+flowchart TB
+  You([you]) -->|"chat · do things"| TG["Telegram<br/>coach + control"]
+  You -->|"read · track"| OB["Obsidian<br/>board · syllabus · home"]
+  You -->|"review"| AK["Anki<br/>spaced repetition"]
+  subgraph host["your always-on server — your keys"]
+    ENG["Deterministic engine<br/>GPA · mastery · proofs · schedule"]
+    VAULT[("Vault<br/>git-synced")]
+    ENG <--> VAULT
+  end
+  TG <--> ENG
+  OB <--> VAULT
+  AK <--> ENG
+```
 
 ## Why it's different
-- **It researches, it doesn't hallucinate.** Course design is grounded in a real, cited research
-  report (you run a deep-research prompt in Claude; it authors from that) plus mandatory web search — a
+- **It researches, it doesn't hallucinate.** Course design is grounded in a real, cited research report
+  (you run a deep-research prompt in Claude; it authors from that) plus mandatory web search — a
   machine-checked gate rejects any course built from the model's memory.
-- **It starts from fundamentals, then tests you out.** Every course is built complete from the
-  foundations up; a rigorous **placement exam** decides what to skip — never an assumption about your
-  level.
+- **It starts from fundamentals, then tests you out.** Every course is built complete from the ground up;
+  a rigorous **placement exam** decides what to skip — never an assumption about your level.
 - **The numbers are real.** A deterministic engine owns GPA, mastery, streak, standing, and promotion —
-  the LLM only teaches and grades to a rubric. No outcome without a proof.
+  the LLM only teaches and grades to a rubric. **No outcome without a proof.**
 - **A course is data, not code.** One `course.yaml` holds the whole curriculum + teaching profile +
   mastery model. One professor skill teaches *any* course. Add a subject, not a subsystem.
+- **You own it end-to-end.** Self-hosted on the open [Hermes Agent](https://github.com/NousResearch/hermes-agent),
+  your keys, model-agnostic (DeepSeek by default). Progress is git-backed and portable.
+
+## How a course gets built
+```mermaid
+flowchart LR
+  A["create course<br/>(your goal)"] --> B[intake]
+  B --> C["📎 research prompt<br/>→ run in Claude"]
+  C --> D["upload the report"]
+  D --> E["full A–Z syllabus<br/>cited materials + weekly plan"]
+  E --> F["placement exam<br/>skip only what you prove ≥B"]
+  F --> G["your MyPlan.md<br/>the daily loop begins"]
+```
 
 ## Three surfaces, one brain
-- **Telegram** — your coach: daily nudges, quick-actions, voice answers, file handoffs.
-- **Obsidian** — your workspace: a **Kanban board** you track work on, a live dashboard, and every
-  syllabus / resource / transcript. Two-way — drag a card to *Done* and the night audit verifies it.
-- **Anki** — retention: spaced-repetition cards to your phone (FSRS).
+- **Telegram** — your coach *and* your control panel: daily nudges, every command, voice answers, files.
+- **Obsidian** — your workspace: a **Kanban board** you track work on, a live **Home** dashboard, and
+  every syllabus / resource / transcript. Two-way — drag a card to *Done* and the night audit verifies it.
+- **Anki** — retention: cards auto-made from proven concepts, pushed to your phone (FSRS); lapses come
+  back for review.
+
+Plus: a **daily tech/AI/engineering briefing** (curated blogs + news, the few things worth reading), a
+**Google-Calendar** study schedule, and **spaced-repetition** that closes the loop.
 
 ## Quickstart
 ```bash
-git clone <repo> hermes-university && cd hermes-university
-cp profile.example.yaml profile.yaml     # your name + goals (git-ignored)
-cp config.env.example config.env         # your API keys / infra (git-ignored)
-# fill both in — see PREREQUISITES.md
-./install.sh                             # idempotent; re-run to upgrade
+git clone https://github.com/AlijonovMukhammaddiyor/hermes-university.git
+cd hermes-university
+./setup.sh        # guided: enters your keys, wires the agent, installs everything
 ```
-In Obsidian, install the **Kanban**, **Dataview**, and **Obsidian Git** plugins (see the vault README).
-Then message the bot **`create course <your goal>`** and it takes it from there.
+See **[PREREQUISITES.md](PREREQUISITES.md)** for the accounts/keys to get first (an always-on Linux host
+with the Hermes Agent, an LLM key, a Telegram bot, a web-search key; Anki/Calendar optional). Then in
+Obsidian install the **Kanban · Dataview · Obsidian Git** plugins, and message the bot
+**`create course <your goal>`** — it takes it from there.
 
-## How a course gets built
-```
-create course <goal>
-   → short intake interview
-   → 📎 it hands you a deep-research prompt → you run it in Claude, upload the report
-   → it builds the FULL A–Z syllabus (fundamentals → advanced) with cited materials + a week-by-week plan
-   → placement exam (skip only what you prove at ≥B)
-   → your personalized MyPlan.md — and the daily loop begins
-```
+## Using it
+**One rule: talk to the bot to *do* things · open Obsidian to *see* things · open Anki to *review*.** You
+never touch a terminal for routine work. Morning it assigns your tasks; you do them and drag a card to
+**Done** (or reply `done`); night it verifies the proof — unverified work bounces, never a fake pass —
+and proven concepts become Anki cards. Manage everything by course name from Telegram
+(`courses · status · create · enroll · archive · delete · profile`), each destructive action confirmed.
+**Full command manual → [GUIDE.md](GUIDE.md).**
 
-## Using it every day
-**One rule: talk to the bot to *do* things · open Obsidian to *see* things · open Anki to *review*.**
-You never need a terminal for anything routine.
-
-**The daily loop** — morning it assigns your tasks onto the Board's **Today**; you do them and drag a
-card to **Done** (or reply `done`, or answer by voice); night it verifies each **proof** — unverified
-work bounces to *Proof Pending*, never a fake pass — and proven concepts become Anki cards. Ask
-`status` (or open `Home.md`) anytime for where you are and what's blocked on you.
-
-**Manage everything from Telegram, by course name:**
-
-| Say | It does |
-|---|---|
-| `courses` · `status` · `profile` | list courses · where you are · view/edit your goals |
-| `create course <goal>` · `enroll <name>` | research + build · enroll (authors, then placement) |
-| `archive <name>` / `restore <name>` | soft-drop (reversible) / bring it back |
-| `delete <name>` | permanent — asks you to echo `delete <name>` to confirm |
-| `tailor <name>` · `pause` / `resume <name>` | re-run placement, adjust pace · stop/restart assignments |
-
-Every destructive action **confirms first** (`yes` / `cancel`; a hard delete needs the name echo).
-Courses move through a visible lifecycle: `🔬 researching → ✍️ authoring → 🎯 placement → 🟢 active →
-🗄️ archived` (🔬 = waiting on your research upload). **Full manual: [GUIDE.md](GUIDE.md).**
+## Never lose progress
+Your state, grades, authored courses, and an encrypted secrets bundle are backed up to a private git
+vault daily. Move to a new server with one command — `./bootstrap.sh <code-url> <vault-url>` — and
+everything restores. Details → **[docs/REDEPLOY-runbook.md](docs/REDEPLOY-runbook.md)**.
 
 ## Principles
-1. Numbers are computed by code, not the model. 2. No outcome without a proof. 3. A course is data,
-not code. 4. Personalize to your **goals**, never your work. 5. No hardcoded personal/organizational
-data — identity lives in one git-ignored `profile.yaml`.
-
-## Backup & redeploy (never lose progress)
-Your progress is durable by design (RFC-011): the **vault** git repo holds your state/grades and — via
-a daily backup — your **authored course sources** and an **encrypted secrets bundle** (`_source/`). To
-move to a new droplet, on a box with the Hermes Agent installed:
-```bash
-./bootstrap.sh <code-repo-url> <vault-repo-url>   # clones both, decrypts secrets, restores, installs
-```
-It asks for your **backup passphrase** (saved when the first backup ran — keep it in a password
-manager; it's the one thing not recoverable from git). Everything else — courses, GPA, streak, crons,
-config — comes back from the vault. Exact steps: **[docs/REDEPLOY-runbook.md](docs/REDEPLOY-runbook.md)**.
+1. Numbers are computed by code, not the model. 2. No outcome without a proof. 3. A course is data, not
+code. 4. Personalize to your **goals**, never your work. 5. No hardcoded personal/organizational data —
+identity lives in one git-ignored `profile.yaml`.
 
 ## Learn more
-- **[GUIDE.md](GUIDE.md)** — how to use & manage it day-to-day (commands, the daily loop, surfaces).
+- **[GUIDE.md](GUIDE.md)** — day-to-day: commands, the daily loop, the surfaces.
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — how it works (engine · skills · courses · lifecycle).
-- **[PREREQUISITES.md](PREREQUISITES.md)** — the API keys/accounts + Obsidian plugins.
-- **`docs/RFC-00*.md`** — the design record. **[CONTRIBUTING.md](CONTRIBUTING.md)** to help.
+- **[PREREQUISITES.md](PREREQUISITES.md)** — the accounts/keys + Obsidian plugins.
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** · **`docs/RFC-00*.md`** — how to help + the design record.
 
 ## Built on
-The [Hermes Agent](https://github.com/NousResearch/hermes-agent) (skills, cron, Telegram gateway) +
-a deterministic Python engine. Model-agnostic via the provider seam (DeepSeek by default).
+The [Hermes Agent](https://github.com/NousResearch/hermes-agent) (skills, cron, Telegram gateway) + a
+deterministic Python engine. Model-agnostic via the provider seam (DeepSeek by default).
 
 ## License
 [MIT](LICENSE).
