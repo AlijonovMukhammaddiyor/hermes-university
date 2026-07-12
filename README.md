@@ -2,10 +2,10 @@
 
 **A personal university that molds to your life — not the other way around.** Tell it a goal; it
 **researches the field** and **builds you a real course** (full A–Z syllabus, best-in-class materials),
-a **placement exam** skips what you already know, and it **teaches you day by day on your own schedule** —
-coaching over Telegram, tracking real mastery with an engine. No cohort, no someone-else's calendar to
-keep up with. Everything personalizes to *you*: your goals, your level, your hours. Your server, your
-API keys, no SaaS.
+a **placement exam** skips what you already know, and it **plans your week straight onto your own Google
+Calendar** — around your real life, at your best hours — then coaches you through it day by day over
+Telegram. No cohort, no someone-else's calendar to keep up with; the routine forms around *you*: your
+goals, your level, your hours. Your server, your API keys, no SaaS.
 
 <p align="left">
   <img alt="license: MIT" src="https://img.shields.io/badge/license-MIT-green.svg">
@@ -29,14 +29,16 @@ flowchart LR
     ENG <--> VAULT
   end
   TG <--> ENG
+  ENG ==>|"builds your routine"| CAL["📅 Google Calendar<br/>study blocks at your best hours"]
   ENG -.->|"see + track"| OB["🗂️ Obsidian<br/>board · syllabus · home"]
   ENG -.->|"optional"| AK["🔁 Anki<br/>spaced repetition"]
 ```
 
 ## Why it's different
-- **Built around your life, not a fixed schedule.** No cohort to join, no course calendar to fall behind
-  — it plans around your real days and your pace, and adapts as you go. Level, workload, timing, subject:
-  all personalized to you.
+- **Built around your life, not a fixed schedule.** It reads your real calendar, finds your free time,
+  and books each day's study at your best hours on a dedicated *Mentor* calendar — then re-paces the plan
+  month over month from how you're actually doing. No cohort, no course calendar to fall behind; the
+  routine forms around you.
 - **It researches, it doesn't hallucinate.** Course design is grounded in a real, cited research report
   (you run a deep-research prompt in Claude; it authors from that) plus mandatory web search — a
   machine-checked gate rejects any course built from the model's memory.
@@ -69,8 +71,10 @@ The engine is the brain; you reach it three ways — most of the time, just the 
 - **Anki — optional retention.** Turn it on and proven concepts become spaced-repetition cards on your
   phone (FSRS), lapses coming back for review. Leave it off and everything else still works.
 
-Plus, both optional: a **daily tech/AI/engineering briefing** (curated blogs + news — the few things
-worth reading) and a **Google-Calendar** study schedule that plans around *your* days.
+**Your routine lives on your calendar.** The engine reads your real schedule, finds your free hours, and
+books each day's study on a dedicated **Google Calendar** you can toggle or wipe — the personalization
+made concrete. Plus an optional **daily tech/AI/engineering briefing** (curated blogs + news — the few
+things worth reading).
 
 ## Quickstart
 ```bash
