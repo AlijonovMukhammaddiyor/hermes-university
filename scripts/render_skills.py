@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from engine.profile import load_profile  # noqa: E402
-from engine.render import render_file  # noqa: E402
+from engine.render import check_skill_caps, render_file  # noqa: E402
 
 
 def main(argv: list[str]) -> int:
@@ -38,7 +38,10 @@ def main(argv: list[str]) -> int:
     # registrar + examiner + professor (Faculty Handbook: the single professor teaches every course by
     # reading its module — RFC-004) + briefer (the daily digest — RFC-010).
     for name in ("registrar", "examiner", "professor", "briefer"):
-        render_file(root / "skills" / f"{name}.template.md", out / name / "SKILL.md", base)
+        dst = out / name / "SKILL.md"
+        render_file(root / "skills" / f"{name}.template.md", dst, base)
+        for warning in check_skill_caps(dst):  # raises on a hard-cap breach; warns on soft ones
+            print(f"warning: {warning}")
         print(f"rendered {name}")
     return 0
 

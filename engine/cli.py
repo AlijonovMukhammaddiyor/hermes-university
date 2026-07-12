@@ -195,6 +195,22 @@ def main(argv: list[str] | None = None) -> int:
     plw = pl.add_parser("weak")
     plw.add_argument("--records", required=True)
     plw.add_argument("--tz", default="Asia/Tashkent")
+    # observations (RFC-013): the skills record what they learn; everything is visible + reversible
+    plo = pl.add_parser("observe")
+    plo.add_argument("--vault", required=True)
+    plo.add_argument("--aspect", required=True)
+    plo.add_argument("--value", required=True)
+    plo.add_argument("--evidence", default="")
+    plo.add_argument("--source", default="chat")
+    plo.add_argument("--confidence", type=float, default=0.5)
+    plf = pl.add_parser("forget")
+    plf.add_argument("--vault", required=True)
+    plf.add_argument("--aspect", required=True)
+    plf.add_argument("--value", default=None)
+    plr = pl.add_parser("reset")
+    plr.add_argument("--vault", required=True)
+    plc = pl.add_parser("consolidate")  # decay stale observations (nightly)
+    plc.add_argument("--vault", required=True)
 
     # plan — the engine's per-course "what to teach next + at what difficulty" (drives assign)
     pp = sub.add_parser("plan")
@@ -619,6 +635,38 @@ def main(argv: list[str] | None = None) -> int:
         recs = gb.load_records(args.records)
         m = recompute(LearnerModel(), recs, tz=args.tz, now=_now())
         print(json.dumps({"weak_areas": weak_areas(m)}))
+        return 0
+    if args.cmd == "learner" and args.sub in ("observe", "forget", "reset", "consolidate"):
+        from pathlib import Path
+
+        from . import learner_model as LM
+
+        p = Path(args.vault) / "records" / "learner_model.json"
+        m = LM.load(p)
+        if args.sub == "observe":
+            try:
+                obs = LM.observe(
+                    m,
+                    args.aspect,
+                    args.value,
+                    now=_now(),
+                    evidence=args.evidence,
+                    confidence=args.confidence,
+                    source=args.source,
+                )
+            except ValueError as e:
+                print(json.dumps({"ok": False, "error": str(e)}))
+                return 2
+            out = {"ok": True, "observed": obs.model_dump()}
+        elif args.sub == "forget":
+            out = {"ok": True, "forgot": LM.forget(m, args.aspect, args.value)}
+        elif args.sub == "consolidate":
+            out = {"ok": True, "dropped": LM.consolidate(m, _now())}
+        else:
+            LM.reset(m)
+            out = {"ok": True, "reset": True}
+        LM.save(m, p)
+        print(json.dumps(out))
         return 0
     if args.cmd == "plan":
         from pathlib import Path

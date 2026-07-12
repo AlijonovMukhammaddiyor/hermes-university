@@ -9,7 +9,8 @@ skills call to personalize topics / difficulty / reviews / routine.
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, Field
@@ -18,6 +19,12 @@ from .gradebook import GradeRecord
 
 TIER_ORDER = ["easy", "med", "hard"]
 WEAK_THRESHOLD = 0.75
+
+# learned-about-you aspects (RFC-013). Single-valued ones live in `preferences`; the rest are lists.
+ASPECTS = ("format", "energy_window", "constraint", "interest", "motivation", "pace")
+_LIST_ASPECTS = {"constraint", "interest"}
+DECAY_PER_DAY = 0.95  # ~30 days unreinforced → below the floor
+CONFIDENCE_FLOOR = 0.1
 
 
 class TopicStat(BaseModel):
@@ -45,13 +52,28 @@ class OutcomeState(BaseModel):
     misconceptions: list[str] = []
 
 
+class Observation(BaseModel):
+    """One thing learned about the learner from chat/calendar/timing (RFC-013). Decays if unreinforced."""
+
+    aspect: str
+    value: str
+    evidence: str = ""
+    confidence: float = 0.5
+    source: str = "chat"  # chat | calendar | timing | grades
+    first_seen: str = ""
+    last_seen: str = ""
+
+
 class LearnerModel(BaseModel):
     outcomes: dict[str, OutcomeState] = Field(default_factory=dict)
     topics: dict[str, TopicStat] = Field(default_factory=dict)
     routine: Routine = Field(default_factory=Routine)
     pace: Pace = Field(default_factory=Pace)
-    prefs: dict = Field(default_factory=dict)
-    goals: dict = Field(default_factory=dict)
+    preferences: dict[str, Observation] = Field(
+        default_factory=dict
+    )  # single-valued, keyed by aspect
+    constraints: list[Observation] = Field(default_factory=list)
+    interests: list[Observation] = Field(default_factory=list)
     trend_window_days: int = 14
 
 
@@ -161,6 +183,111 @@ def next_topic(units: list[dict], mastered: set[str]) -> str | None:
         if all(dep in mastered for dep in u.get("depends_on", [])):
             return oid
     return None
+
+
+# --------------------------- observations (RFC-013) ---------------------------
+
+
+def _list_store(model: LearnerModel, aspect: str) -> list[Observation]:
+    return model.constraints if aspect == "constraint" else model.interests
+
+
+def observe(
+    model: LearnerModel,
+    aspect: str,
+    value: str,
+    *,
+    now: datetime,
+    evidence: str = "",
+    confidence: float = 0.5,
+    source: str = "chat",
+) -> Observation:
+    """Record one learned aspect. List aspects (constraint/interest) reinforce a matching value;
+    single-valued ones (format/energy_window/motivation/pace) overwrite, keeping the original date."""
+    if aspect not in ASPECTS:
+        raise ValueError(f"unknown aspect {aspect!r}; valid: {', '.join(ASPECTS)}")
+    day = now.date().isoformat()
+    obs = Observation(
+        aspect=aspect,
+        value=value,
+        evidence=evidence,
+        confidence=confidence,
+        source=source,
+        first_seen=day,
+        last_seen=day,
+    )
+    if aspect in _LIST_ASPECTS:
+        for o in _list_store(model, aspect):
+            if o.value.lower() == value.lower():
+                o.confidence = round(min(1.0, max(o.confidence, confidence) + 0.1), 4)
+                o.last_seen, o.evidence = day, evidence or o.evidence
+                return o
+        _list_store(model, aspect).append(obs)
+    else:
+        if prev := model.preferences.get(aspect):
+            obs.first_seen = prev.first_seen
+        model.preferences[aspect] = obs
+    return obs
+
+
+def forget(model: LearnerModel, aspect: str, value: str | None = None) -> int:
+    """Drop observations for an aspect (all of it, or just a matching value). Returns count removed."""
+    if aspect in _LIST_ASPECTS:
+        store = _list_store(model, aspect)
+        before = len(store)
+        store[:] = [o for o in store if value is not None and o.value.lower() != value.lower()]
+        return before - len(store)
+    prev = model.preferences.get(aspect)
+    if prev and (value is None or prev.value.lower() == value.lower()):
+        del model.preferences[aspect]
+        return 1
+    return 0
+
+
+def reset(model: LearnerModel) -> None:
+    """Clear everything learned about the learner (grade-derived stats stay)."""
+    model.preferences.clear()
+    model.constraints.clear()
+    model.interests.clear()
+
+
+def consolidate(
+    model: LearnerModel,
+    now: datetime,
+    decay: float = DECAY_PER_DAY,
+    floor: float = CONFIDENCE_FLOOR,
+) -> int:
+    """Decay each observation by days since last seen; drop those below the floor. Returns count dropped."""
+    dropped = 0
+
+    def survive(o: Observation) -> bool:
+        nonlocal dropped
+        days = (now.date() - date.fromisoformat(o.last_seen)).days if o.last_seen else 0
+        o.confidence = round(o.confidence * (decay ** max(0, days)), 4)
+        if o.confidence < floor:
+            dropped += 1
+            return False
+        return True
+
+    model.preferences = {a: o for a, o in model.preferences.items() if survive(o)}
+    model.constraints[:] = [o for o in model.constraints if survive(o)]
+    model.interests[:] = [o for o in model.interests if survive(o)]
+    return dropped
+
+
+def all_observations(model: LearnerModel) -> list[Observation]:
+    return [*model.preferences.values(), *model.constraints, *model.interests]
+
+
+def load(path: str | Path) -> LearnerModel:
+    p = Path(path)
+    return LearnerModel.model_validate_json(p.read_text()) if p.exists() else LearnerModel()
+
+
+def save(model: LearnerModel, path: str | Path) -> None:
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(model.model_dump_json(indent=1) + "\n")
 
 
 # --------------------------- helpers ---------------------------

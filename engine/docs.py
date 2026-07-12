@@ -451,6 +451,7 @@ def status_snapshot(vault: str | Path, courses_dir: str | Path, now=None) -> dic
     from datetime import datetime
 
     from . import board as B
+    from . import learner_model as LM
     from . import srs as S
     from .profile import load_profile
 
@@ -526,10 +527,13 @@ def status_snapshot(vault: str | Path, courses_dir: str | Path, now=None) -> dic
     briefings = sorted(bdir.glob("20*.md")) if bdir.exists() else []
     latest_briefing = briefings[-1].stem if briefings else None
 
+    learned_count = len(LM.all_observations(LM.load(vault / "records" / "learner_model.json")))
+
     return {
         "learner": state.learner.name,
         "objective": objective,
         "progress_pct": progress_pct,
+        "learned_count": learned_count,
         "semester": state.position.semester,
         "week": state.position.week_in_semester,
         "weeks_per_semester": state.program.weeks_per_semester,
@@ -624,11 +628,57 @@ def render_home(snap: dict) -> str:
             line += f" · {srs['review_due']} to review"
         out += [line, ""]
 
+    if snap.get("learned_count"):
+        out += [
+            f"> [!note] I've learned **{snap['learned_count']}** things about you → "
+            "[[LearnerModel]] (correct anything that's off)",
+            "",
+        ]
+
     out += [
         "---",
-        "[[Board]] · [[Catalog]] · [[Guide]] · [[Registrar/Transcript|Transcript]] · "
+        "[[Board]] · [[Catalog]] · [[Guide]] · [[LearnerModel|What I know about you]] · "
+        "[[Registrar/Transcript|Transcript]] · "
         "[[Registrar/DegreeProgress|Degree Progress]] · [[Registrar/Schedule|Schedule]]",
     ]
+    return "\n".join(out).rstrip() + "\n"
+
+
+# ---------------------------------------------------------------- learner model (RFC-013)
+def render_learner_model(model) -> str:
+    """The transparent 'what I've learned about you' surface — every belief, its confidence, and where
+    it came from, so the learner can see and correct it."""
+    from . import learner_model as LM
+
+    out = [
+        "# 🧠 What I've learned about you",
+        "",
+        "*My best guesses from what you do — correct or delete any of it (tell the bot, or "
+        "`learner forget`). Each fades if I stop seeing it.*",
+        "",
+    ]
+    obs = LM.all_observations(model)
+    if obs:
+        out += ["| Aspect | What | Confidence | From |", "|---|---|---|---|"]
+        for o in sorted(obs, key=lambda x: (x.aspect, -x.confidence)):
+            out.append(
+                f"| {o.aspect} | {_cell(o.value)} | {int(round(o.confidence * 100))}% | {o.source} |"
+            )
+        out.append("")
+    else:
+        out += ["_Nothing yet — I'll pick things up as we go._", ""]
+
+    facts = []
+    if model.routine.best_hours:
+        facts.append(f"**Best hours:** {', '.join(model.routine.best_hours)}")
+    if model.pace.task_cap_observed:
+        facts.append(f"**Most tasks in a day:** {model.pace.task_cap_observed}")
+    if model.pace.rest_day:
+        facts.append(f"**Quietest day:** {model.pace.rest_day}")
+    if weak := LM.weak_areas(model):
+        facts.append(f"**Weakest topics:** {', '.join(weak[:5])}")
+    if facts:
+        out += ["## From your work"] + [f"- {f}" for f in facts]
     return "\n".join(out).rstrip() + "\n"
 
 
@@ -665,6 +715,9 @@ def render_all(vault: str | Path, courses_dir: str | Path) -> list[str]:
     w("Registrar/DegreeProgress.md", render_degree_progress(state, records, enrolled_modules))
     if state.degree.awarded_on:
         w("Registrar/Diploma.md", render_diploma(state))
+    from . import learner_model as LM
+
+    w("LearnerModel.md", render_learner_model(LM.load(vault / "records" / "learner_model.json")))
     w("Home.md", render_home(status_snapshot(vault, courses_dir)))  # the control center (RFC-009)
     return written
 

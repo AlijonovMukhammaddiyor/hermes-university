@@ -225,15 +225,13 @@ def refresh(state: State, records: list[GradeRecord]) -> State:
 
 
 def persist_learner_model(vault: str | Path, records: list[GradeRecord], tz: str, now) -> None:
-    """Recompute the Learner Model from the grade log and write records/learner_model.json
-    (RFC-002 §2.5). Mastery/proficiency live here; per-card FSRS review state lives in Anki."""
-    from .learner_model import LearnerModel, recompute
+    """Recompute grade-derived stats and write records/learner_model.json, preserving observations."""
+    from . import learner_model as LM
 
     p = Path(vault) / "records" / "learner_model.json"
-    existing = LearnerModel.model_validate_json(p.read_text()) if p.exists() else LearnerModel()
-    recompute(existing, records, tz=tz, now=now)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(existing.model_dump_json(indent=1) + "\n")
+    model = LM.load(p)
+    LM.recompute(model, records, tz=tz, now=now)
+    LM.save(model, p)
 
 
 def record_day(state: State, today: str, all_done: bool) -> State:
