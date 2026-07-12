@@ -6,7 +6,6 @@ and call these; they never mutate GPA/standing/position/promotion themselves.
 
 from __future__ import annotations
 
-from datetime import date
 from pathlib import Path
 
 from . import gradebook as gb
@@ -27,20 +26,29 @@ def register_courses(state: State, course_dir: str | Path) -> list[str]:
         if path.parent.name == "_TEMPLATE":
             continue
         from .authoring import authored_report
+
         c = load_course(path)
         first_unit = c.units[0].id if c.units else None
-        active = c.active_default and (c.activates_week is None or
-                                       state.position.week_in_semester >= c.activates_week)
+        active = c.active_default and (
+            c.activates_week is None or state.position.week_in_semester >= c.activates_week
+        )
         existing = state.courses.get(c.id)
-        status = (existing.status if existing else
-                  ("placement" if authored_report(c, path.parent)["authored"] else "researching"))
+        status = (
+            existing.status
+            if existing
+            else ("placement" if authored_report(c, path.parent)["authored"] else "researching")
+        )
         state.courses[c.id] = StateCourse(
-            title=c.title, credits=c.credits, runs_in=c.runs_in,
+            title=c.title,
+            credits=c.credits,
+            runs_in=c.runs_in,
             active=active if existing is None else existing.active,
             unit=existing.unit if existing else first_unit,
             unit_index=existing.unit_index if existing else 0,
-            activates_week=c.activates_week, grade_weights=c.grade_weights,
-            status=status, archived_on=existing.archived_on if existing else None,
+            activates_week=c.activates_week,
+            grade_weights=c.grade_weights,
+            status=status,
+            archived_on=existing.archived_on if existing else None,
         )
         if existing is None:
             added.append(c.id)
@@ -56,9 +64,17 @@ def catalog(course_dir: str | Path) -> list[dict]:
         if path.parent.name == "_TEMPLATE":
             continue
         c = load_course(path)
-        out.append({"code": c.id, "title": c.title, "credits": c.credits,
-                    "domain": c.subject_domain, "units": len(c.units),
-                    "activates_week": c.activates_week, "north_star": c.north_star.strip()})
+        out.append(
+            {
+                "code": c.id,
+                "title": c.title,
+                "credits": c.credits,
+                "domain": c.subject_domain,
+                "units": len(c.units),
+                "activates_week": c.activates_week,
+                "north_star": c.north_star.strip(),
+            }
+        )
     return out
 
 
@@ -81,33 +97,46 @@ def enroll(state: State, course_dir: str | Path, code: str, today: str | None = 
 
     if state.hold:
         raise EnrollError(f"enrollment is on hold ({state.hold}); clear it before adding courses")
-    for pre in c.prerequisites:                     # prereq must already be enrolled
+    for pre in c.prerequisites:  # prereq must already be enrolled
         if pre not in state.courses:
             raise EnrollError(f"{code} requires {pre} first — enroll in {pre} before {code}")
     load = sum(sc.credits for sc in state.courses.values() if sc.active) + c.credits
     if load > state.enrollment.credit_cap:
-        raise EnrollError(f"credit load {load} exceeds cap {state.enrollment.credit_cap}; "
-                          f"drop a course before adding {code}")
+        raise EnrollError(
+            f"credit load {load} exceeds cap {state.enrollment.credit_cap}; "
+            f"drop a course before adding {code}"
+        )
 
-    active = c.active_default and (c.activates_week is None or
-                                   state.position.week_in_semester >= c.activates_week)
+    active = c.active_default and (
+        c.activates_week is None or state.position.week_in_semester >= c.activates_week
+    )
     from .authoring import authored_report
+
     status = "placement" if authored_report(c, path.parent)["authored"] else "researching"
     state.courses[code] = StateCourse(
-        title=c.title, credits=c.credits, runs_in=c.runs_in, active=active,
-        unit=(c.units[0].id if c.units else None), unit_index=0,
-        activates_week=c.activates_week, grade_weights=c.grade_weights, enrolled_on=today,
-        status=status)
+        title=c.title,
+        credits=c.credits,
+        runs_in=c.runs_in,
+        active=active,
+        unit=(c.units[0].id if c.units else None),
+        unit_index=0,
+        activates_week=c.activates_week,
+        grade_weights=c.grade_weights,
+        enrolled_on=today,
+        status=status,
+    )
     state.enrollment.records.append(EnrollmentRecord(code=code, enrolled_on=today or ""))
     return "enrolled"
 
 
-def refresh_course_status(state: State, course_dir: str | Path, uploads_dir: str | Path,
-                          code: str) -> str | None:
+def refresh_course_status(
+    state: State, course_dir: str | Path, uploads_dir: str | Path, code: str
+) -> str | None:
     """Re-derive a course's authoring-phase status from the filesystem (RFC-009). Only advances a
     course still in the authoring pipeline (researching/authoring/placement) — never overrides a
     live 'active' or an 'archived' course. Returns the new status, or None if unchanged/absent."""
     from .authoring import authoring_status
+
     sc = state.courses.get(code)
     if sc is None or sc.status not in ("draft", "researching", "authoring", "placement"):
         return None
@@ -137,17 +166,23 @@ def archive(state: State, code: str, today: str | None = None) -> bool:
     sc.status = "archived"
     sc.active = False
     sc.archived_on = today
-    for rec in state.enrollment.records:                 # close the audit record (dropped_on)
+    for rec in state.enrollment.records:  # close the audit record (dropped_on)
         if rec.code == code and rec.dropped_on is None:
             rec.dropped_on = today or ""
     return True
 
 
-def restore(state: State, course_dir: str | Path, uploads_dir: str | Path, code: str,
-            today: str | None = None) -> bool:
+def restore(
+    state: State,
+    course_dir: str | Path,
+    uploads_dir: str | Path,
+    code: str,
+    today: str | None = None,
+) -> bool:
     """Un-archive: re-derive the course's authoring status from the filesystem (RFC-009).
     Returns True if it was archived and is now restored."""
     from .authoring import authoring_status
+
     sc = state.courses.get(code)
     if sc is None or sc.status != "archived":
         return False
@@ -185,11 +220,11 @@ def refresh(state: State, records: list[GradeRecord]) -> State:
     return state
 
 
-def persist_learner_model(vault: str | Path, records: list[GradeRecord], tz: str,
-                          now) -> None:
+def persist_learner_model(vault: str | Path, records: list[GradeRecord], tz: str, now) -> None:
     """Recompute the Learner Model from the grade log and write records/learner_model.json
     (RFC-002 §2.5). Mastery/proficiency live here; per-card FSRS review state lives in Anki."""
     from .learner_model import LearnerModel, recompute
+
     p = Path(vault) / "records" / "learner_model.json"
     existing = LearnerModel.model_validate_json(p.read_text()) if p.exists() else LearnerModel()
     recompute(existing, records, tz=tz, now=now)
@@ -198,9 +233,18 @@ def persist_learner_model(vault: str | Path, records: list[GradeRecord], tz: str
 
 
 def record_day(state: State, today: str, all_done: bool) -> State:
-    c, l, last = gb.update_streak(state.streak.current, state.streak.longest,
-                                  state.streak.last_completed_date, today, all_done)
-    state.streak.current, state.streak.longest, state.streak.last_completed_date = c, l, last
+    cur, longest, last = gb.update_streak(
+        state.streak.current,
+        state.streak.longest,
+        state.streak.last_completed_date,
+        today,
+        all_done,
+    )
+    state.streak.current, state.streak.longest, state.streak.last_completed_date = (
+        cur,
+        longest,
+        last,
+    )
     return state
 
 
@@ -212,7 +256,10 @@ def activate_due_courses(state: State) -> list[str]:
         if state.position.semester not in course.runs_in:
             course.active = False
             continue
-        due = course.activates_week is None or state.position.week_in_semester >= course.activates_week
+        due = (
+            course.activates_week is None
+            or state.position.week_in_semester >= course.activates_week
+        )
         if due and not course.active:
             course.active = True
             newly.append(code)
@@ -225,19 +272,25 @@ def band_passes(band: str) -> bool:
     return BAND_POINTS.get(band, 0.0) >= PASS_BAND_POINTS
 
 
-def promote_or_graduate(state: State, finals_band: str, on: str,
-                        records: list[GradeRecord]) -> tuple[State, str]:
+def promote_or_graduate(
+    state: State, finals_band: str, on: str, records: list[GradeRecord]
+) -> tuple[State, str]:
     """Apply a semester-finals result. Returns (state, status) where status is one of
     'promoted', 'graduated', 'remediation'. Deterministic; the Examiner supplies the band."""
     sem = state.position.semester
     passed = band_passes(finals_band)
     sem_gpa = gb.semester_gpa(records, state.courses, sem)
-    state.history.append(SemesterRecord(
-        semester=sem, gpa=sem_gpa, standing=gb.standing_for(sem_gpa),
-        finals_grade=finals_band, completed_on=on,
-    ))
+    state.history.append(
+        SemesterRecord(
+            semester=sem,
+            gpa=sem_gpa,
+            standing=gb.standing_for(sem_gpa),
+            finals_grade=finals_band,
+            completed_on=on,
+        )
+    )
     if sem >= state.program.total_semesters and passed:
-        state.degree.awarded_on = on             # graduation awards the degree
+        state.degree.awarded_on = on  # graduation awards the degree
     key = f"s{sem}_finals"
     setattr(state.assessments, key, finals_band)
     if not passed:

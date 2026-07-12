@@ -1,6 +1,7 @@
 import pytest
 
 from engine import gradebook as gb
+from engine.state import Course as SC
 from tests.conftest import rec
 
 
@@ -16,7 +17,7 @@ def test_band_meets_threshold():
     # default 0.8 -> requires >= B; a C does NOT master an outcome (consistent with ≥B promotion)
     assert gb.band_meets("A") and gb.band_meets("B")
     assert not gb.band_meets("C") and not gb.band_meets("F")
-    assert gb.band_meets("A", 0.9) and not gb.band_meets("B", 0.9)   # higher threshold needs A
+    assert gb.band_meets("A", 0.9) and not gb.band_meets("B", 0.9)  # higher threshold needs A
 
 
 def test_gpa_cli_runs(tmp_path, capsys):
@@ -25,16 +26,26 @@ def test_gpa_cli_runs(tmp_path, capsys):
 
     from engine.cli import main
     from engine.gradebook import GradeRecord, Proof, append_record
+
     p = tmp_path / "grades.jsonl"
-    append_record(p, GradeRecord(ts="t", course="X", outcome="o.apply", kind="hw", band="A",
-                                 score=0.95, semester=1, proof=Proof(source="rubric", passed=True)))
+    append_record(
+        p,
+        GradeRecord(
+            ts="t",
+            course="X",
+            outcome="o.apply",
+            kind="hw",
+            band="A",
+            score=0.95,
+            semester=1,
+            proof=Proof(source="rubric", passed=True),
+        ),
+    )
     assert main(["gpa", "--records", str(p)]) == 0
     out = json.loads(capsys.readouterr().out)
     assert out["gpa"] == 4.0 and out["standing"] == "honors"
-    assert main(["gpa", "--records", str(p), "--semester", "1"]) == 0   # semester branch too
+    assert main(["gpa", "--records", str(p), "--semester", "1"]) == 0  # semester branch too
 
-
-from engine.state import Course as SC
 
 COURSES = {"CS250": SC(title="DSA", credits=4), "CS270": SC(title="AI", credits=2)}
 
@@ -44,7 +55,9 @@ def test_course_gpa_kind_weighted():
     assert gb.course_gpa([rec("a", 0.95), rec("b", 0.72)], {}) == 3.0
     # policy weights renormalize over present kinds: hw=A(4), finals=C(2), weights hw.2/finals.8
     recs = [rec("a", 0.95, kind="hw"), rec("b", 0.72, kind="finals")]
-    assert gb.course_gpa(recs, {"hw": 0.2, "finals": 0.8}) == pytest.approx(4 * 0.2 + 2 * 0.8, abs=0.01)
+    assert gb.course_gpa(recs, {"hw": 0.2, "finals": 0.8}) == pytest.approx(
+        4 * 0.2 + 2 * 0.8, abs=0.01
+    )
     assert gb.course_gpa([], {}) is None
 
 
@@ -71,15 +84,15 @@ def test_standing():
 
 
 def test_streak_consecutive_and_gap():
-    c, l, last = gb.update_streak(0, 0, None, "2026-07-06", True)
-    assert (c, l, last) == (1, 1, "2026-07-06")
-    c, l, last = gb.update_streak(c, l, last, "2026-07-07", True)
-    assert (c, l, last) == (2, 2, "2026-07-07")
+    cur, lng, last = gb.update_streak(0, 0, None, "2026-07-06", True)
+    assert (cur, lng, last) == (1, 1, "2026-07-06")
+    cur, lng, last = gb.update_streak(cur, lng, last, "2026-07-07", True)
+    assert (cur, lng, last) == (2, 2, "2026-07-07")
     # same-day repeat is idempotent
-    assert gb.update_streak(c, l, last, "2026-07-07", True) == (2, 2, "2026-07-07")
+    assert gb.update_streak(cur, lng, last, "2026-07-07", True) == (2, 2, "2026-07-07")
     # a gap resets to 1 but keeps longest
-    c, l, last = gb.update_streak(c, l, last, "2026-07-10", True)
-    assert (c, l) == (1, 2)
+    cur, lng, last = gb.update_streak(cur, lng, last, "2026-07-10", True)
+    assert (cur, lng) == (1, 2)
 
 
 def test_streak_reset_on_incomplete():

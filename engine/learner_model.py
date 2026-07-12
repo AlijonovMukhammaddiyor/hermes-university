@@ -9,7 +9,7 @@ skills call to personalize topics / difficulty / reviews / routine.
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, Field
@@ -21,25 +21,25 @@ WEAK_THRESHOLD = 0.75
 
 
 class TopicStat(BaseModel):
-    proficiency: float = 0.0            # 0..1 (windowed mean score)
-    difficulty_ceiling: str = "easy"    # hardest passed tier
-    error_tags: list[str] = []          # recent misconceptions
+    proficiency: float = 0.0  # 0..1 (windowed mean score)
+    difficulty_ceiling: str = "easy"  # hardest passed tier
+    error_tags: list[str] = []  # recent misconceptions
     attempts: int = 0
 
 
 class Routine(BaseModel):
-    best_hours: list[str] = []          # e.g. ["20:00-22:00"]
+    best_hours: list[str] = []  # e.g. ["20:00-22:00"]
     adherence_by_slot: dict[str, int] = {}
 
 
 class Pace(BaseModel):
     task_cap_observed: int = 0
-    rest_day: str | None = None         # weekday name with fewest completions
+    rest_day: str | None = None  # weekday name with fewest completions
 
 
 class OutcomeState(BaseModel):
     mastery_band: str | None = None
-    fsrs: dict | None = None            # engine.fsrs card dict (persisted)
+    fsrs: dict | None = None  # engine.fsrs card dict (persisted)
     attempts: int = 0
     last_seen: str | None = None
     misconceptions: list[str] = []
@@ -59,8 +59,14 @@ def _hour_slot(h: int) -> str:
     return f"{h:02d}:00-{(h + 2) % 24:02d}:00"
 
 
-def recompute(model: LearnerModel, records: list[GradeRecord], *, tz: str,
-              now: datetime, window_days: int | None = None) -> LearnerModel:
+def recompute(
+    model: LearnerModel,
+    records: list[GradeRecord],
+    *,
+    tz: str,
+    now: datetime,
+    window_days: int | None = None,
+) -> LearnerModel:
     """Recompute aggregate stats + per-outcome mastery from the grade log, in place.
     FSRS card states already on the model are preserved (reviews update them separately)."""
     window = window_days if window_days is not None else model.trend_window_days
@@ -82,8 +88,9 @@ def recompute(model: LearnerModel, records: list[GradeRecord], *, tz: str,
         ceiling = max(passed_tiers, key=TIER_ORDER.index) if passed_tiers else _infer_tier(prof)
         errs = [t for r in win for t in r.weak_areas]
         top_errs = [t for t, _ in Counter(errs).most_common(5)]
-        topics[topic] = TopicStat(proficiency=prof, difficulty_ceiling=ceiling,
-                                   error_tags=top_errs, attempts=len(recs))
+        topics[topic] = TopicStat(
+            proficiency=prof, difficulty_ceiling=ceiling, error_tags=top_errs, attempts=len(recs)
+        )
     model.topics = topics
 
     # --- per-outcome mastery (latest band) + misconceptions ---
@@ -120,6 +127,7 @@ def recompute(model: LearnerModel, records: list[GradeRecord], *, tz: str,
 
 
 # --------------------------- query API (skills call these) ---------------------------
+
 
 def weak_areas(model: LearnerModel, threshold: float = WEAK_THRESHOLD) -> list[str]:
     """Topics below the proficiency threshold, weakest first."""
@@ -158,9 +166,10 @@ def next_topic(units: list[dict], mastered: set[str]) -> str | None:
 
 # --------------------------- helpers ---------------------------
 
+
 def _parse(ts: str) -> datetime:
     dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
 
 
 def _infer_tier(prof: float) -> str:

@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
-import json
+from collections.abc import Iterable
 from datetime import date, timedelta
 from pathlib import Path
-from typing import Iterable, Literal
+from typing import Literal
 
 from pydantic import BaseModel
 
 Band = Literal["A", "B", "C", "F"]
-BAND_POINTS: dict[Band, float] = {"A": 4.0, "B": 3.0, "C": 2.0, "F": 0.0}
+# str-keyed (not Band-keyed) so band strings threaded through the code can index it without casts
+BAND_POINTS: dict[str, float] = {"A": 4.0, "B": 3.0, "C": 2.0, "F": 0.0}
 # Grade scale (RFC / program): A ≥0.90, B ≥0.80, C ≥0.70, else F.
 BAND_CUTOFFS: list[tuple[float, Band]] = [(0.90, "A"), (0.80, "B"), (0.70, "C")]
 
@@ -19,24 +20,24 @@ PROBATION_GPA = 2.5
 
 
 class Proof(BaseModel):
-    source: str            # leetcode | judge0 | rubric | self-explain | ...
+    source: str  # leetcode | judge0 | rubric | self-explain | ...
     passed: bool
     ref: str | None = None
 
 
 class GradeRecord(BaseModel):
-    ts: str                # ISO timestamp (UTC)
+    ts: str  # ISO timestamp (UTC)
     course: str
-    outcome: str           # "<topic>.<bloom>" e.g. "two-pointers.apply"
+    outcome: str  # "<topic>.<bloom>" e.g. "two-pointers.apply"
     kind: Literal["hw", "quiz", "exam", "midterm", "finals"]
     band: Band
-    score: float           # 0..1
+    score: float  # 0..1
     semester: int
     proof: Proof
     # Learner-model signal (optional; set by the grader):
-    topic: str | None = None            # defaults to outcome prefix if omitted
+    topic: str | None = None  # defaults to outcome prefix if omitted
     tier: Literal["easy", "med", "hard"] | None = None
-    weak_areas: list[str] = []          # misconception tags from grading
+    weak_areas: list[str] = []  # misconception tags from grading
 
     def topic_of(self) -> str:
         return self.topic or topic_of_outcome(self.outcome)
@@ -66,6 +67,7 @@ def course_gpa(records: Iterable[GradeRecord], weights: dict[str, float] | None)
     """One course's GPA (0–4): kind-weighted mean of grade points, renormalized over the kinds that
     actually have records. Deterministic — the grading policy comes from the course, not the model."""
     from collections import defaultdict
+
     by_kind: dict[str, list[float]] = defaultdict(list)
     for r in records:
         by_kind[r.kind].append(BAND_POINTS[r.band])
@@ -74,7 +76,7 @@ def course_gpa(records: Iterable[GradeRecord], weights: dict[str, float] | None)
     means = {k: sum(v) / len(v) for k, v in by_kind.items()}
     w = weights or {}
     tw = sum(w.get(k, 0.0) for k in means)
-    if tw == 0:                                   # no policy weight for present kinds → equal-weight
+    if tw == 0:  # no policy weight for present kinds → equal-weight
         return round(sum(means.values()) / len(means), 2)
     return round(sum(means[k] * w.get(k, 0.0) for k in means) / tw, 2)
 
@@ -111,8 +113,9 @@ def standing_for(gpa_value: float | None) -> Literal["good", "honors", "probatio
     return "good"
 
 
-def update_streak(current: int, longest: int, last_completed: str | None,
-                  today: str, all_done: bool) -> tuple[int, int, str | None]:
+def update_streak(
+    current: int, longest: int, last_completed: str | None, today: str, all_done: bool
+) -> tuple[int, int, str | None]:
     """Advance the daily streak. `today`/`last_completed` are YYYY-MM-DD.
 
     all_done False resets to 0. Consecutive calendar days extend; a gap resets to 1.

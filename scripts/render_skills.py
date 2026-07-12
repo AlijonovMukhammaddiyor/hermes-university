@@ -38,8 +38,7 @@ def main(argv: list[str]) -> int:
     # registrar + examiner + professor (Faculty Handbook: the single professor teaches every course by
     # reading its module — RFC-004) + briefer (the daily digest — RFC-010).
     for name in ("registrar", "examiner", "professor", "briefer"):
-        render_file(root / "skills" / f"{name}.template.md",
-                    out / name / "SKILL.md", base)
+        render_file(root / "skills" / f"{name}.template.md", out / name / "SKILL.md", base)
         print(f"rendered {name}")
     return 0
 

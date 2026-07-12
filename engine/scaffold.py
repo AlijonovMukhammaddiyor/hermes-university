@@ -15,8 +15,14 @@ import yaml
 from .course import Course
 
 
-def scaffold_course(courses_dir: str | Path, code: str, title: str, goal: str = "",
-                    domain: str = "general", credits: int = 3) -> Path:
+def scaffold_course(
+    courses_dir: str | Path,
+    code: str,
+    title: str,
+    goal: str = "",
+    domain: str = "general",
+    credits: int = 3,
+) -> Path:
     """Write `<courses_dir>/<code>/course.yaml` (a valid, empty-of-units stub). Refuses to clobber an
     existing module. Returns the file path."""
     cdir = Path(courses_dir) / code
@@ -24,10 +30,14 @@ def scaffold_course(courses_dir: str | Path, code: str, title: str, goal: str = 
     if path.exists():
         raise FileExistsError(f"course {code!r} already exists at {path}")
     north = goal.strip() or f"Master {title}."
-    stub = Course(id=code, title=title, subject_domain=domain, credits=credits,
-                  north_star=north)                      # empty units -> validates, not authored
+    stub = Course(
+        id=code, title=title, subject_domain=domain, credits=credits, north_star=north
+    )  # empty units -> validates, not authored
     cdir.mkdir(parents=True, exist_ok=True)
-    path.write_text(yaml.safe_dump(stub.model_dump(exclude_none=True, mode="json"),
-                                   sort_keys=False, allow_unicode=True))
-    (cdir / "research").mkdir(exist_ok=True)             # where the dossier will be written
+    path.write_text(
+        yaml.safe_dump(
+            stub.model_dump(exclude_none=True, mode="json"), sort_keys=False, allow_unicode=True
+        )
+    )
+    (cdir / "research").mkdir(exist_ok=True)  # where the dossier will be written
     return path

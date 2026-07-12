@@ -19,6 +19,21 @@ hu-engine = "engine.cli:main"
 testpaths = ["tests"]
 addopts = "-q"
 
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP"]
+# line length is owned by `ruff format` (keeps code ≤100); E501 would only ever fire on
+# unbreakable prose in docstrings/comments/URLs, so we don't double-enforce it.
+ignore = ["E501"]
+
+[tool.pyright]
+include = ["engine"]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"

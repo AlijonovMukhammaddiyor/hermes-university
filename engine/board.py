@@ -21,8 +21,8 @@ _TITLE = re.compile(r"\*\*(.+?)\*\*")
 
 class Card(BaseModel):
     title: str
-    line: str = ""                 # one-line description
-    outcome: str | None = None     # engine outcome id (hidden metadata)
+    line: str = ""  # one-line description
+    outcome: str | None = None  # engine outcome id (hidden metadata)
     course: str | None = None
     tier: str | None = None
     checked: bool = False
@@ -69,8 +69,14 @@ def _parse_card(line: str) -> Card | None:
     tm = _TITLE.search(body)
     title = tm.group(1).strip() if tm else body.strip()
     line_txt = body.split("—", 1)[1].strip() if "—" in body else ""
-    return Card(title=title, line=line_txt, outcome=meta.get("o"),
-                course=meta.get("c"), tier=meta.get("d"), checked=checked)
+    return Card(
+        title=title,
+        line=line_txt,
+        outcome=meta.get("o"),
+        course=meta.get("c"),
+        tier=meta.get("d"),
+        checked=checked,
+    )
 
 
 def parse_board(md: str) -> dict[str, list[Card]]:

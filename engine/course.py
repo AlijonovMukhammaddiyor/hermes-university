@@ -22,39 +22,43 @@ BLOOM_ORDER = ["remember", "understand", "apply", "analyze", "evaluate", "create
 
 class Resource(BaseModel):
     """A concrete learning material (RFC-003 §3) — researched, not a topic label."""
+
     type: Literal["textbook", "course", "paper", "docs", "video", "problemset", "reference"]
     title: str
     author: str | None = None
     url: str | None = None
-    locator: str | None = None      # "ch. 3–4" | "Lectures 5–7" | "§2.1"
-    why: str | None = None          # why THIS resource for THIS topic/learner
+    locator: str | None = None  # "ch. 3–4" | "Lectures 5–7" | "§2.1"
+    why: str | None = None  # why THIS resource for THIS topic/learner
     tier: Literal["core", "supplementary"] = "core"
     cost: Literal["free", "paid"] = "free"
 
 
 class ProfessorProfile(BaseModel):
     """The researched teaching character for a field (RFC-004) — data, not code."""
-    persona: str                                         # voice/character for the field + learner
-    teaching_stance: str                                 # pedagogical approach for this domain
-    common_misconceptions: list[str] = Field(default_factory=list)   # preempted by the professor
-    assessment_philosophy: str = ""                      # what "excellent" is + how to grade it
+
+    persona: str  # voice/character for the field + learner
+    teaching_stance: str  # pedagogical approach for this domain
+    common_misconceptions: list[str] = Field(default_factory=list)  # preempted by the professor
+    assessment_philosophy: str = ""  # what "excellent" is + how to grade it
     hint_style: str | None = None
 
 
 class MasteryModel(BaseModel):
     """How this course makes the learner one of the best AND keeps them evolving (RFC-004)."""
-    excellence_bar: str                                  # what the best in this field can DO
-    expert_practices: list[str] = Field(default_factory=list)   # how top practitioners work
-    frontier: str = ""                                   # state of the art + trajectory
-    staying_current: list["Resource"] = Field(default_factory=list)  # people/communities/feeds/papers
-    signature_work: str = ""                             # portfolio/reputation to work with the best
-    deliberate_practice: str = ""                        # the regimen to reach the bar
+
+    excellence_bar: str  # what the best in this field can DO
+    expert_practices: list[str] = Field(default_factory=list)  # how top practitioners work
+    frontier: str = ""  # state of the art + trajectory
+    staying_current: list[Resource] = Field(default_factory=list)  # people/communities/feeds/papers
+    signature_work: str = ""  # portfolio/reputation to work with the best
+    deliberate_practice: str = ""  # the regimen to reach the bar
 
 
 class Audience(BaseModel):
     """Who a course is for — and honestly, who it is NOT for (RFC-009). Authored from research so the
     learner can self-select before investing months."""
-    good_fit: list[str] = Field(default_factory=list)   # who benefits + the assumed starting point
+
+    good_fit: list[str] = Field(default_factory=list)  # who benefits + the assumed starting point
     not_a_fit: list[str] = Field(default_factory=list)  # who should look elsewhere (say where)
 
 
@@ -76,31 +80,32 @@ class Assessment(BaseModel):
     id: str
     outcome_id: str
     type: Literal["formative", "summative"]
-    modality: str                      # recall_quiz | worked-completion | open_problem | explain | project | ...
+    modality: str  # recall_quiz | worked-completion | open_problem | explain | project | ...
     bloom_target: Bloom
     rubric_id: str | None = None
-    proof_gate: str                    # human-readable pass condition
-    gate: str | None = None            # engine proof-gate name (e.g. "leetcode"); None => rubric-only
-    gate_args: dict = Field(default_factory=dict)   # e.g. {"slug": "two-sum"}
+    proof_gate: str  # human-readable pass condition
+    gate: str | None = None  # engine proof-gate name (e.g. "leetcode"); None => rubric-only
+    gate_args: dict = Field(default_factory=dict)  # e.g. {"slug": "two-sum"}
     scaffold_stage: Literal["worked_example", "completion", "independent"] = "independent"
 
 
 class Outcome(BaseModel):
     id: str
-    statement: str                     # A-SMART
+    statement: str  # A-SMART
     bloom_level: Bloom
     depends_on: list[str] = Field(default_factory=list)
-    proof: str                         # assessment id
+    proof: str  # assessment id
     spaced_items: list[str] = Field(default_factory=list)
     mastery_threshold: float = 0.8
 
 
 class Session(BaseModel):
     """One week of the prepared calendar (RFC-006) — focus + exact readings + a deliverable."""
-    week: int                                                 # week number within the course
-    focus: str                                                # the week's theme / what you do
-    readings: list[Resource] = Field(default_factory=list)    # exact readings for the week (locators)
-    deliverable: str = ""                                     # the assignment/artifact due that week
+
+    week: int  # week number within the course
+    focus: str  # the week's theme / what you do
+    readings: list[Resource] = Field(default_factory=list)  # exact readings for the week (locators)
+    deliverable: str = ""  # the assignment/artifact due that week
 
 
 class Unit(BaseModel):
@@ -109,11 +114,11 @@ class Unit(BaseModel):
     order_index: int
     semester: int
     outcomes: list[Outcome]
-    summary: str | None = None                                # one-line what/why of the unit
-    foundational: bool = False                                # a fundamentals unit (RFC-007 placement)
-    resources: list[Resource] = Field(default_factory=list)   # per-unit reading list (researched)
-    sessions: list[Session] = Field(default_factory=list)     # week-by-week plan (RFC-006)
-    est_weeks: int = 1                                         # schedule span
+    summary: str | None = None  # one-line what/why of the unit
+    foundational: bool = False  # a fundamentals unit (RFC-007 placement)
+    resources: list[Resource] = Field(default_factory=list)  # per-unit reading list (researched)
+    sessions: list[Session] = Field(default_factory=list)  # week-by-week plan (RFC-006)
+    est_weeks: int = 1  # schedule span
 
 
 class Course(BaseModel):
@@ -122,23 +127,30 @@ class Course(BaseModel):
     subject_domain: str
     credits: int
     north_star: str
-    description: str = ""                                      # syllabus/catalog prose (researched)
-    audience: Audience | None = None                          # who it's for / not for (RFC-009)
-    primary_text: Resource | None = None                      # the anchoring textbook/course
-    resources: list[Resource] = Field(default_factory=list)   # course-level library
-    professor_profile: ProfessorProfile | None = None         # researched teaching character (RFC-004)
-    mastery_model: MasteryModel | None = None                 # become-the-best + keep-evolving (RFC-004)
+    description: str = ""  # syllabus/catalog prose (researched)
+    audience: Audience | None = None  # who it's for / not for (RFC-009)
+    primary_text: Resource | None = None  # the anchoring textbook/course
+    resources: list[Resource] = Field(default_factory=list)  # course-level library
+    professor_profile: ProfessorProfile | None = None  # researched teaching character (RFC-004)
+    mastery_model: MasteryModel | None = None  # become-the-best + keep-evolving (RFC-004)
     starting_tier: Literal["easy", "med", "hard"] = "easy"  # difficulty floor for a new learner
     runs_in: list[int] = Field(default_factory=lambda: [1, 2])
-    active_default: bool = True          # inactive until activates_week if False
-    activates_week: int | None = None    # week_in_semester a dormant course turns on
+    active_default: bool = True  # inactive until activates_week if False
+    activates_week: int | None = None  # week_in_semester a dormant course turns on
     prerequisites: list[str] = Field(default_factory=list)
     enduring_understandings: list[str] = Field(default_factory=list)
     grading_scale: dict[str, float] = Field(
-        default_factory=lambda: {"A": 4.0, "B": 3.0, "C": 2.0, "F": 0.0})
+        default_factory=lambda: {"A": 4.0, "B": 3.0, "C": 2.0, "F": 0.0}
+    )
     grade_weights: dict[str, float] = Field(  # policy over assessment kinds (renormalized in use)
-        default_factory=lambda: {"hw": 0.30, "quiz": 0.20, "exam": 0.20,
-                                 "midterm": 0.10, "finals": 0.20})
+        default_factory=lambda: {
+            "hw": 0.30,
+            "quiz": 0.20,
+            "exam": 0.20,
+            "midterm": 0.10,
+            "finals": 0.20,
+        }
+    )
     rubrics: list[Rubric] = Field(default_factory=list)
     assessments: list[Assessment] = Field(default_factory=list)
     units: list[Unit] = Field(default_factory=list)
@@ -188,7 +200,8 @@ class Course(BaseModel):
             if u.sessions and len(u.sessions) != max(1, u.est_weeks):
                 raise ValueError(
                     f"unit {u.id!r}: {len(u.sessions)} sessions but est_weeks={u.est_weeks} "
-                    "(one session per scheduled week, else the week-by-week plan drifts)")
+                    "(one session per scheduled week, else the week-by-week plan drifts)"
+                )
         _assert_acyclic(outcomes)
         return self
 

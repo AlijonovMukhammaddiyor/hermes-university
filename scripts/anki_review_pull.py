@@ -12,7 +12,7 @@ import json
 import os
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 sys.path.insert(0, "/usr/local/share/anki/app_packages")
 from anki.collection import Collection  # noqa: E402
@@ -30,17 +30,22 @@ def main(vault: str, coll_path: str, engine: str) -> int:
     try:
         auth = col.sync_login(os.environ["AW_USER"], os.environ["AW_PASS"], None)
         out = col.sync_collection(auth, False)
-        if out.required in (2, 4):                     # never full-upload from here (data-loss guard)
-            print("refusing full-upload sync (would overwrite AnkiWeb); seed the collection first",
-                  file=sys.stderr); return 1
-        if out.required == 3:                          # FULL_DOWNLOAD — safe
+        if out.required in (2, 4):  # never full-upload from here (data-loss guard)
+            print(
+                "refusing full-upload sync (would overwrite AnkiWeb); seed the collection first",
+                file=sys.stderr,
+            )
+            return 1
+        if out.required == 3:  # FULL_DOWNLOAD — safe
             if out.new_endpoint:
                 auth.endpoint = out.new_endpoint
             col.full_upload_or_download(auth=auth, server_usn=out.server_media_usn, upload=False)
         rows = col.db.all(
             "select r.id, r.ease, n.tags from revlog r "
             "join cards c on r.cid = c.id join notes n on c.nid = n.id "
-            "where r.id > ? order by r.id", wm)
+            "where r.id > ? order by r.id",
+            wm,
+        )
     finally:
         col.close()
 
@@ -49,11 +54,17 @@ def main(vault: str, coll_path: str, engine: str) -> int:
         maxid = max(maxid, rid)
         for t in (tags or "").split():
             if t.startswith(TAG):
-                events.append({"outcome": t[len(TAG):], "ease": int(ease),
-                               "ts": datetime.fromtimestamp(rid / 1000, timezone.utc).isoformat()})
+                events.append(
+                    {
+                        "outcome": t[len(TAG) :],
+                        "ease": int(ease),
+                        "ts": datetime.fromtimestamp(rid / 1000, UTC).isoformat(),
+                    }
+                )
     if events:
-        subprocess.run([engine, "srs", "review", "--vault", vault, "--events", json.dumps(events)],
-                       check=True)
+        subprocess.run(
+            [engine, "srs", "review", "--vault", vault, "--events", json.dumps(events)], check=True
+        )
     with open(wm_path, "w") as f:
         f.write(str(maxid))
     print(f"pulled {len(events)} review events from {len(rows)} new revlog rows")

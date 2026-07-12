@@ -36,5 +36,6 @@ def test_is_due_toggle():
 
 def test_invalid_rating_raises():
     import pytest
+
     with pytest.raises(ValueError):
         fsrs.review(fsrs.new_card(), 9, dt("2026-07-06T20:00:00+00:00"))

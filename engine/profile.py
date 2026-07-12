@@ -17,8 +17,8 @@ class Profile(BaseModel):
     name: str = "Learner"
     timezone: str = "UTC"
     goal: str = "Become one of the best in the fields you study, able to work with the best people."
-    target_level: str = "top of the field"        # the bar to design courses backward from
-    current_level: str = "capable beginner"        # calibrates placement
+    target_level: str = "top of the field"  # the bar to design courses backward from
+    current_level: str = "capable beginner"  # calibrates placement
     interests: list[str] = Field(default_factory=list)
     daily_task_cap: int = 4
     credential_name: str = "Hermes University Certificate of Mastery"
@@ -45,7 +45,8 @@ def set_field(root: str | Path, field: str, value: str) -> Profile:
     prof = load_profile(root)
     coerced: object = int(value) if field in _INT_FIELDS else value
     updated = prof.model_copy(update={field: coerced})
-    Profile.model_validate(updated.model_dump())          # revalidate
+    Profile.model_validate(updated.model_dump())  # revalidate
     (Path(root) / "profile.yaml").write_text(
-        yaml.safe_dump(updated.model_dump(), sort_keys=False, allow_unicode=True))
+        yaml.safe_dump(updated.model_dump(), sort_keys=False, allow_unicode=True)
+    )
     return updated

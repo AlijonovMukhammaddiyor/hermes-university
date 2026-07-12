@@ -26,6 +26,7 @@ def test_no_personal_identifiers_leak_into_the_tree():
     the scan — a bare `the maintainer` or `university` anywhere else still trips. (employer/top-tier-company stay allowed
     as documented ban-examples in CONTRIBUTING/RFC-005.)"""
     import re
+
     allowed_handle = re.compile(re.escape("AlijonovMukhammaddiyor"), re.I)
     banned = re.compile(r"maintainer|university", re.I)
 
@@ -34,43 +35,51 @@ def test_no_personal_identifiers_leak_into_the_tree():
 
     dirs = [ROOT / d for d in ("engine", "skills", "docs", "tests", "courses/_TEMPLATE")]
     exts = {".py", ".md", ".yaml", ".yml", ".txt", ".env", ".example"}
-    self_path = Path(__file__).resolve()            # this file names them on purpose (the ban list)
+    self_path = Path(__file__).resolve()  # this file names them on purpose (the ban list)
     hits = []
     for base in dirs:
         for f in base.rglob("*"):
-            if (f.is_file() and f.suffix in exts and f.resolve() != self_path
-                    and leaks(f.read_text(errors="ignore"))):
+            if (
+                f.is_file()
+                and f.suffix in exts
+                and f.resolve() != self_path
+                and leaks(f.read_text(errors="ignore"))
+            ):
                 hits.append(str(f.relative_to(ROOT)))
-    for f in ROOT.glob("*.md"):                      # root-level README/ARCHITECTURE/etc.
+    for f in ROOT.glob("*.md"):  # root-level README/ARCHITECTURE/etc.
         if leaks(f.read_text(errors="ignore")):
             hits.append(f.name)
     assert not hits, f"personal identifiers leaked into: {sorted(hits)}"
 
 
 def test_profile_defaults_when_absent(tmp_path):
-    p = load_profile(tmp_path)          # no profile.yaml / profile.example.yaml -> defaults
+    p = load_profile(tmp_path)  # no profile.yaml / profile.example.yaml -> defaults
     assert p.name == "Learner" and p.daily_task_cap == 4
 
 
 def test_profile_yaml_overrides_example(tmp_path):
     (tmp_path / "profile.yaml").write_text(
-        "name: Ada\ngoal: master systems\ntarget_level: staff\ndaily_task_cap: 2\n")
+        "name: Ada\ngoal: master systems\ntarget_level: staff\ndaily_task_cap: 2\n"
+    )
     p = load_profile(tmp_path)
     assert p.name == "Ada" and p.target_level == "staff" and p.daily_task_cap == 2
 
 
 def test_set_field_persists_and_coerces(tmp_path):
     from engine.profile import set_field
+
     p = set_field(tmp_path, "goal", "become a great researcher")
     assert p.goal == "become a great researcher"
-    assert (tmp_path / "profile.yaml").exists()             # written to the private file
+    assert (tmp_path / "profile.yaml").exists()  # written to the private file
     assert load_profile(tmp_path).goal == "become a great researcher"
-    p2 = set_field(tmp_path, "daily_task_cap", "3")         # coerced to int
+    p2 = set_field(tmp_path, "daily_task_cap", "3")  # coerced to int
     assert p2.daily_task_cap == 3 and load_profile(tmp_path).goal == "become a great researcher"
 
 
 def test_set_field_rejects_unknown_field(tmp_path):
     import pytest
+
     from engine.profile import set_field
+
     with pytest.raises(KeyError):
         set_field(tmp_path, "employer", "anything")

@@ -1,7 +1,6 @@
 import pytest
 
 from engine.proofgate import get_gate
-from engine.proofgate.base import ProofGate, register_gate
 from engine.proofgate.leetcode import LeetCodeGate
 
 
@@ -29,6 +28,7 @@ def test_leetcode_fail_when_wrong_slug():
 def test_leetcode_fetch_failure_is_not_passed():
     def boom(u, s):
         raise RuntimeError("network down")
+
     gate = LeetCodeGate(fetcher=boom)
     res = gate.verify({"username": "u", "slug": "two-sum", "since_ts": 0})
     assert not res.passed and "network down" in (res.detail or "")
@@ -37,4 +37,4 @@ def test_leetcode_fetch_failure_is_not_passed():
 def test_registry_has_leetcode_and_rejects_unknown():
     assert get_gate("leetcode").name == "leetcode"
     with pytest.raises(KeyError):
-        get_gate("judge0")   # not added yet (RFC D9: later)
+        get_gate("judge0")  # not added yet (RFC D9: later)

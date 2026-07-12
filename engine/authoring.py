@@ -10,6 +10,7 @@ import re
 from pathlib import Path
 
 from .course import Course, load_course
+from .state import CourseStatus
 
 _URL = re.compile(r"https?://[^\s)\]>]+")
 _UPLOAD_MARKERS = {".gitkeep", "README.md", "RESEARCH-PROMPT.md", "PROMPT.md"}
@@ -23,9 +24,14 @@ def authored_report(course: Course, course_dir: Path) -> dict:
     dossier = course_dir / "research" / "dossier.md"
     dtext = dossier.read_text() if dossier.exists() else ""
     n_urls = len(set(_URL.findall(dtext)))
-    has_dossier = (n_urls >= 5 and "confidence" in dtext.lower()
-                   and any(s in dtext.lower() for s in
-                           ("open question", "couldn't verify", "could not verify", "cannot verify")))
+    has_dossier = (
+        n_urls >= 5
+        and "confidence" in dtext.lower()
+        and any(
+            s in dtext.lower()
+            for s in ("open question", "couldn't verify", "could not verify", "cannot verify")
+        )
+    )
     mm = course.mastery_model
     has_mastery = bool(mm and mm.excellence_bar and mm.staying_current)
     aud = course.audience
@@ -45,12 +51,15 @@ def authored_report(course: Course, course_dir: Path) -> dict:
         missing.append("mastery_model")
     if not has_dossier:
         missing.append("research-dossier(needs ≥5 cited URLs + confidence + open-questions)")
-    return {"authored": not missing, "missing_for_authored": missing,
-            "no_resource_units": [u.id for u in course.units if not u.resources],
-            "n_dossier_urls": n_urls}
+    return {
+        "authored": not missing,
+        "missing_for_authored": missing,
+        "no_resource_units": [u.id for u in course.units if not u.resources],
+        "n_dossier_urls": n_urls,
+    }
 
 
-def report_present(uploads_dir: Path, code: str) -> bool:
+def report_present(uploads_dir: str | Path, code: str) -> bool:
     """Has the learner dropped a research report for <code>? Any real file under Uploads/<code>/
     (ignoring the scaffold markers), or a saved research/report.md."""
     up = Path(uploads_dir) / code
@@ -61,14 +70,14 @@ def report_present(uploads_dir: Path, code: str) -> bool:
     return False
 
 
-def authoring_status(course_file: Path, uploads_dir: Path, code: str) -> str:
+def authoring_status(course_file: str | Path, uploads_dir: str | Path, code: str) -> CourseStatus:
     """Deterministic authoring-phase lifecycle status (RFC-009), from the filesystem alone:
     authored → 'placement'; report uploaded but not yet authored → 'authoring';
     else blocked on the learner → 'researching'."""
     try:
         c = load_course(course_file)
     except FileNotFoundError:
-        return "researching"          # no course.yaml yet → still awaiting the research report
+        return "researching"  # no course.yaml yet → still awaiting the research report
     # a course.yaml that exists but won't parse/validate is a real fault — fail loud, don't mask it
     if authored_report(c, Path(course_file).parent)["authored"]:
         return "placement"

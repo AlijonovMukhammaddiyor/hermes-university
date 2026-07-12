@@ -4,10 +4,13 @@ Cards are stored as JSON-able dicts in the Learner Model. Ratings: 1=Again 2=Har
 All functions take an explicit `now` (no hidden clock) so scheduling is deterministic/testable.
 RFC §4.4 / §15.
 """
+# py-fsrs ships no type stubs; this wrapper is the one place the library is touched, so scope the
+# unresolved-attribute noise here rather than leaking `# type: ignore` across the engine.
+# pyright: reportAttributeAccessIssue=false, reportCallIssue=false
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fsrs import Card, Rating, Scheduler
 
@@ -18,8 +21,8 @@ RATING = {1: Rating.Again, 2: Rating.Hard, 3: Rating.Good, 4: Rating.Easy}
 
 def new_card(now: datetime | None = None) -> dict:
     card = Card()
-    if now is not None:                       # honor the explicit clock (module contract) — a fresh
-        card.due = _aware(now)                # card is due at `now`, not at import/real time
+    if now is not None:  # honor the explicit clock (module contract) — a fresh
+        card.due = _aware(now)  # card is due at `now`, not at import/real time
     return card.to_dict()
 
 
@@ -47,4 +50,4 @@ def is_due(card_dict: dict, now: datetime) -> bool:
 
 
 def _aware(dt: datetime) -> datetime:
-    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    return dt if dt.tzinfo else dt.replace(tzinfo=UTC)

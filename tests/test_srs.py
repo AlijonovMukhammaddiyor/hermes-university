@@ -1,23 +1,32 @@
 """The Anki forward pipeline (RFC-009 §5)."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from engine.srs import due_count, queue_cards
 
-NOW = datetime(2026, 7, 8, tzinfo=timezone.utc)
+NOW = datetime(2026, 7, 8, tzinfo=UTC)
 
 
 def test_queue_cards_writes_push_queue_and_ledger(tmp_path):
-    n = queue_cards(tmp_path, "CS101", "Hermes", "unit1",
-                    [{"front": "What is O(1)?", "back": "constant time"},
-                     {"front": "What is O(n)?", "back": "linear", "tags": ["complexity"]}], NOW)
+    n = queue_cards(
+        tmp_path,
+        "CS101",
+        "Hermes",
+        "unit1",
+        [
+            {"front": "What is O(1)?", "back": "constant time"},
+            {"front": "What is O(n)?", "back": "linear", "tags": ["complexity"]},
+        ],
+        NOW,
+    )
     assert n == 2
     pend = (tmp_path / "SRS" / "pending.jsonl").read_text().splitlines()
     assert len(pend) == 2
     import json
+
     first = json.loads(pend[0])
     assert first["deck"] == "Hermes::CS101::unit1" and first["front"] == "What is O(1)?"
-    assert set(first) == {"deck", "front", "back", "tags"}          # exactly what anki_sync reads
+    assert set(first) == {"deck", "front", "back", "tags"}  # exactly what anki_sync reads
     ledger = (tmp_path / "SRS" / "ledger.jsonl").read_text().splitlines()
     assert len(ledger) == 2 and "fsrs" in json.loads(ledger[0])
 
@@ -34,17 +43,21 @@ def test_due_count_reflects_queue_and_ledger(tmp_path):
 
 def test_cards_are_tagged_with_the_outcome(tmp_path):
     from engine.srs import outcome_tag
-    queue_cards(tmp_path, "CS101", "Hermes", "u1", [{"front": "q", "back": "a"}], NOW,
-                outcome="f1.apply")
+
+    queue_cards(
+        tmp_path, "CS101", "Hermes", "u1", [{"front": "q", "back": "a"}], NOW, outcome="f1.apply"
+    )
     import json
+
     card = json.loads((tmp_path / "SRS" / "pending.jsonl").read_text().splitlines()[0])
-    assert outcome_tag("f1.apply") in card["tags"]                  # review-back linkage survives
+    assert outcome_tag("f1.apply") in card["tags"]  # review-back linkage survives
     led = json.loads((tmp_path / "SRS" / "ledger.jsonl").read_text().splitlines()[0])
     assert led["outcome"] == "f1.apply"
 
 
 def test_review_ingest_flags_and_clears_review_due(tmp_path):
     from engine.srs import ingest_reviews, review_due
+
     # a lapse (Again=1) marks the outcome review-due; GPA/transcript are untouched here by design
     r = ingest_reviews(tmp_path, [{"outcome": "f1.apply", "ease": 1, "ts": "2026-07-08T01:00"}])
     assert r["ingested"] == 1 and review_due(tmp_path) == ["f1.apply"]
@@ -55,4 +68,5 @@ def test_review_ingest_flags_and_clears_review_due(tmp_path):
     ingest_reviews(tmp_path, [{"outcome": "f2.apply", "ease": 1, "ts": "2026-07-08T03:00"}])
     assert due_count(tmp_path, NOW)["review_due"] == 1
     from engine.srs import load_retention
+
     assert load_retention(tmp_path)["f1.apply"]["reviews"] == 2

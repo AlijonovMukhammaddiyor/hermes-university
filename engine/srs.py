@@ -32,24 +32,50 @@ def outcome_tag(outcome: str) -> str:
     return f"hu-o::{outcome}"
 
 
-def queue_cards(vault: str | Path, course: str, deck_prefix: str, unit: str,
-                items: list[dict], now: datetime, outcome: str = "") -> int:
+def queue_cards(
+    vault: str | Path,
+    course: str,
+    deck_prefix: str,
+    unit: str,
+    items: list[dict],
+    now: datetime,
+    outcome: str = "",
+) -> int:
     """Append professor-supplied [{front,back,tags?}] cards for a proven outcome. Writes the push
     queue (pending.jsonl: deck/front/back/tags) and the ledger (full card + fsrs). When `outcome` is
     given, every card is tagged so its Anki reviews map back to that outcome (RFC-009 review-back)."""
-    built = C.build_cards(prefix=deck_prefix or DECK_PREFIX, course_code=course,
-                          items=items, unit=unit or None, now=now)
+    built = C.build_cards(
+        prefix=deck_prefix or DECK_PREFIX,
+        course_code=course,
+        items=items,
+        unit=unit or None,
+        now=now,
+    )
     d = _srs_dir(vault)
     with (d / "pending.jsonl").open("a") as pend, (d / "ledger.jsonl").open("a") as led:
         for card in built:
             tags = list(card.tags)
             if outcome and outcome_tag(outcome) not in tags:
                 tags.append(outcome_tag(outcome))
-            pend.write(json.dumps({"deck": card.deck, "front": card.front,
-                                   "back": card.back, "tags": tags}) + "\n")
-            led.write(json.dumps({"course": course, "outcome": outcome, "deck": card.deck,
-                                  "front": card.front, "fsrs": card.fsrs,
-                                  "created": now.isoformat()}) + "\n")
+            pend.write(
+                json.dumps(
+                    {"deck": card.deck, "front": card.front, "back": card.back, "tags": tags}
+                )
+                + "\n"
+            )
+            led.write(
+                json.dumps(
+                    {
+                        "course": course,
+                        "outcome": outcome,
+                        "deck": card.deck,
+                        "front": card.front,
+                        "fsrs": card.fsrs,
+                        "created": now.isoformat(),
+                    }
+                )
+                + "\n"
+            )
     return len(built)
 
 
@@ -75,15 +101,16 @@ def ingest_reviews(vault: str | Path, events: list[dict]) -> dict:
         ease = ev.get("ease")
         if not o or ease not in (1, 2, 3, 4):
             continue
-        r = ret.setdefault(o, {"reviews": 0, "lapses": 0, "last_ease": None,
-                               "last_ts": None, "review_due": False})
+        r = ret.setdefault(
+            o, {"reviews": 0, "lapses": 0, "last_ease": None, "last_ts": None, "review_due": False}
+        )
         r["reviews"] += 1
         r["last_ease"], r["last_ts"] = ease, ev.get("ts")
         if ease == 1:
             r["lapses"] += 1
             r["review_due"] = True
         elif ease >= 3:
-            r["review_due"] = False        # a good/easy review clears the flag
+            r["review_due"] = False  # a good/easy review clears the flag
         ingested += 1
     _retention_path(vault).write_text(json.dumps(ret, indent=1) + "\n")
     return {"ingested": ingested, "review_due": review_due(vault)}
@@ -105,7 +132,9 @@ def due_count(vault: str | Path, now: datetime) -> dict:
     due = cards whose FSRS schedule says due (from the ledger — see the review-back caveat above)."""
     d = _srs_dir(vault)
     ledger = _lines(d / "ledger.jsonl")
-    return {"queued": len(_lines(d / "pending.jsonl")),
-            "created": len(ledger),
-            "due": sum(1 for c in ledger if fsrs.is_due(c.get("fsrs", {}), now)),
-            "review_due": len(review_due(vault))}
+    return {
+        "queued": len(_lines(d / "pending.jsonl")),
+        "created": len(ledger),
+        "due": sum(1 for c in ledger if fsrs.is_due(c.get("fsrs", {}), now)),
+        "review_due": len(review_due(vault)),
+    }

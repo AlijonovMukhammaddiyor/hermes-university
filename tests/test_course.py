@@ -7,7 +7,7 @@ from engine.course import load_course
 from engine.learner_model import next_topic
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURES = ROOT / "tests" / "fixtures"      # generic courses; shipped catalog is empty (RFC-005)
+FIXTURES = ROOT / "tests" / "fixtures"  # generic courses; shipped catalog is empty (RFC-005)
 
 
 def test_fixture_module_loads_and_satisfies_contract():
@@ -27,55 +27,127 @@ def test_template_loads():
 
 def test_resources_schema_optional_and_typed():
     from engine.course import Course, Resource
+
     c = load_course(FIXTURES / "GEN101" / "course.yaml")
     assert isinstance(c.resources, list) and c.units[0].resources[0].type == "textbook"
     # a fully-specified researched course carries typed resources on course + unit
-    r = Resource(type="textbook", title="CLRS", author="Cormen", locator="ch. 6",
-                 why="canonical", tier="core", cost="paid")
+    r = Resource(
+        type="textbook",
+        title="CLRS",
+        author="Cormen",
+        locator="ch. 6",
+        why="canonical",
+        tier="core",
+        cost="paid",
+    )
     assert r.cost == "paid" and r.type == "textbook"
-    m = Course.model_validate({
-        "id": "RX", "title": "x", "subject_domain": "d", "credits": 1, "north_star": "n",
-        "description": "researched desc", "primary_text": r.model_dump(),
-        "assessments": [{"id": "a1", "outcome_id": "o1", "type": "summative", "modality": "project",
-                         "bloom_target": "apply", "proof_gate": "g"}],
-        "units": [{"id": "u", "title": "U", "order_index": 1, "semester": 1, "est_weeks": 2,
-                   "summary": "builds x", "resources": [r.model_dump()],
-                   "outcomes": [{"id": "o1", "statement": "s", "bloom_level": "apply", "proof": "a1"}]}],
-    })
+    m = Course.model_validate(
+        {
+            "id": "RX",
+            "title": "x",
+            "subject_domain": "d",
+            "credits": 1,
+            "north_star": "n",
+            "description": "researched desc",
+            "primary_text": r.model_dump(),
+            "assessments": [
+                {
+                    "id": "a1",
+                    "outcome_id": "o1",
+                    "type": "summative",
+                    "modality": "project",
+                    "bloom_target": "apply",
+                    "proof_gate": "g",
+                }
+            ],
+            "units": [
+                {
+                    "id": "u",
+                    "title": "U",
+                    "order_index": 1,
+                    "semester": 1,
+                    "est_weeks": 2,
+                    "summary": "builds x",
+                    "resources": [r.model_dump()],
+                    "outcomes": [
+                        {"id": "o1", "statement": "s", "bloom_level": "apply", "proof": "a1"}
+                    ],
+                }
+            ],
+        }
+    )
     assert m.primary_text.title == "CLRS" and m.units[0].est_weeks == 2
     assert m.units[0].resources[0].locator == "ch. 6"
 
 
 def test_invalid_resource_type_rejected():
     from engine.course import Resource
+
     with pytest.raises(ValidationError):
         Resource(type="tweet", title="x")
 
 
 def test_professor_profile_and_mastery_model_load():
     from engine.course import Course, MasteryModel, ProfessorProfile, Resource
-    pp = ProfessorProfile(persona="rigorous systems mentor", teaching_stance="build-then-generalize",
-                          common_misconceptions=["cache = free"], assessment_philosophy="ship + defend")
-    mm = MasteryModel(excellence_bar="designs planet-scale systems",
-                      expert_practices=["writes design docs first"], frontier="serverless + edge",
-                      staying_current=[Resource(type="reference", title="High Scalability")],
-                      signature_work="a public design portfolio")
-    c = Course.model_validate({
-        "id": "RX", "title": "x", "subject_domain": "d", "credits": 1, "north_star": "n",
-        "description": "d", "professor_profile": pp.model_dump(), "mastery_model": mm.model_dump(),
-        "assessments": [{"id": "a1", "outcome_id": "o1", "type": "summative", "modality": "project",
-                         "bloom_target": "apply", "proof_gate": "g"}],
-        "units": [{"id": "u", "title": "U", "order_index": 1, "semester": 1,
-                   "outcomes": [{"id": "o1", "statement": "s", "bloom_level": "apply", "proof": "a1"}]}],
-    })
+
+    pp = ProfessorProfile(
+        persona="rigorous systems mentor",
+        teaching_stance="build-then-generalize",
+        common_misconceptions=["cache = free"],
+        assessment_philosophy="ship + defend",
+    )
+    mm = MasteryModel(
+        excellence_bar="designs planet-scale systems",
+        expert_practices=["writes design docs first"],
+        frontier="serverless + edge",
+        staying_current=[Resource(type="reference", title="High Scalability")],
+        signature_work="a public design portfolio",
+    )
+    c = Course.model_validate(
+        {
+            "id": "RX",
+            "title": "x",
+            "subject_domain": "d",
+            "credits": 1,
+            "north_star": "n",
+            "description": "d",
+            "professor_profile": pp.model_dump(),
+            "mastery_model": mm.model_dump(),
+            "assessments": [
+                {
+                    "id": "a1",
+                    "outcome_id": "o1",
+                    "type": "summative",
+                    "modality": "project",
+                    "bloom_target": "apply",
+                    "proof_gate": "g",
+                }
+            ],
+            "units": [
+                {
+                    "id": "u",
+                    "title": "U",
+                    "order_index": 1,
+                    "semester": 1,
+                    "outcomes": [
+                        {"id": "o1", "statement": "s", "bloom_level": "apply", "proof": "a1"}
+                    ],
+                }
+            ],
+        }
+    )
     assert c.professor_profile.persona.startswith("rigorous")
-    assert c.mastery_model.excellence_bar and c.mastery_model.staying_current[0].title == "High Scalability"
+    assert (
+        c.mastery_model.excellence_bar
+        and c.mastery_model.staying_current[0].title == "High Scalability"
+    )
 
 
-@pytest.mark.parametrize("path", sorted(FIXTURES.glob("*/course.yaml")),
-                         ids=lambda p: p.parent.name)
+@pytest.mark.parametrize(
+    "path", sorted(FIXTURES.glob("*/course.yaml")), ids=lambda p: p.parent.name
+)
 def test_every_course_module_satisfies_contract(path):
-    c = load_course(path)                     # raises if the backward-design contract is violated
+    c = load_course(path)  # raises if the backward-design contract is violated
     assert c.id and c.credits >= 1
     assert c.all_outcomes(), "a course must have outcomes"
 
@@ -91,17 +163,38 @@ def test_session_count_must_match_est_weeks():
     """The week-by-week plan must map 1:1 onto the unit's scheduled weeks, else the rendered plan
     drifts from the Units calendar (RFC-006). A mismatch fails loud at load time."""
     from engine.course import Course
+
     base = {
-        "id": "SX", "title": "x", "subject_domain": "d", "credits": 1, "north_star": "x",
-        "assessments": [{"id": "a", "outcome_id": "o", "type": "summative", "modality": "project",
-                         "bloom_target": "apply", "proof_gate": "p"}],
-        "units": [{"id": "u", "title": "U", "order_index": 1, "semester": 1, "est_weeks": 3,
-                   "outcomes": [{"id": "o", "statement": "s", "bloom_level": "apply", "proof": "a"}],
-                   "sessions": [{"week": 1, "focus": "f"}, {"week": 2, "focus": "f"}]}],  # 2 != 3
+        "id": "SX",
+        "title": "x",
+        "subject_domain": "d",
+        "credits": 1,
+        "north_star": "x",
+        "assessments": [
+            {
+                "id": "a",
+                "outcome_id": "o",
+                "type": "summative",
+                "modality": "project",
+                "bloom_target": "apply",
+                "proof_gate": "p",
+            }
+        ],
+        "units": [
+            {
+                "id": "u",
+                "title": "U",
+                "order_index": 1,
+                "semester": 1,
+                "est_weeks": 3,
+                "outcomes": [{"id": "o", "statement": "s", "bloom_level": "apply", "proof": "a"}],
+                "sessions": [{"week": 1, "focus": "f"}, {"week": 2, "focus": "f"}],
+            }
+        ],  # 2 != 3
     }
     with pytest.raises(ValidationError):
         Course.model_validate(base)
-    base["units"][0]["sessions"].append({"week": 3, "focus": "f"})   # now 3 == est_weeks
+    base["units"][0]["sessions"].append({"week": 3, "focus": "f"})  # now 3 == est_weeks
     assert Course.model_validate(base).units[0].est_weeks == 3
     # a unit with NO sessions is exempt (sessions are optional)
     base["units"][0]["sessions"] = []
@@ -111,37 +204,88 @@ def test_session_count_must_match_est_weeks():
 def test_dag_drives_next_topic():
     c = load_course(FIXTURES / "GEN101" / "course.yaml")
     units = c.dag()
-    assert next_topic(units, mastered=set()) == "f1.apply"          # basics is the entry
+    assert next_topic(units, mastered=set()) == "f1.apply"  # basics is the entry
     # intermediate depends on basics -> not offered until f1.apply mastered
     assert next_topic(units, mastered={"f1.apply"}) == "f2.apply"
 
 
 def test_orphan_outcome_is_rejected():
     bad = {
-        "id": "BAD", "title": "x", "subject_domain": "d", "credits": 1, "north_star": "x",
+        "id": "BAD",
+        "title": "x",
+        "subject_domain": "d",
+        "credits": 1,
+        "north_star": "x",
         "assessments": [],
-        "units": [{"id": "u", "title": "U", "order_index": 1, "semester": 1,
-                   "outcomes": [{"id": "o", "statement": "s", "bloom_level": "apply", "proof": "missing"}]}],
+        "units": [
+            {
+                "id": "u",
+                "title": "U",
+                "order_index": 1,
+                "semester": 1,
+                "outcomes": [
+                    {"id": "o", "statement": "s", "bloom_level": "apply", "proof": "missing"}
+                ],
+            }
+        ],
     }
     from engine.course import Course
+
     with pytest.raises(ValidationError):
         Course.model_validate(bad)
 
 
 def test_cycle_is_rejected():
     bad = {
-        "id": "BAD", "title": "x", "subject_domain": "d", "credits": 1, "north_star": "x",
+        "id": "BAD",
+        "title": "x",
+        "subject_domain": "d",
+        "credits": 1,
+        "north_star": "x",
         "assessments": [
-            {"id": "a1", "outcome_id": "o1", "type": "formative", "modality": "explain",
-             "bloom_target": "apply", "proof_gate": "x"},
-            {"id": "a2", "outcome_id": "o2", "type": "formative", "modality": "explain",
-             "bloom_target": "apply", "proof_gate": "x"},
+            {
+                "id": "a1",
+                "outcome_id": "o1",
+                "type": "formative",
+                "modality": "explain",
+                "bloom_target": "apply",
+                "proof_gate": "x",
+            },
+            {
+                "id": "a2",
+                "outcome_id": "o2",
+                "type": "formative",
+                "modality": "explain",
+                "bloom_target": "apply",
+                "proof_gate": "x",
+            },
         ],
-        "units": [{"id": "u", "title": "U", "order_index": 1, "semester": 1, "outcomes": [
-            {"id": "o1", "statement": "s", "bloom_level": "apply", "proof": "a1", "depends_on": ["o2"]},
-            {"id": "o2", "statement": "s", "bloom_level": "apply", "proof": "a2", "depends_on": ["o1"]},
-        ]}],
+        "units": [
+            {
+                "id": "u",
+                "title": "U",
+                "order_index": 1,
+                "semester": 1,
+                "outcomes": [
+                    {
+                        "id": "o1",
+                        "statement": "s",
+                        "bloom_level": "apply",
+                        "proof": "a1",
+                        "depends_on": ["o2"],
+                    },
+                    {
+                        "id": "o2",
+                        "statement": "s",
+                        "bloom_level": "apply",
+                        "proof": "a2",
+                        "depends_on": ["o1"],
+                    },
+                ],
+            }
+        ],
     }
     from engine.course import Course
+
     with pytest.raises(ValidationError):
         Course.model_validate(bad)

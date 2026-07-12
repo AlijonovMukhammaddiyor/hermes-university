@@ -9,9 +9,9 @@ from pydantic import BaseModel
 
 class ProofResult(BaseModel):
     passed: bool
-    score: float = 0.0          # 0..1 where meaningful; gates may return 1.0/0.0
-    source: str                 # gate name
-    ref: str | None = None      # submission id / url / commit
+    score: float = 0.0  # 0..1 where meaningful; gates may return 1.0/0.0
+    source: str  # gate name
+    ref: str | None = None  # submission id / url / commit
     detail: str | None = None
 
 

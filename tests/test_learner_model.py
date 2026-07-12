@@ -1,5 +1,10 @@
 from engine.learner_model import (
-    LearnerModel, best_slot, difficulty_for, next_topic, recompute, weak_areas,
+    LearnerModel,
+    best_slot,
+    difficulty_for,
+    next_topic,
+    recompute,
+    weak_areas,
 )
 from tests.conftest import dt, rec
 
@@ -16,7 +21,7 @@ def test_topic_proficiency_and_ceiling():
     ]
     m = build(recs)
     assert m.topics["two-pointers"].proficiency == 0.85
-    assert m.topics["two-pointers"].difficulty_ceiling == "hard"   # hardest passed tier
+    assert m.topics["two-pointers"].difficulty_ceiling == "hard"  # hardest passed tier
     assert m.topics["graphs"].proficiency == 0.5
     assert "wrong-invariant" in m.topics["graphs"].error_tags
 
@@ -24,25 +29,25 @@ def test_topic_proficiency_and_ceiling():
 def test_weak_areas_sorted_weakest_first():
     recs = [rec("a.apply", 0.6), rec("b.apply", 0.72), rec("c.apply", 0.95)]
     m = build(recs)
-    assert weak_areas(m) == ["a", "b"]      # c (0.95) is above threshold
+    assert weak_areas(m) == ["a", "b"]  # c (0.95) is above threshold
     assert "c" not in weak_areas(m)
 
 
 def test_difficulty_for_ramps_with_proficiency():
     m = build([rec("dp.apply", 0.95, tier="med")])
-    assert difficulty_for(m, "dp") == "med"                 # proficient -> at ceiling
+    assert difficulty_for(m, "dp") == "med"  # proficient -> at ceiling
     m2 = build([rec("dp.apply", 0.72, tier="hard")])
-    assert difficulty_for(m2, "dp") == "med"                # weak -> one below ceiling(hard)
+    assert difficulty_for(m2, "dp") == "med"  # weak -> one below ceiling(hard)
     assert difficulty_for(m2, "unknown-topic") == "easy"
 
 
 def test_difficulty_baseline_floors_a_strong_learner():
-    m = build([])                                            # no history
-    assert difficulty_for(m, "graphs", baseline="med") == "med"     # new topic starts at baseline
-    m2 = build([rec("dp.apply", 0.72, tier="hard")])         # weak -> would be "med"
-    assert difficulty_for(m2, "dp", baseline="med") == "med"        # not below baseline
-    m3 = build([rec("dp.apply", 0.5, tier="easy")])          # weak, ceiling easy -> below is easy
-    assert difficulty_for(m3, "dp", baseline="med") == "med"        # floored up to baseline
+    m = build([])  # no history
+    assert difficulty_for(m, "graphs", baseline="med") == "med"  # new topic starts at baseline
+    m2 = build([rec("dp.apply", 0.72, tier="hard")])  # weak -> would be "med"
+    assert difficulty_for(m2, "dp", baseline="med") == "med"  # not below baseline
+    m3 = build([rec("dp.apply", 0.5, tier="easy")])  # weak, ceiling easy -> below is easy
+    assert difficulty_for(m3, "dp", baseline="med") == "med"  # floored up to baseline
 
 
 def test_best_slot_from_completion_hours():
@@ -54,11 +59,13 @@ def test_best_slot_from_completion_hours():
 
 
 def test_pace_task_cap_and_rest_day():
-    recs = [rec("a.apply", 0.9, ts="2026-07-06T10:00:00+00:00"),
-            rec("b.apply", 0.9, ts="2026-07-06T11:00:00+00:00"),
-            rec("c.apply", 0.9, ts="2026-07-07T10:00:00+00:00")]
+    recs = [
+        rec("a.apply", 0.9, ts="2026-07-06T10:00:00+00:00"),
+        rec("b.apply", 0.9, ts="2026-07-06T11:00:00+00:00"),
+        rec("c.apply", 0.9, ts="2026-07-07T10:00:00+00:00"),
+    ]
     m = build(recs)
-    assert m.pace.task_cap_observed == 2   # two on 07-06 (local)
+    assert m.pace.task_cap_observed == 2  # two on 07-06 (local)
     assert m.pace.rest_day is not None
 
 

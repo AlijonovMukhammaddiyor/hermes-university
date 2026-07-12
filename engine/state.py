@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Literal
 
@@ -56,10 +55,12 @@ class Course(BaseModel):
     unit: str | None = None
     unit_index: int = 0
     activates_week: int | None = None
-    grade_weights: dict[str, float] = Field(default_factory=dict)  # copied from the module at enroll
+    grade_weights: dict[str, float] = Field(
+        default_factory=dict
+    )  # copied from the module at enroll
     enrolled_on: str | None = None
-    status: CourseStatus = "draft"                # lifecycle (RFC-009); advanced only by the engine
-    archived_on: str | None = None               # set when moved to archived (soft drop)
+    status: CourseStatus = "draft"  # lifecycle (RFC-009); advanced only by the engine
+    archived_on: str | None = None  # set when moved to archived (soft drop)
 
 
 class Assessments(BaseModel):
@@ -89,7 +90,7 @@ class Enrollment(BaseModel):
 
 
 class Degree(BaseModel):
-    name: str = "Hermes University Certificate of Mastery"   # from profile.credential_name (RFC-005)
+    name: str = "Hermes University Certificate of Mastery"  # from profile.credential_name (RFC-005)
     requirement: str = "pass finals of both 3-month semesters (>=B)"
     awarded_on: str | None = None
 
@@ -106,25 +107,34 @@ class State(BaseModel):
     assessments: Assessments = Field(default_factory=Assessments)
     history: list[SemesterRecord] = Field(default_factory=list)
     enrollment: Enrollment = Field(default_factory=Enrollment)
-    hold: str | None = None                       # e.g. "probation" — blocks new material
+    hold: str | None = None  # e.g. "probation" — blocks new material
     degree: Degree = Field(default_factory=Degree)
 
     @classmethod
-    def load(cls, path: str | Path) -> "State":
+    def load(cls, path: str | Path) -> State:
         return cls.model_validate_json(Path(path).read_text())
 
     def save(self, path: str | Path) -> None:
         Path(path).write_text(self.model_dump_json(indent=2) + "\n")
 
 
-def fresh_state(*, name: str, timezone: str, started_on: str,
-                total_semesters: int = 2, weeks_per_semester: int = 12,
-                credential_name: str | None = None) -> State:
+def fresh_state(
+    *,
+    name: str,
+    timezone: str,
+    started_on: str,
+    total_semesters: int = 2,
+    weeks_per_semester: int = 12,
+    credential_name: str | None = None,
+) -> State:
     """A clean day-1 state (no courses yet; registration adds them)."""
     degree = Degree(name=credential_name) if credential_name else Degree()
     return State(
-        program=Program(total_semesters=total_semesters,
-                        weeks_per_semester=weeks_per_semester, started_on=started_on),
+        program=Program(
+            total_semesters=total_semesters,
+            weeks_per_semester=weeks_per_semester,
+            started_on=started_on,
+        ),
         learner=Learner(name=name, timezone=timezone),
         degree=degree,
     )
