@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Hermes University installer — idempotent; re-run to upgrade. See ARCHITECTURE.md.
-# Real steps = profile + config, engine venv, vault scaffold, state init, render skills, verify.
-# Later phases (marked [PHASE n]) are stubbed until built.
+# Hermes University installer — idempotent; re-run to upgrade. Usually invoked by setup.sh (which
+# collects keys first). Steps: profile + config, engine venv, vault scaffold, state init, render
+# skills, DR/anki/vault-sync timers, cron creation, verify + integrations preflight.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
