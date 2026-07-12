@@ -15,6 +15,12 @@ from .state import EnrollmentRecord, SemesterRecord, State
 PASS_BAND_POINTS = BAND_POINTS["B"]  # promotion/midterm gate = >= B
 
 
+def _activation_due(activates_week: int | None, week: int) -> bool:
+    """Has a course's activation week arrived? (None = live from week 1). The single week-gate every
+    enroll/activate/promote path shares, so 'is this course active?' can't drift between them."""
+    return activates_week is None or week >= activates_week
+
+
 def register_courses(state: State, course_dir: str | Path) -> list[str]:
     """Populate state.courses from the course modules under `course_dir` (RFC §6).
     Idempotent: updates existing entries, preserves progress fields (unit_index)."""
@@ -29,8 +35,8 @@ def register_courses(state: State, course_dir: str | Path) -> list[str]:
 
         c = load_course(path)
         first_unit = c.units[0].id if c.units else None
-        active = c.active_default and (
-            c.activates_week is None or state.position.week_in_semester >= c.activates_week
+        active = c.active_default and _activation_due(
+            c.activates_week, state.position.week_in_semester
         )
         existing = state.courses.get(c.id)
         status = (
@@ -107,9 +113,7 @@ def enroll(state: State, course_dir: str | Path, code: str, today: str | None = 
             f"drop a course before adding {code}"
         )
 
-    active = c.active_default and (
-        c.activates_week is None or state.position.week_in_semester >= c.activates_week
-    )
+    active = c.active_default and _activation_due(c.activates_week, state.position.week_in_semester)
     from .authoring import authored_report
 
     status = "placement" if authored_report(c, path.parent)["authored"] else "researching"
@@ -256,10 +260,7 @@ def activate_due_courses(state: State) -> list[str]:
         if state.position.semester not in course.runs_in:
             course.active = False
             continue
-        due = (
-            course.activates_week is None
-            or state.position.week_in_semester >= course.activates_week
-        )
+        due = _activation_due(course.activates_week, state.position.week_in_semester)
         if due and not course.active:
             course.active = True
             newly.append(code)
@@ -300,9 +301,11 @@ def promote_or_graduate(
         state.position.week_in_semester = 1
         state.position.phase = "depth" if sem + 1 == 2 else "foundations"
         state.gpa.semester = None
-        # activate S2 courses
+        # activate next-semester courses (week resets to 1) — same gate as activate_due_courses
         for course in state.courses.values():
-            course.active = (sem + 1) in course.runs_in and course.activates_week is None
+            course.active = (sem + 1) in course.runs_in and _activation_due(
+                course.activates_week, state.position.week_in_semester
+            )
         return state, "promoted"
     return state, "graduated"
 

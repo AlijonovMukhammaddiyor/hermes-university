@@ -136,6 +136,26 @@ def test_promote_on_pass_and_remediation_on_fail():
     assert status3 == "remediation" and s3.position.semester == 1
 
 
+def test_promote_activation_agrees_with_weekly_cron():
+    # a course that activates in week 1 must be active right after promotion — the same result
+    # activate_due_courses gives at that position (regression: promote required activates_week is None)
+    s = _state()
+    s.courses["WK1"] = Course(title="Wk1", credits=2, runs_in=[2], active=False, activates_week=1)
+    s2, status = R.promote_or_graduate(
+        _clone(s), "B", "2026-10-01", [rec("x.apply", 0.9, semester=1)]
+    )
+    assert status == "promoted" and s2.position.week_in_semester == 1
+    assert s2.courses["WK1"].active is True  # promote activated it (week 1 already reached)
+    # …and it matches what the weekly cron would compute at the same position
+    s3 = _clone(s2)
+    for c in s3.courses.values():
+        c.active = False
+    R.activate_due_courses(s3)
+    promote_active = {k for k, c in s2.courses.items() if c.active}
+    cron_active = {k for k, c in s3.courses.items() if c.active}
+    assert promote_active == cron_active
+
+
 def test_graduation_on_semester_2_finals():
     s = _state()
     s.position.semester = 2

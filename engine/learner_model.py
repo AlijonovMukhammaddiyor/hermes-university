@@ -97,12 +97,11 @@ def recompute(
     for r in sorted(records, key=lambda x: x.ts):
         st = model.outcomes.setdefault(r.outcome, OutcomeState())
         st.mastery_band = r.band
-        st.attempts += 0  # attempts tracked below to avoid double count on recompute
         st.last_seen = r.ts
         if r.weak_areas:
             st.misconceptions = r.weak_areas
     for oid, recs in _group(records, key=lambda r: r.outcome).items():
-        model.outcomes[oid].attempts = len(recs)
+        model.outcomes[oid].attempts = len(recs)  # count once here, not incrementally above
 
     # --- routine: completion-hour histogram (in learner tz) ---
     slots: Counter = Counter()
