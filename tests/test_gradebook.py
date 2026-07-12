@@ -14,7 +14,7 @@ def test_score_to_band_boundaries():
 
 
 def test_band_meets_threshold():
-    # default 0.8 -> requires >= B; a C does NOT master an outcome (consistent with ≥B promotion)
+    # default 0.8 -> requires >= B; a C does not master an outcome
     assert gb.band_meets("A") and gb.band_meets("B")
     assert not gb.band_meets("C") and not gb.band_meets("F")
     assert gb.band_meets("A", 0.9) and not gb.band_meets("B", 0.9)  # higher threshold needs A

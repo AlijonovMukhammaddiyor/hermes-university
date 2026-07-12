@@ -1,7 +1,6 @@
-"""The registered integrations (RFC-012). Add a connector = add one `register(Integration(...))`.
+"""Registered integrations (RFC-012). Add a connector = one `register(Integration(...))`.
 
-Each declares the config it needs; `doctor` and skills read this one list. Required connectors gate
-setup; optional ones just degrade gracefully when absent.
+`doctor` and skills read this list; required connectors gate setup, optional ones degrade.
 """
 
 from __future__ import annotations
@@ -20,7 +19,7 @@ from .base import (
 
 
 def _anki_probe(env: dict[str, str]) -> IntegrationStatus | None:
-    """Creds are set (checked already); confirm the Anki desktop is actually installed to sync to."""
+    """Creds already checked; confirm the Anki desktop is actually installed."""
     found = any(
         p.exists()
         for p in (

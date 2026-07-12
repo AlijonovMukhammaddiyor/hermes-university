@@ -269,7 +269,7 @@ def test_persist_preserves_observations(tmp_path):
     assert reloaded.topics  # grade-derived stats were recomputed
 
 
-# ---- Phase B: the observation protocol is placed into the consuming skills ----
+# ---- Phase B: protocol placed into consuming skills ----
 def test_render_skills_places_and_resolves_the_reference(tmp_path):
     import importlib.util
 

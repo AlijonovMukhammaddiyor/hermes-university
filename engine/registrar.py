@@ -1,7 +1,7 @@
-"""Deterministic Registrar operations — the state mutations the skills call (RFC §3, §5).
+"""Deterministic Registrar state mutations the skills call (RFC §3, §5).
 
-Every number here is computed from the grade log. Skills orchestrate (teach/assign/grade-to-rubric)
-and call these; they never mutate GPA/standing/position/promotion themselves.
+Every number is computed from the grade log; skills orchestrate and call these, never mutating
+GPA/standing/position/promotion themselves.
 """
 
 from __future__ import annotations
@@ -16,8 +16,8 @@ PASS_BAND_POINTS = BAND_POINTS["B"]  # promotion/midterm gate = >= B
 
 
 def _activation_due(activates_week: int | None, week: int) -> bool:
-    """Has a course's activation week arrived? (None = live from week 1). The single week-gate every
-    enroll/activate/promote path shares, so 'is this course active?' can't drift between them."""
+    """None = live from week 1. Single week-gate shared by every enroll/activate/promote path so
+    activation can't drift between them."""
     return activates_week is None or week >= activates_week
 
 
@@ -137,8 +137,8 @@ def refresh_course_status(
     state: State, course_dir: str | Path, uploads_dir: str | Path, code: str
 ) -> str | None:
     """Re-derive a course's authoring-phase status from the filesystem (RFC-009). Only advances a
-    course still in the authoring pipeline (researching/authoring/placement) — never overrides a
-    live 'active' or an 'archived' course. Returns the new status, or None if unchanged/absent."""
+    course still in the authoring pipeline; never overrides a live 'active' or 'archived'. Returns
+    the new status, or None if unchanged/absent."""
     from .authoring import authoring_status
 
     sc = state.courses.get(code)
@@ -221,7 +221,7 @@ def refresh(state: State, records: list[GradeRecord]) -> State:
 
 
 def persist_learner_model(vault: str | Path, records: list[GradeRecord], tz: str, now) -> None:
-    """Recompute grade-derived stats and write records/learner_model.json, preserving observations."""
+    """Recompute grade-derived stats into records/learner_model.json, preserving observations."""
     from . import learner_model as LM
 
     p = Path(vault) / "records" / "learner_model.json"
@@ -247,9 +247,9 @@ def record_day(state: State, today: str, all_done: bool) -> State:
 
 
 def activate_due_courses(state: State) -> list[str]:
-    """Activate courses whose semester is current and whose activation week has arrived.
-    Returns the list of course codes newly activated. Archived (soft-dropped) courses are skipped —
-    they stay inactive until an explicit restore()."""
+    """Activate courses whose semester is current and whose activation week has arrived; returns the
+    codes newly activated. Archived (soft-dropped) courses stay inactive until an explicit
+    restore()."""
     newly: list[str] = []
     for code, course in state.courses.items():
         if course.status == "archived":
@@ -288,7 +288,7 @@ def promote_or_graduate(
         )
     )
     if sem >= state.program.total_semesters and passed:
-        state.degree.awarded_on = on  # graduation awards the degree
+        state.degree.awarded_on = on
     key = f"s{sem}_finals"
     setattr(state.assessments, key, finals_band)
     if not passed:

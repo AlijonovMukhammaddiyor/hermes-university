@@ -1,7 +1,7 @@
 """Authored-gate + lifecycle derivation (RFC-007/009).
 
-One home for "is this course real yet, and what is it waiting on?" — reused by the CLI (`course
-validate`) and the registrar (lifecycle transitions), so no surface re-implements the gate.
+One home for the gate, reused by CLI `course validate` and the registrar so no surface
+re-implements it.
 """
 
 from __future__ import annotations
@@ -17,9 +17,8 @@ _UPLOAD_MARKERS = {".gitkeep", "README.md", "RESEARCH-PROMPT.md", "PROMPT.md"}
 
 
 def authored_report(course: Course, course_dir: Path) -> dict:
-    """The authored gate (RFC-004/007): a course ships only with description + per-unit resources +
-    weekly plan + professor profile + mastery model + a real cited research dossier. `course_dir` is
-    the course's own folder (holds `research/dossier.md`). Returns the JSON the CLI emits."""
+    """The authored gate (RFC-004/007). `course_dir` is the course's own folder (holds
+    `research/dossier.md`); returns the JSON the CLI emits."""
     teaching = [u for u in course.units if not u.id.endswith("finals")]
     dossier = course_dir / "research" / "dossier.md"
     dtext = dossier.read_text() if dossier.exists() else ""
@@ -60,8 +59,8 @@ def authored_report(course: Course, course_dir: Path) -> dict:
 
 
 def report_present(uploads_dir: str | Path, code: str) -> bool:
-    """Has the learner dropped a research report for <code>? Any real file under Uploads/<code>/
-    (ignoring the scaffold markers), or a saved research/report.md."""
+    """Has the learner dropped a research report for <code>? True if Uploads/<code>/ holds any
+    real file (ignoring scaffold markers)."""
     up = Path(uploads_dir) / code
     if up.is_dir():
         for f in up.iterdir():

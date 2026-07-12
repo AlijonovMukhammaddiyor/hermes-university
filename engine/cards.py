@@ -1,8 +1,7 @@
 """Spaced-repetition card generation (RFC §7, D8).
 
-The engine builds card records (deck, fields, tags) with an initial FSRS state; the professor
-supplies the front/back text for a proven concept. Cards are pushed to AnkiWeb headlessly by
-`engine.anki_sync` (deploy-time). This module is pure/testable — no network, no Anki runtime.
+Builds card records with an initial FSRS state; the professor supplies front/back. Pushed to
+AnkiWeb by `engine.anki_sync` at deploy-time. Pure/testable — no network, no Anki runtime.
 """
 
 from __future__ import annotations

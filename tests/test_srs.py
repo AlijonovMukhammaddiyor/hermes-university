@@ -88,8 +88,7 @@ def test_review_ingest_drops_malformed_events_without_raising(tmp_path):
 
 
 def test_review_ingest_tolerates_null_ts_without_dropping_the_batch(tmp_path):
-    # a single event with an explicit JSON null ts must not abort the whole batch — the sort key
-    # used to compare None < str and raise TypeError, discarding every valid review with it.
+    # regression: explicit null ts must not abort batch (sort key did None < str -> TypeError)
     from engine.srs import ingest_reviews
 
     events = [

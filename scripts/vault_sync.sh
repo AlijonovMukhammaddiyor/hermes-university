@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
-# Durable vault sync (RFC-009): GUARANTEE the Obsidian vault is always committed AND pushed to the
-# remote, so a droplet-side change can never be stranded (Obsidian only ever sees the remote).
-#
-# Idempotent and safe to run on a short timer OR from a git post-commit hook. Self-heals three
-# failure modes: (a) engine/agent wrote but didn't commit, (b) committed but didn't push,
-# (c) push rejected because the remote advanced (Obsidian-side commit) — pull, then push.
+# Durable vault sync (RFC-009): guarantee the vault is always committed AND pushed, so a
+# droplet-side change is never stranded (Obsidian only sees the remote). Idempotent; safe on a
+# short timer or a git post-commit hook. Self-heals: (a) wrote but didn't commit, (b) committed
+# but didn't push, (c) push rejected because the remote advanced — pull, then push.
 set -uo pipefail
 V="${1:-$HOME/vault}"
 cd "$V" 2>/dev/null || exit 0

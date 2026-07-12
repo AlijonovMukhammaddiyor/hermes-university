@@ -136,8 +136,8 @@ def test_promote_on_pass_and_remediation_on_fail():
 
 
 def test_promote_activation_agrees_with_weekly_cron():
-    # a course that activates in week 1 must be active right after promotion — the same result
-    # activate_due_courses gives at that position (regression: promote required activates_week is None)
+    # a week-1 course must be active right after promotion, matching what the cron computes there
+    # (regression: promotion only activated courses whose activates_week is None)
     s = _state()
     s.courses["WK1"] = Course(title="Wk1", credits=2, runs_in=[2], active=False, activates_week=1)
     s2, status = R.promote_or_graduate(
@@ -185,7 +185,7 @@ def test_activate_due_courses_deactivates_stale_semester_course():
 
 def test_archived_course_is_never_reactivated():
     # regression: a soft-dropped course must stay dropped through both the weekly `advance` cron and
-    # promotion — otherwise its credits silently re-enter the cap and block a replacement enrollment.
+    # promotion — otherwise its credits re-enter the cap and block a replacement enrollment.
     s = fresh_state(name="M", timezone="UTC", started_on="2026-07-06")
     R.enroll(s, _fixtures(), "GEN101")  # 3cr, active
     assert R.archive(s, "GEN101") is True

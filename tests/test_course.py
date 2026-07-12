@@ -160,8 +160,7 @@ def test_foundational_flag_loads():
 
 
 def test_session_count_must_match_est_weeks():
-    """The week-by-week plan must map 1:1 onto the unit's scheduled weeks, else the rendered plan
-    drifts from the Units calendar (RFC-006). A mismatch fails loud at load time."""
+    """Week-by-week plan must map 1:1 onto est_weeks or the rendered plan drifts (RFC-006)."""
     from engine.course import Course
 
     base = {

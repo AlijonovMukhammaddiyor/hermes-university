@@ -1,10 +1,10 @@
 """LeetCode proof-gate (best-effort, RFC §7 / D9).
 
-Proves an Accepted submission for a target problem after an assigned-since timestamp, using the
-learner's recent-AC list. Network is injectable via `fetcher` for deterministic tests.
+Proves an Accepted submission for a target problem after an assigned-since timestamp, from the
+learner's recent-AC list. Network injectable via `fetcher` for deterministic tests.
 
-Caveat (from research): LeetCode has no official API and a public list can't prove account
-ownership beyond the session cookie; treat as best-effort and swappable for Judge0 later.
+Caveat: LeetCode has no official API and a public list can't prove account ownership beyond the
+session cookie — best-effort, swappable for Judge0 later.
 """
 
 from __future__ import annotations

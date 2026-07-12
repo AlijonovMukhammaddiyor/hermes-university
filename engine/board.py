@@ -1,9 +1,8 @@
-"""Kanban board (RFC-008) — a two-way Obsidian surface (obsidian-kanban markdown).
+"""Kanban board (RFC-008) — a two-way obsidian-kanban surface.
 
-The engine renders + parses the board deterministically; it is a **view**, never a source of truth.
-Numbers (mastery/GPA/streak) always come from the gradebook — a card the learner marks Done without a
-real proof bounces back, it never becomes mastery. Cards embed an invisible `<!--hu:…-->` metadata
-comment mapping the card to its outcome/course/tier so the audit can reconcile against the engine.
+A view, never a source of truth: numbers come from the gradebook, and a card marked Done without a
+real proof bounces back. The hidden `<!--hu:…-->` comment maps each card to its outcome/course/tier
+so the audit can reconcile against the engine.
 """
 
 from __future__ import annotations
@@ -39,7 +38,7 @@ def render_card(c: Card) -> str:
 
 
 def render_board(columns: dict[str, list[Card]]) -> str:
-    """Always-valid obsidian-kanban markdown. Unknown extra columns are appended after the standard set."""
+    """Always-valid obsidian-kanban markdown; unknown columns appended after the standard set."""
     order = COLUMNS + [c for c in columns if c not in COLUMNS]
     out = ["---", "", "kanban-plugin: board", "", "---", ""]
     for col in order:

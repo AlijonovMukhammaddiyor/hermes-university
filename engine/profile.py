@@ -1,8 +1,7 @@
 """Instance identity + goals (RFC-005) — the ONLY place personal data lives.
 
-Loads a git-ignored `profile.yaml`, falling back to the shipped generic `profile.example.yaml`.
-No person- or org-specific data is ever hardcoded in code, skills, or courses; everything reads here.
-Personalization is to the learner's GOALS, never their work/employer.
+Loads a git-ignored `profile.yaml`, else the generic `profile.example.yaml`. Nothing person- or
+org-specific is hardcoded elsewhere; personalization targets the learner's GOALS, never their work.
 """
 
 from __future__ import annotations
@@ -38,14 +37,14 @@ _INT_FIELDS = {"daily_task_cap"}
 
 
 def set_field(root: str | Path, field: str, value: str) -> Profile:
-    """Edit one profile field and persist to the private `profile.yaml` (RFC-009 §6). Starts from the
-    current profile so example defaults carry over. Rejects unknown fields (fail loud)."""
+    """Edit one field, persist to private `profile.yaml` (RFC-009 §6). Starts from the current
+    profile so example defaults carry over; rejects unknown fields."""
     if field not in Profile.model_fields:
         raise KeyError(f"unknown profile field {field!r}; valid: {sorted(Profile.model_fields)}")
     prof = load_profile(root)
     coerced: object = int(value) if field in _INT_FIELDS else value
     updated = prof.model_copy(update={field: coerced})
-    Profile.model_validate(updated.model_dump())  # revalidate
+    Profile.model_validate(updated.model_dump())
     (Path(root) / "profile.yaml").write_text(
         yaml.safe_dump(updated.model_dump(), sort_keys=False, allow_unicode=True)
     )

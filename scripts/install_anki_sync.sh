@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install the Anki push + review-back sync (RFC-009 §5): a wrapper + a systemd --user timer (every 6h).
+# Install Anki push + review-back sync (RFC-009 §5): a wrapper + a systemd --user timer (every 6h).
 # Uses the bundled Anki desktop python. No-ops with a warning if Anki isn't installed. Idempotent.
 set -euo pipefail
 R="${1:-$HOME/hermes-university}"; V="${2:-$HOME/vault}"

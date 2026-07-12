@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Disaster-recovery backup (RFC-011). Mirrors course sources + an ENCRYPTED secrets bundle INTO the
-# vault, so the vault's git remote is the single durable store. Idempotent + churn-free (only rewrites
-# when inputs change). The vault-sync (RFC-009) then commits + pushes it. Safe on a timer.
+# Disaster-recovery backup (RFC-011): mirror course sources + an encrypted secrets bundle into the
+# vault so its git remote is the single durable store. Idempotent, rewrites only when inputs change;
+# vault-sync (RFC-009) then commits + pushes. Safe on a timer.
 set -uo pipefail
 R="${HERMES_UNIVERSITY_ROOT:-$HOME/hermes-university}"
 V="${HERMES_UNIVERSITY_VAULT:-$HOME/vault}"
@@ -11,7 +11,7 @@ KEY="$HR/backup.key"
 GCT="$HOME/.config/google-calendar-mcp/tokens.json"
 mkdir -p "$SRC/courses"
 
-# ── 1) course sources → vault/_source/courses/<CODE>/ (course.yaml + research/) ──────────────
+# 1) course sources → vault/_source/courses/<CODE>/ (course.yaml + research/)
 if [ -d "$R/courses" ]; then
   for d in "$R"/courses/*/; do
     code=$(basename "$d"); [ "$code" = "_TEMPLATE" ] && continue
@@ -24,15 +24,15 @@ if [ -d "$R/courses" ]; then
   done
 fi
 
-# ── 2) encrypted secrets bundle → vault/_source/secrets.tar.gz.enc (only if inputs changed) ──
+# 2) encrypted secrets bundle → vault/_source/secrets.tar.gz.enc (only if inputs changed)
 [ -f "$KEY" ] || {
   umask 077; head -c 32 /dev/urandom | base64 | tr -d '\n' > "$KEY"
   echo "════════════════════════════════════════════════════════════════════════"
   echo " NEW BACKUP PASSPHRASE generated at $KEY — SAVE IT in a password manager."
   echo " It is the ONLY key that decrypts your redeploy backup."
-  if [ -t 1 ]; then                      # print the secret ONLY to an interactive terminal…
+  if [ -t 1 ]; then  # print the secret only to an interactive terminal…
     echo "     $(cat "$KEY")"
-  else                                   # …never from the systemd timer, where stdout is the journal
+  else  # …never from the timer, where stdout is the journal
     echo "     (read it on the server with:  cat $KEY   — kept out of logs)"
   fi
   echo "════════════════════════════════════════════════════════════════════════"

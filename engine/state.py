@@ -11,15 +11,13 @@ SCHEMA_VERSION = 3
 Standing = Literal["good", "honors", "probation"]
 Persona = Literal["guide", "collaborator", "peer", "launcher"]
 # Course lifecycle (RFC-009). Engine-owned; surfaces read it, never set it directly.
-#   draft: enrolled, not yet authored · researching: blocked on the learner's research upload
-#   authoring: report in, building · placement: authored, awaiting placement · active: live
-#   archived: dropped (soft, reversible)
+# researching=awaiting research upload; placement=awaiting placement; archived=soft drop
 CourseStatus = Literal["draft", "researching", "authoring", "placement", "active", "archived"]
 
 
 class Program(BaseModel):
-    # The engine is built around exactly two semesters (phase logic, the s1_/s2_ Assessments fields,
-    # the Degree requirement) — so this is fixed, not a knob. Literal[2] rejects any other value loudly.
+    # Fixed, not a knob: phase logic, the s1_/s2_ Assessments fields, and the Degree requirement
+    # all assume exactly two semesters. Literal[2] rejects anything else loudly.
     total_semesters: Literal[2] = 2
     weeks_per_semester: int = 12
     started_on: str | None = None  # YYYY-MM-DD

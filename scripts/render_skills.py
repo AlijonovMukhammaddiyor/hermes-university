@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Render skill templates against the instance profile → an output dir.
 
-Renders registrar + examiner + professor (one each — the single Faculty Handbook professor teaches
-every course by reading its module, RFC-004). Identity/goals come from profile.yaml (RFC-005); the
-5th arg is kept for backward compatibility and ignored. Fails loudly on any unresolved placeholder.
+Identity/goals come from profile.yaml (RFC-005); the `<ignored>` arg is kept for backward compat.
+Fails loudly on any unresolved placeholder.
 
 Usage: render_skills.py <repo_root> <ignored> <out_dir> <vault> <engine_path>
 """
@@ -35,9 +34,8 @@ def main(argv: list[str]) -> int:
         # source list lives in the VAULT (Obsidian-editable, auto-synced) — seeded from vault-template
         "BRIEFING_SOURCES": str(Path(vault) / "Briefing" / "sources.yaml"),
     }
-    # registrar + examiner + professor (Faculty Handbook: the single professor teaches every course by
-    # reading its module — RFC-004) + briefer (the daily digest — RFC-010).
-    # Shared reference docs pulled on demand via skill_view (progressive disclosure, RFC-013).
+    # registrar + examiner + professor (RFC-004: one professor teaches every course) + briefer
+    # (daily digest, RFC-010). Shared reference docs pulled on demand via skill_view (RFC-013).
     references = {
         "registrar": ["observe-the-learner.md"],
         "professor": ["observe-the-learner.md"],

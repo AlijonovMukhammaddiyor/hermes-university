@@ -1,11 +1,9 @@
-"""Pull Anki review results back into the engine — the review-back half (RFC-009 §5).
+"""Pull Anki review results back into the engine (RFC-009 §5).
 
-Runs under the bundled Anki python (3.13). Downloads reviews from AnkiWeb (never uploads-overwrites),
-reads new rows from the `revlog`, maps each reviewed card to its engine outcome via the `hu-o::<id>`
-tag the professor attached, and hands the events to `hu-engine srs review`. A watermark (last revlog
-id) prevents double-counting. GPA/transcript are untouched — a lapse only marks an outcome review-due.
-
-Env: AW_USER, AW_PASS.  Args: <vault> <collection.anki2> <hu-engine path>.
+Downloads reviews from AnkiWeb (never uploads-overwrites), reads new `revlog` rows, maps each card
+to its engine outcome via its `hu-o::<id>` tag, and hands events to `hu-engine srs review`. A
+watermark (last revlog id) prevents double-counting; GPA/transcript are untouched.
+Env: AW_USER, AW_PASS. Args: <vault> <collection.anki2> <hu-engine path>.
 """
 
 import json

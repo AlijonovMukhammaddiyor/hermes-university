@@ -1,13 +1,9 @@
 #!/usr/bin/env bash
-# ─────────────────────────────────────────────────────────────────────────────
-# Hermes University — one-command setup wizard.
-#
-# Prompts for your keys, writes them to config.env AND into the Hermes agent (~/.hermes), installs the
-# web-search plugin, then runs install.sh (engine · vault · skills · crons · timers · preflight).
+# Hermes University — one-command setup wizard. Prompts for keys, writes them to config.env and
+# into the Hermes agent (~/.hermes), installs the web-search plugin, then runs install.sh.
 # Prereq: the Hermes Agent must already be installed (the `hermes` CLI on PATH):
 #     curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
 # See PREREQUISITES.md for the accounts/keys to get first.
-# ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CFG="$ROOT/config.env"
@@ -30,7 +26,7 @@ set -a
 . "$CFG"
 set +a
 
-# in-place upsert of KEY=value in config.env (shell-quoted so any value — quotes, $, `, \ — round-trips)
+# in-place upsert KEY=value into config.env; shell-quoted so odd values round-trip (quotes $ ` \)
 set_key() {
   python3 - "$CFG" "$1" "$2" <<'PY'
 import shlex
@@ -81,7 +77,7 @@ ask TELEGRAM_HOME_CHANNEL "Telegram chat id for scheduled digests" 0 0
 ask ANKIWEB_USERNAME "AnkiWeb username (spaced repetition)" 0 0
 ask ANKIWEB_PASSWORD "AnkiWeb password" 0 1
 
-# ── wire into the agent (config set auto-routes: secrets → .env, settings → config.yaml) ──
+# wire into the agent — config set auto-routes: secrets → .env, settings → config.yaml
 log "wiring keys into the Hermes agent (~/.hermes)"
 hermes config set DEEPSEEK_API_KEY "$DEEPSEEK_API_KEY"
 hermes config set model.provider deepseek
@@ -92,15 +88,15 @@ hermes config set SERPER_API_KEY "$SERPER_API_KEY"
 [ -n "${TELEGRAM_HOME_CHANNEL:-}" ] && hermes config set TELEGRAM_HOME_CHANNEL "$TELEGRAM_HOME_CHANNEL"
 [ -n "${BRAVE_API_KEY:-}" ] && hermes config set BRAVE_API_KEY "$BRAVE_API_KEY"
 
-# ── web search: the multi-provider plugin (registers the web_search_plus tool the skills use) ──
+# web search — multi-provider plugin; registers the web_search_plus tool the skills use
 log "installing the web-search plugin"
 hermes plugins install robbyczgw-cla/hermes-web-search-plus --enable \
   || log "plugin install skipped — run later: hermes plugins install robbyczgw-cla/hermes-web-search-plus --enable"
 
-# ── Google Calendar (optional, guided — the OAuth flow can't be scripted) ──
+# Google Calendar (optional, guided) — the OAuth flow can't be scripted
 log "Calendar (optional): follow PREREQUISITES.md to add a Google OAuth client, then 'hermes mcp login google-calendar'"
 
-# ── engine · vault · skills · crons · timers · preflight ──
+# engine · vault · skills · crons · timers · preflight
 log "running install.sh"
 bash "$ROOT/install.sh"
 

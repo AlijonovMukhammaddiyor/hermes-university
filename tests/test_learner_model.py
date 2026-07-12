@@ -58,8 +58,8 @@ def test_best_hours_from_completion_hours():
 
 
 def test_proficiency_falls_back_to_all_time_when_window_empty():
-    # every record predates the 14-day trend window → the windowed list is empty and recompute must
-    # fall back to all-time (`or recs`), not crash on len([])/0 for an inactive learner.
+    # all records predate the 14-day window → windowed list empty; recompute must fall back to
+    # all-time (`or recs`) instead of dividing by len([]).
     recs = [rec("dp.apply", 0.9, ts="2026-06-01T20:00:00+00:00")]
     m = build(recs, now="2026-07-10T00:00:00+00:00")
     assert m.topics["dp"].proficiency == 0.9

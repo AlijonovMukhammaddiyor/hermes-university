@@ -1,9 +1,5 @@
-"""Rendering layer — the *visible* university (RFC-002 §3).
-
-Deterministic, read-only projections generated from the canonical data (course modules + state +
-grade log) into human-readable Markdown the WebUI file-browser and Obsidian display, and the agent
-can render on request. Numbers come from the engine; nothing here is hand-typed or LLM-invented.
-"""
+"""Rendering layer (RFC-002 §3): deterministic read-only Markdown projections of engine
+truth — no number here is hand-typed or LLM-invented."""
 
 from __future__ import annotations
 
@@ -15,7 +11,7 @@ from .gradebook import GradeRecord, band_meets, course_gpa, load_records
 from .state import State
 
 
-# ---------------------------------------------------------------- catalog
+# --- catalog ---
 def render_catalog(courses: list[Course]) -> str:
     out = [
         "# 📚 Course Catalog",
@@ -59,9 +55,8 @@ def _cell(s: str) -> str:
 
 
 def _unit_spans(c) -> dict[str, tuple[int, int, int]]:
-    """The one calendar spine (RFC-006): unit.id -> (semester, start_week, end_week), from est_weeks
-    accumulated per semester. Both the week-by-week table and the Units section read this, so they
-    can never disagree."""
+    """The one calendar spine (RFC-006): unit.id -> (semester, start_week, end_week). Table + Units
+    section both read this, so they can never disagree."""
     spans: dict[str, tuple[int, int, int]] = {}
     cursor: dict[int, int] = {}
     for u in sorted(c.units, key=lambda x: (x.semester, x.order_index)):
@@ -73,9 +68,8 @@ def _unit_spans(c) -> dict[str, tuple[int, int, int]]:
 
 
 def _assessment_marks(c) -> dict[tuple[int, int], str]:
-    """The assessment calendar (RFC-009): which (semester, week) carries a quiz/midterm/finals. Derived
-    from the unit spine + semester length so it always lines up with the week-by-week plan and matches
-    what the Examiner administers — a quiz at each unit's end, a midterm mid-semester, finals last week."""
+    """The assessment calendar (RFC-009): (semester, week) -> quiz/midterm/finals, derived from the
+    unit spine so it lines up with the week-by-week plan and what the Examiner administers."""
     spans = _unit_spans(c)
     marks: dict[tuple[int, int], str] = {}
     by_sem: dict[int, list[int]] = {}
@@ -84,14 +78,14 @@ def _assessment_marks(c) -> dict[tuple[int, int], str]:
         marks[(sem, end)] = "📝 Unit quiz"
     for sem, ends in by_sem.items():
         sem_end = max(ends)
-        # midterm at the UNIT boundary nearest the semester mid-point (after a completed unit — never
-        # mid-unit), never the final week; falls back to the mid-point if there's only one unit
+        # midterm at the unit boundary nearest the mid-point (never mid-unit, never finals week);
+        # falls back to the mid-point when there's only one unit
         inner = [e for e in sorted(set(ends)) if e < sem_end]
         mid = (
             min(inner, key=lambda e: abs(e - sem_end / 2)) if inner else max(1, (sem_end + 1) // 2)
         )
         marks[(sem, mid)] = "🎯 Midterm exam"  # overrides that unit's quiz
-        marks[(sem, sem_end)] = "🏁 Finals"  # last week of the semester
+        marks[(sem, sem_end)] = "🏁 Finals"
     return marks
 
 
@@ -121,9 +115,8 @@ def _grading_section(c) -> list[str]:
 
 
 def _week_plan_table(c) -> list[str]:
-    """Ivy-grade week-by-week academic calendar (RFC-006/009): Week · Focus · Readings · Assignment
-    (take-home) · Assessment (quiz/midterm/finals slots). Absolute weeks come from the same spine as
-    the Units section (_unit_spans), so everything lines up. Markdown table — Obsidian renders it."""
+    """Week-by-week academic calendar (RFC-006/009). Absolute weeks come from the same spine as the
+    Units section (_unit_spans), so everything lines up."""
     spans = _unit_spans(c)
     marks = _assessment_marks(c)
     rows = []
@@ -164,7 +157,7 @@ def _week_plan_table(c) -> list[str]:
     return out + [""]
 
 
-# ---------------------------------------------------------------- syllabus
+# --- syllabus ---
 def render_syllabus(c: Course) -> str:
     out = [f"# {c.id} — {c.title}", "", f"> {c.north_star.strip()}", ""]
     if getattr(c, "description", ""):
@@ -239,7 +232,7 @@ def render_syllabus(c: Course) -> str:
     return "\n".join(out).rstrip() + "\n"
 
 
-# ---------------------------------------------------------------- resources (curated library)
+# --- resources ---
 def render_resources(c: Course) -> str:
     out = [f"# 📖 Resources — {c.id} {c.title}", ""]
     if getattr(c, "primary_text", None):
@@ -256,10 +249,10 @@ def render_resources(c: Course) -> str:
     return "\n".join(out).rstrip() + "\n"
 
 
-# ---------------------------------------------------------------- personalized plan (RFC-007)
+# --- personalized plan (RFC-007) ---
 def render_my_plan(c: Course, mastered: set[str]) -> str:
-    """The learner's personalized track: placed-out units (all outcomes mastered) are skipped and the
-    remaining weeks are renumbered. The canonical full A–Z course stays in Syllabus.md."""
+    """Personalized track: placed-out units (all outcomes mastered) skipped, weeks renumbered. The
+    canonical full course stays in Syllabus.md."""
     placed, rows, week = [], [], 1
     for u in sorted(c.units, key=lambda x: (x.semester, x.order_index)):
         outs = [o.id for o in u.outcomes]
@@ -295,7 +288,7 @@ def render_my_plan(c: Course, mastered: set[str]) -> str:
     return "\n".join(out).rstrip() + "\n"
 
 
-# ---------------------------------------------------------------- transcript
+# --- transcript ---
 def _course_records(records: list[GradeRecord], code: str) -> list[GradeRecord]:
     return [r for r in records if r.course == code]
 
@@ -325,11 +318,10 @@ def render_transcript(state: State, records: list[GradeRecord]) -> str:
     return "\n".join(out).rstrip() + "\n"
 
 
-# ---------------------------------------------------------------- degree progress
+# --- degree progress ---
 def _mastered_outcomes(records: list[GradeRecord], thr: dict[str, float]) -> set[str]:
-    """Outcomes mastered by their LATEST grade — not ever-passed. A later failing retake un-masters,
-    so Home/DegreeProgress agree with the learner model's per-outcome band (MyPlan/next_topic) and
-    can never over-report mastery after a regression. The single 'what's mastered' definition."""
+    """Outcomes mastered by their LATEST grade, not ever-passed — a later failing retake un-masters,
+    so nothing over-reports mastery after a regression. The single 'what's mastered' definition."""
     latest: dict[str, GradeRecord] = {}
     for r in sorted(records, key=lambda x: x.ts):
         latest[r.outcome] = r
@@ -375,12 +367,11 @@ def render_degree_progress(
     return "\n".join(out).rstrip() + "\n"
 
 
-# ---------------------------------------------------------------- schedule (academic calendar)
+# --- schedule ---
 def term_calendar(started_on: str | None, total_semesters: int, wps: int) -> dict:
-    """Program-frame dates from the start date — term boundaries only. The exam calendar
-    (quizzes/midterm/finals) is derived per course in `_assessment_marks` and rendered in each
-    Syllabus; it is NOT duplicated here, so the two can never disagree. Week N of semester S begins
-    `started_on + ((S-1)*wps + (N-1))` weeks."""
+    """Program-frame term boundaries from the start date. The exam calendar is derived per course
+    in `_assessment_marks`, NOT duplicated here, so the two can't disagree. Week N of semester S
+    begins `started_on + ((S-1)*wps + (N-1))` weeks."""
     from datetime import date, timedelta
 
     if not started_on:
@@ -436,7 +427,7 @@ def render_diploma(state: State) -> str:
     )
 
 
-# ---------------------------------------------------------------- control center (RFC-009)
+# --- control center (RFC-009) ---
 _STATUS_BADGE = {
     "draft": "📝 draft",
     "researching": "🔬 researching — waiting on you",
@@ -448,9 +439,8 @@ _STATUS_BADGE = {
 
 
 def status_snapshot(vault: str | Path, courses_dir: str | Path, now=None) -> dict:
-    """The one aggregate every surface reads (RFC-009): standing/GPA/streak, each course + lifecycle
-    status + mastery %, today's board items, what's blocked on the learner, and SRS counts. Pure
-    reaggregation of engine truth — no number is invented here."""
+    """The one aggregate every surface reads (RFC-009). Pure reaggregation of engine truth — no
+    number is invented here."""
     from datetime import datetime
 
     from . import board as B
@@ -555,8 +545,7 @@ def status_snapshot(vault: str | Path, courses_dir: str | Path, now=None) -> dic
 
 
 def render_home(snap: dict) -> str:
-    """The Obsidian control center `Home.md` — structured to match the Board: callout boxes + a course
-    table (Obsidian renders both richly). The visual mirror of the Telegram status surface."""
+    """The Obsidian control center `Home.md` — visual mirror of the Telegram status surface."""
     active = [c for c in snap["courses"] if c["status"] != "archived"]
     where = (
         f"Semester {snap['semester']} · Week {snap['week']}/{snap['weeks_per_semester']} · "
@@ -647,10 +636,9 @@ def render_home(snap: dict) -> str:
     return "\n".join(out).rstrip() + "\n"
 
 
-# ---------------------------------------------------------------- learner model (RFC-013)
+# --- learner model (RFC-013) ---
 def render_learner_model(model) -> str:
-    """The transparent 'what I've learned about you' surface — every belief, its confidence, and where
-    it came from, so the learner can see and correct it."""
+    """The 'what I've learned about you' surface — so the learner can see and correct every belief."""
     from . import learner_model as LM
 
     out = [
@@ -686,7 +674,7 @@ def render_learner_model(model) -> str:
     return "\n".join(out).rstrip() + "\n"
 
 
-# ---------------------------------------------------------------- orchestrator
+# --- orchestrator ---
 def render_all(vault: str | Path, courses_dir: str | Path) -> list[str]:
     """(Re)generate every visible document. Returns the list of paths written."""
     vault, courses_dir = Path(vault), Path(courses_dir)

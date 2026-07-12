@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
-"""Push queued spaced-repetition cards to AnkiWeb — headless, via the `anki` library (RFC §7, D8).
+"""Push queued SRS cards to AnkiWeb headless via the `anki` library (RFC §7, D8).
 
-Reads <vault>/SRS/pending.jsonl (one card/line: {deck, front, back, tags}), adds them to the Anki
-collection, syncs to AnkiWeb (→ the learner's phone), and clears the queue ONLY on a successful
-sync (so no card is ever lost). No GUI / xvfb / addon — just the backend library.
-
-Run under a python that can import `anki` (droplet: the bundled Anki python + app_packages).
-Env: AW_USER, AW_PASS. Args: <vault> <collection.anki2 path>.
+Reads <vault>/SRS/pending.jsonl, adds to the collection, syncs, and clears the queue ONLY on a
+successful sync (so no card is lost). Run under a python that can import `anki`.
+Env: AW_USER, AW_PASS. Args: <vault> <collection.anki2>.
 """
 
 import json
@@ -46,9 +43,8 @@ def main(vault: str, coll_path: str) -> int:
 
         auth = col.sync_login(os.environ["AW_USER"], os.environ["AW_PASS"], None)
         out = col.sync_collection(auth, False)
-        # Safety: a headless card-pusher must NEVER overwrite AnkiWeb (the phone's collection).
-        # On a required full sync, only DOWNLOAD is safe; refuse a full UPLOAD and fail loud so a
-        # human seeds the collection (sync once from Anki) instead of silently clobbering it.
+        # Safety: never overwrite AnkiWeb (the phone's collection). Only a full DOWNLOAD is safe;
+        # refuse a full UPLOAD and fail loud so a human seeds the collection instead of clobbering it.
         if out.required in (2, 4):  # FULL_SYNC (ambiguous) / FULL_UPLOAD
             raise SystemExit(
                 "refusing a full-upload sync — it would overwrite AnkiWeb. Seed the "
@@ -60,11 +56,11 @@ def main(vault: str, coll_path: str) -> int:
             col.full_upload_or_download(auth=auth, server_usn=out.server_media_usn, upload=False)
             downloaded = True
         else:
-            uploaded = True  # a normal sync pushed our new notes to AnkiWeb
+            uploaded = True  # normal sync pushed our new notes
     finally:
-        # Atomicity: unless a normal sync actually pushed the notes, undo them so a refused/failed run
-        # leaves the collection exactly as it was — the queue is preserved and re-added next run, never
-        # duplicated. (A full DOWNLOAD already replaced the local collection, so there's nothing to undo.)
+        # Atomicity: unless a normal sync pushed the notes, undo them so a failed/refused run leaves
+        # the collection unchanged, never duplicated. A full DOWNLOAD already replaced local, so
+        # there's nothing to undo.
         if not uploaded and not downloaded and added_ids:
             col.remove_notes(added_ids)
         col.close()
@@ -73,7 +69,6 @@ def main(vault: str, coll_path: str) -> int:
         open(pending, "w").close()  # clear the queue only once its cards are on AnkiWeb
         print(f"synced {len(added_ids)} cards to AnkiWeb")
         return 0
-    # a full download just seeded the local collection; the cards weren't uploaded — keep them queued
     print("seeded local collection from AnkiWeb; cards remain queued for the next sync")
     return 0
 

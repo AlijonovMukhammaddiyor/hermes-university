@@ -1,10 +1,5 @@
-"""Learner Model — the personalization asset (RFC §4.4 / §15).
-
-Engine-owned. Aggregate stats (proficiency, difficulty ceiling, misconceptions, routine, pace) are
-RECOMPUTED from the grade log; per-outcome FSRS card states are PERSISTED (updated per review).
-Adaptation reads a trailing window so it tracks trends, not a single day. Exposes the query API the
-skills call to personalize topics / difficulty / reviews / routine.
-"""
+"""Learner model (RFC §4.4/§15). Aggregate stats are recomputed from the grade log; per-outcome
+FSRS card states persist across reviews. Reads a trailing window to track trends, not one day."""
 
 from __future__ import annotations
 
@@ -53,7 +48,7 @@ class OutcomeState(BaseModel):
 
 
 class Observation(BaseModel):
-    """One thing learned about the learner from chat/calendar/timing (RFC-013). Decays if unreinforced."""
+    """One thing learned about the learner (RFC-013). Decays if unreinforced."""
 
     aspect: str
     value: str
@@ -150,7 +145,7 @@ def recompute(
     return model
 
 
-# --------------------------- query API (skills call these) ---------------------------
+# --- query API (skills call these) ---
 
 
 def weak_areas(model: LearnerModel, threshold: float = WEAK_THRESHOLD) -> list[str]:
@@ -184,7 +179,7 @@ def next_topic(units: list[dict], mastered: set[str]) -> str | None:
     return None
 
 
-# --------------------------- observations (RFC-013) ---------------------------
+# --- observations (RFC-013) ---
 
 
 def _list_store(model: LearnerModel, aspect: str) -> list[Observation]:
@@ -202,7 +197,7 @@ def observe(
     source: str = "chat",
 ) -> Observation:
     """Record one learned aspect. List aspects (constraint/interest) reinforce a matching value;
-    single-valued ones (format/energy_window/motivation/pace) overwrite, keeping the original date."""
+    single-valued ones overwrite, keeping the original first_seen date."""
     if aspect not in ASPECTS:
         raise ValueError(f"unknown aspect {aspect!r}; valid: {', '.join(ASPECTS)}")
     confidence = min(1.0, max(0.0, confidence))  # LLMs sometimes emit a 0-100 scale
@@ -231,7 +226,7 @@ def observe(
 
 
 def forget(model: LearnerModel, aspect: str, value: str | None = None) -> int:
-    """Drop observations for an aspect (all of it, or just a matching value). Returns count removed."""
+    """Drop an aspect's observations (all, or just a matching value). Returns count removed."""
     if aspect not in ASPECTS:
         raise ValueError(f"unknown aspect {aspect!r}; valid: {', '.join(ASPECTS)}")
     if aspect in _LIST_ASPECTS:
@@ -259,7 +254,7 @@ def consolidate(
     decay: float = DECAY_PER_DAY,
     floor: float = CONFIDENCE_FLOOR,
 ) -> int:
-    """Decay each observation by days since last seen; drop those below the floor. Returns count dropped."""
+    """Decay each observation by days unseen; drop those below the floor. Returns count dropped."""
     dropped = 0
 
     today = now.date()
@@ -300,7 +295,7 @@ def save(model: LearnerModel, path: str | Path) -> None:
     p.write_text(model.model_dump_json(indent=1) + "\n")
 
 
-# --------------------------- helpers ---------------------------
+# --- helpers ---
 
 
 def _parse(ts: str) -> datetime:

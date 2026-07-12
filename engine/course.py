@@ -1,11 +1,6 @@
 """Course-module schema + loader/validator (RFC §4.3, §6). A course is DATA, not code.
 
-Enforces the backward-design contract at load time:
-  - every Outcome has a proof (an Assessment for that outcome),
-  - assessment Bloom target >= the outcome's Bloom level,
-  - depends_on references exist and form a DAG (no cycles),
-  - rubrics referenced by assessments exist.
-Invalid course files fail loudly here, before anything schedules them.
+Enforces the backward-design contract at load (see _check_contract); invalid files fail loudly.
 """
 
 from __future__ import annotations
@@ -37,7 +32,7 @@ class ProfessorProfile(BaseModel):
     """The researched teaching character for a field (RFC-004) — data, not code."""
 
     persona: str  # voice/character for the field + learner
-    teaching_stance: str  # pedagogical approach for this domain
+    teaching_stance: str
     common_misconceptions: list[str] = Field(default_factory=list)  # preempted by the professor
     assessment_philosophy: str = ""  # what "excellent" is + how to grade it
     hint_style: str | None = None
@@ -47,7 +42,7 @@ class MasteryModel(BaseModel):
     """How this course makes the learner one of the best AND keeps them evolving (RFC-004)."""
 
     excellence_bar: str  # what the best in this field can DO
-    expert_practices: list[str] = Field(default_factory=list)  # how top practitioners work
+    expert_practices: list[str] = Field(default_factory=list)
     frontier: str = ""  # state of the art + trajectory
     staying_current: list[Resource] = Field(default_factory=list)  # people/communities/feeds/papers
     signature_work: str = ""  # portfolio/reputation to work with the best
@@ -55,8 +50,7 @@ class MasteryModel(BaseModel):
 
 
 class Audience(BaseModel):
-    """Who a course is for — and honestly, who it is NOT for (RFC-009). Authored from research so the
-    learner can self-select before investing months."""
+    """Who a course is for and who it's NOT for (RFC-009). Lets the learner self-select early."""
 
     good_fit: list[str] = Field(default_factory=list)  # who benefits + the assumed starting point
     not_a_fit: list[str] = Field(default_factory=list)  # who should look elsewhere (say where)
@@ -102,10 +96,10 @@ class Outcome(BaseModel):
 class Session(BaseModel):
     """One week of the prepared calendar (RFC-006) — focus + exact readings + a deliverable."""
 
-    week: int  # week number within the course
-    focus: str  # the week's theme / what you do
-    readings: list[Resource] = Field(default_factory=list)  # exact readings for the week (locators)
-    deliverable: str = ""  # the assignment/artifact due that week
+    week: int  # within the course
+    focus: str
+    readings: list[Resource] = Field(default_factory=list)
+    deliverable: str = ""
 
 
 class Unit(BaseModel):

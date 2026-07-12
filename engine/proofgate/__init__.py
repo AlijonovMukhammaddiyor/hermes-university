@@ -1,7 +1,7 @@
-"""Pluggable proof-gates. RFC §7: verify(evidence) -> ProofResult.
+"""Pluggable proof-gates (RFC §7): verify(evidence) -> ProofResult.
 
-The LLM never decides "passed" — a gate adapter does. Register adapters by name so the
-same interface serves LeetCode now and Judge0 later without touching callers.
+The LLM never decides "passed" — a gate adapter does. Register by name so the same interface
+serves LeetCode now and Judge0 later without touching callers.
 """
 
 from __future__ import annotations

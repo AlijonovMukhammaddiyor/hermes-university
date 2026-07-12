@@ -15,7 +15,7 @@ def test_render_catalog_lists_all_courses():
     cat = docs.render_catalog(mods)
     for code in ("GEN101", "GEN102"):
         assert f"enroll {code}" in cat
-    assert "| Course | Credits | You'll be able to… | Units | Enroll |" in cat  # structured table
+    assert "| Course | Credits | You'll be able to… | Units | Enroll |" in cat
 
 
 def test_render_syllabus_is_a_complete_academic_plan():
@@ -32,9 +32,8 @@ def test_render_syllabus_is_a_complete_academic_plan():
 
 
 def test_week_plan_weeks_agree_with_unit_calendar():
-    """The week-by-week table and the Units section share one calendar spine (_unit_spans), so a
-    session.week authored as a within-unit offset still renders to the correct absolute week and
-    never collapses (the AG201 bug: 12 units' first sessions all stamped 'Week 1')."""
+    """Week table and Units share one calendar spine (_unit_spans) so a within-unit session.week
+    still renders to its absolute week, never collapsing (AG201: all units stamped 'Week 1')."""
     from engine.course import Course
 
     def unit(uid, order, weeks, n_sessions):
@@ -265,7 +264,7 @@ def test_home_control_center_aggregates_status(tmp_path):
     (tmp_path / "records" / "grades.jsonl").write_text("")
     snap = docs.status_snapshot(tmp_path, CDIR)
     assert snap["learner"] == "Ada" and snap["semester"] == 1
-    assert snap["objective"] and snap["progress_pct"] == 0  # single objective + overall progress
+    assert snap["objective"] and snap["progress_pct"] == 0
     by = {c["code"]: c for c in snap["courses"]}
     assert by["GEN101"]["status"] == "active" and by["GEN102"]["status"] == "researching"
     assert any(b["code"] == "GEN102" for b in snap["blocked"])  # research handoff shows as blocked
@@ -318,8 +317,7 @@ def test_render_transcript_and_degree(tmp_path):
 
 def test_mastery_uses_latest_grade_not_ever_passed():
     # regression: a passed-then-failed outcome (a lapsed retake) must NOT still count as mastered.
-    # Home/DegreeProgress both route through _mastered_outcomes, so they agree with the learner model
-    # (MyPlan/next_topic use the latest band) and never over-report after a regression.
+    # Home/DegreeProgress both route through _mastered_outcomes so neither over-reports.
     passed_then_failed = [
         rec("f1.apply", 0.95, kind="hw", ts="2026-07-06T10:00:00+00:00"),
         rec("f1.apply", 0.40, kind="hw", ts="2026-07-08T10:00:00+00:00"),
@@ -335,9 +333,8 @@ def test_schedule_has_real_dates():
 
 
 def test_schedule_defers_exams_to_syllabus_and_invents_nothing():
-    """The assessment calendar has ONE source (_assessment_marks, rendered in each Syllabus). The
-    program Schedule must not fabricate exam weeks that contradict it (regression: it used to hardcode
-    'Midterm (wk 6)' + a fictional 'biweekly exams wk 2,4,8,10' cadence)."""
+    """Assessment calendar has ONE source (_assessment_marks, per Syllabus); the program Schedule
+    must not fabricate exam weeks that contradict it (regression: it hardcoded a fake cadence)."""
     s = fresh_state(name="M", timezone="UTC", started_on="2026-07-06")
     sch = docs.render_schedule(s)
     assert "wk 2,4,8,10" not in sch and "Midterm (wk 6)" not in sch

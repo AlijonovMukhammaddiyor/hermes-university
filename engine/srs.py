@@ -1,11 +1,8 @@
-"""The Anki forward pipeline (RFC-009 §5).
+"""Anki forward pipeline (RFC-009 §5): a proven outcome → review cards.
 
-Turns a proven outcome into review cards: appends to `<vault>/SRS/pending.jsonl` (the queue
-`scripts/anki_sync.py` uploads to AnkiWeb, then clears on a clean sync) and to an append-only
-`ledger.jsonl` (so a due/created count can be surfaced without reading Anki back).
-
-Review results flowing *back* from Anki to update live mastery is a deferred follow-up (RFC-009 §5);
-until then `due` is derived from the initial FSRS schedule in the ledger.
+Writes the push queue `SRS/pending.jsonl` (anki_sync.py uploads, clears on a clean sync) and an
+append-only `ledger.jsonl` (due/created counts without reading Anki back). Review-back into live
+mastery is deferred (RFC-009 §5); until then `due` comes from the initial FSRS schedule.
 """
 
 from __future__ import annotations
@@ -27,8 +24,8 @@ def _srs_dir(vault: str | Path) -> Path:
 
 
 def outcome_tag(outcome: str) -> str:
-    """The Anki tag that links a card back to its engine outcome (survives sync → the review-back
-    reader parses it). Anki tags are space-free; outcome ids (e.g. 'f1.apply') are fine."""
+    """Tag linking a card back to its engine outcome; survives sync so the review-back reader can
+    parse it. Anki tags are space-free — outcome ids (e.g. 'f1.apply') are fine."""
     return f"hu-o::{outcome}"
 
 
@@ -41,9 +38,8 @@ def queue_cards(
     now: datetime,
     outcome: str = "",
 ) -> int:
-    """Append professor-supplied [{front,back,tags?}] cards for a proven outcome. Writes the push
-    queue (pending.jsonl: deck/front/back/tags) and the ledger (full card + fsrs). When `outcome` is
-    given, every card is tagged so its Anki reviews map back to that outcome (RFC-009 review-back)."""
+    """Append [{front,back,tags?}] cards for a proven outcome to the push queue (pending.jsonl) and
+    the ledger. A given `outcome` tags each card so its Anki reviews map back (review-back)."""
     built = C.build_cards(
         prefix=deck_prefix or DECK_PREFIX,
         course_code=course,
@@ -79,9 +75,9 @@ def queue_cards(
     return len(built)
 
 
-# ---- review-back: Anki reviews → retention signal (RFC-009 §5) ----
-# retention.json: {outcome: {reviews, lapses, last_ease, last_ts, review_due}}. GPA/transcript are
-# NOT touched — a lapse only marks an outcome review-due so it re-enters the teaching rotation.
+# --- review-back: Anki reviews → retention signal (RFC-009 §5) ---
+# retention.json: {outcome: {reviews, lapses, last_ease, last_ts, review_due}}.
+# GPA/transcript are NOT touched — a lapse only marks an outcome review-due (re-enters teaching).
 def _retention_path(vault: str | Path) -> Path:
     return _srs_dir(vault) / "retention.json"
 
@@ -110,7 +106,7 @@ def ingest_reviews(vault: str | Path, events: list[dict]) -> dict:
             r["lapses"] += 1
             r["review_due"] = True
         elif ease >= 3:
-            r["review_due"] = False  # a good/easy review clears the flag
+            r["review_due"] = False
         ingested += 1
     _retention_path(vault).write_text(json.dumps(ret, indent=1) + "\n")
     return {"ingested": ingested, "review_due": review_due(vault)}
@@ -129,7 +125,7 @@ def _lines(path: Path) -> list[dict]:
 
 def due_count(vault: str | Path, now: datetime) -> dict:
     """queued = cards waiting to sync to Anki (the actionable number); created = all-time;
-    due = cards whose FSRS schedule says due (from the ledger — see the review-back caveat above)."""
+    due = cards whose FSRS schedule says due (from the ledger — see review-back caveat above)."""
     d = _srs_dir(vault)
     ledger = _lines(d / "ledger.jsonl")
     return {

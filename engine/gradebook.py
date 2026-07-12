@@ -44,9 +44,7 @@ class GradeRecord(BaseModel):
 
 
 def topic_of_outcome(outcome_id: str) -> str:
-    """The learner-model topic key for an outcome id (`<topic>.<bloom>` → `<topic>`). The ONE place
-    this mapping lives, so a record's `topic_of()` and any caller (e.g. the `plan` difficulty lookup)
-    can never key the topics dict differently."""
+    """Topic key for an outcome id (`<topic>.<bloom>` → `<topic>`). The ONE place this lives."""
     return outcome_id.rsplit(".", 1)[0]
 
 
@@ -58,14 +56,13 @@ def score_to_band(score: float) -> Band:
 
 
 def band_meets(band: str, threshold: float = 0.8) -> bool:
-    """True if `band` clears an outcome's mastery threshold (mapped to a band cutoff). Default 0.8 → B.
-    The single bar for 'mastered / placed-out / passed', consistent with the ≥B promotion gate."""
+    """True if `band` clears the mastery threshold (default 0.8 → B) — the ≥B promotion gate."""
     return BAND_POINTS.get(band, 0.0) >= BAND_POINTS[score_to_band(threshold)]
 
 
 def course_gpa(records: Iterable[GradeRecord], weights: dict[str, float] | None) -> float | None:
-    """One course's GPA (0–4): kind-weighted mean of grade points, renormalized over the kinds that
-    actually have records. Deterministic — the grading policy comes from the course, not the model."""
+    """One course's GPA (0–4): kind-weighted mean of grade points, renormalized over present kinds.
+    Deterministic — the grading policy comes from the course, not the model."""
     from collections import defaultdict
 
     by_kind: dict[str, list[float]] = defaultdict(list)
@@ -116,11 +113,8 @@ def standing_for(gpa_value: float | None) -> Literal["good", "honors", "probatio
 def update_streak(
     current: int, longest: int, last_completed: str | None, today: str, all_done: bool
 ) -> tuple[int, int, str | None]:
-    """Advance the daily streak. `today`/`last_completed` are YYYY-MM-DD.
-
-    all_done False resets to 0. Consecutive calendar days extend; a gap resets to 1.
-    Idempotent for a repeated same-day all_done call.
-    """
+    """Advance the daily streak (`today`/`last_completed` are YYYY-MM-DD). Not all_done → 0;
+    consecutive days extend, a gap → 1; idempotent for a repeated same-day call."""
     if not all_done:
         return 0, longest, last_completed
     td = date.fromisoformat(today)

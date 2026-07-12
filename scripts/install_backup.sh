@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install the disaster-recovery backup timer (RFC-011): runs hermes_backup.sh daily so course sources +
+# Install disaster-recovery backup timer (RFC-011): runs hermes_backup.sh daily so course sources +
 # the encrypted secrets bundle land in the vault (which auto-pushes). Idempotent.
 set -euo pipefail
 R="${1:-$HOME/hermes-university}"; V="${2:-$HOME/vault}"

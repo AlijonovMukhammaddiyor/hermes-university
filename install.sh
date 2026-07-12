@@ -1,17 +1,16 @@
 #!/usr/bin/env bash
 # Hermes University installer — idempotent; re-run to upgrade. Usually invoked by setup.sh (which
-# collects keys first). Steps: profile + config, engine venv, vault scaffold, state init, render
-# skills, DR/anki/vault-sync timers, cron creation, verify + integrations preflight.
+# collects keys first).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VAULT="${HERMES_UNIVERSITY_VAULT:-$HOME/vault}"   # canonical path — matches bootstrap + all sync/backup scripts
+VAULT="${HERMES_UNIVERSITY_VAULT:-$HOME/vault}"   # canonical path shared by bootstrap/sync scripts
 HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
 
 log() { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
 die() { printf '\033[1;31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
 
-# 1. profile + config -----------------------------------------------------
+# 1. profile + config
 [ -f "$ROOT/config.env" ] || die "config.env missing — cp config.env.example config.env and fill it in (see PREREQUISITES.md)"
 set -a; . "$ROOT/config.env"; set +a
 if [ ! -f "$ROOT/profile.yaml" ]; then
@@ -20,14 +19,14 @@ if [ ! -f "$ROOT/profile.yaml" ]; then
 fi
 log "config + profile loaded"
 
-# 2. engine venv + install ------------------------------------------------
+# 2. engine venv + install
 log "installing deterministic engine"
 python3 -m venv "$ROOT/.venv"
 "$ROOT/.venv/bin/pip" -q install --upgrade pip >/dev/null
-"$ROOT/.venv/bin/pip" -q install -e "$ROOT[dev]" >/dev/null   # [dev] = pytest, needed by the verify step below
+"$ROOT/.venv/bin/pip" -q install -e "$ROOT[dev]" >/dev/null   # [dev] = pytest for the verify step
 ENGINE="$ROOT/.venv/bin/hu-engine"
 
-# 3. vault scaffold + git -------------------------------------------------
+# 3. vault scaffold + git
 log "scaffolding vault at $VAULT"
 mkdir -p "$VAULT"
 cp -rn "$ROOT/vault-template/." "$VAULT/" 2>/dev/null || true
@@ -48,7 +47,7 @@ bash "$ROOT/scripts/install_backup.sh" "$ROOT" "$VAULT" || log "backup install s
 log "installing Anki sync timer"
 bash "$ROOT/scripts/install_anki_sync.sh" "$ROOT" "$VAULT" || log "anki-sync install skipped"
 
-# 4. engine state (init once; never clobber existing records) -------------
+# 4. engine state — init once; never clobber existing records
 STATE="$VAULT/Registrar/state.json"
 if [ ! -f "$STATE" ]; then
   log "initialising state.json (identity + goals from profile.yaml)"
@@ -58,7 +57,7 @@ else
 fi
 # No auto-enrollment: the catalog starts empty; you author + enroll courses on demand.
 
-# 5. render skills (registrar, examiner, professor — one each) ------------
+# 5. render skills (registrar, examiner, professor — one each)
 log "rendering skills"
 BUILD="$ROOT/.build/skills"; rm -rf "$BUILD"
 "$ROOT/.venv/bin/python" "$ROOT/scripts/render_skills.py" \
@@ -70,8 +69,7 @@ else
   log "hermes CLI not found — rendered to $BUILD (install on the droplet to deploy)"
 fi
 
-# 6. crons — a RESTORE brings them back in ~/.hermes/cron/jobs.json (bootstrap.sh). On a first install,
-#    create them from crons/crons.yaml (idempotent) once the agent is installed.
+# 6. crons — RESTORE brings them back via bootstrap.sh; first install creates from crons/crons.yaml
 if command -v hermes >/dev/null 2>&1; then
   log "creating cron jobs (idempotent)"
   "$ROOT/.venv/bin/python" "$ROOT/scripts/install_crons.py" --vault "$VAULT" \
@@ -84,7 +82,7 @@ fi
 [ -d /usr/local/share/anki ] || log "Anki desktop not installed — SRS sync disabled until you install it"
 log "Google Calendar / AnkiWeb — tokens restored from backup if present; re-auth if expired"
 
-# 9. verify ---------------------------------------------------------------
+# 9. verify
 log "verifying engine"
 "$ROOT/.venv/bin/python" -m pytest "$ROOT" -q
 "$ENGINE" state show --file "$STATE" >/dev/null && log "state OK"

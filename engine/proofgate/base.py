@@ -20,8 +20,8 @@ class ProofGate(ABC):
 
     @abstractmethod
     def verify(self, evidence: dict) -> ProofResult:
-        """Return whether the submitted evidence proves the work. Pure per inputs
-        (inject network via evidence/fetcher so it is testable and deterministic)."""
+        """Whether the evidence proves the work. Inject network via evidence/fetcher so it stays
+        testable and deterministic."""
         ...
 
 

@@ -1,14 +1,9 @@
 #!/usr/bin/env bash
-# ─────────────────────────────────────────────────────────────────────────────
 # Hermes University — one-command RESTORE on a fresh droplet (RFC-011).
-#
-# Prereqs on the new box: the Hermes Agent installed (hermes CLI + ~/.hermes), running as your normal
-# user; git + openssl available; and your BACKUP PASSPHRASE (the contents of ~/.hermes/backup.key from
-# the old box — you saved it, per the backup's instructions). Anki desktop optional (for SRS sync).
-#
+# Prereqs: Hermes Agent installed (hermes CLI + ~/.hermes) as your normal user; git + openssl; and
+# your BACKUP PASSPHRASE (~/.hermes/backup.key from the old box). Anki desktop optional (SRS sync).
 # Usage:  bootstrap.sh <code-repo-url> <vault-repo-url>
 #   e.g.  bootstrap.sh git@github.com:you/hermes-university.git git@github.com:you/hermes-vault.git
-# ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 CODE_URL="${1:?usage: bootstrap.sh <code-repo-url> <vault-repo-url>}"
 VAULT_URL="${2:?usage: bootstrap.sh <code-repo-url> <vault-repo-url>}"
@@ -35,7 +30,7 @@ if [ -f "$ENC" ]; then
   cp "$TMP/hermes/auth.json"     "$HR/"       2>/dev/null || true
   cp "$TMP/hermes/cron/jobs.json" "$HR/cron/" 2>/dev/null || true
   cp "$TMP/gcal/tokens.json" "$HOME/.config/google-calendar-mcp/" 2>/dev/null || true
-  echo "$PASS" | tr -d '\n' > "$HR/backup.key"; chmod 600 "$HR/backup.key"   # so future backups reuse it
+  echo "$PASS" | tr -d '\n' > "$HR/backup.key"; chmod 600 "$HR/backup.key"   # future backups reuse
   rm -rf "$TMP"
   echo "  secrets + config + crons restored"
 else

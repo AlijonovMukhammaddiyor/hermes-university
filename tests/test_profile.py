@@ -19,12 +19,9 @@ def test_profile_example_loads_generic_defaults():
 
 
 def test_no_personal_identifiers_leak_into_the_tree():
-    """Systematic guard (RFC-005): the real name/school must not appear in any shippable file — the
-    profile-blob check above only covers profile.example.yaml, which let the name slip into docs/ and
-    tests/. This scans the source tree so it can't regress. The maintainer's GitHub handle
-    `AlijonovMukhammaddiyor` is kept on purpose (clone URLs), so it's allow-listed and stripped before
-    the scan — a bare `the maintainer` or `university` anywhere else still trips. (employer/top-tier-company stay allowed
-    as documented ban-examples in CONTRIBUTING/RFC-005.)"""
+    """Guard (RFC-005): the real name/school must not appear in any shippable file; this scans
+    the whole tree, not just profile.example.yaml. GitHub handle `AlijonovMukhammaddiyor` is
+    allow-listed (clone URLs) and stripped before the scan, so a bare `the maintainer` trips."""
     import re
 
     allowed_handle = re.compile(re.escape("AlijonovMukhammaddiyor"), re.I)

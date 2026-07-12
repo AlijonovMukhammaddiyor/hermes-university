@@ -1,9 +1,7 @@
-"""Integration contract + registry (RFC-012).
+"""Integration contract + registry (RFC-012). Same shape as the proof-gate registry.
 
-The same shape as the proof-gate registry: declare an `Integration` (what it does, the config it
-needs, an optional deeper availability probe) and `register()` it. `doctor` enumerates the registry
-to preflight setup, and skills read it to degrade gracefully when an optional connector is absent.
-Adding a connector = add one `Integration(...)` entry — nothing else in the engine changes.
+`doctor` enumerates it to preflight setup; skills read it to degrade when an optional connector is
+absent. Adding a connector = one `Integration(...)` entry.
 """
 
 from __future__ import annotations
@@ -33,9 +31,8 @@ class IntegrationStatus(BaseModel):
 
 @dataclass
 class Integration:
-    """One external connector. `env_all` keys must all be set; at least one `env_any` key must be
-    set; an optional `probe` runs once config is present to check the connector is actually usable
-    (e.g. the Anki desktop is installed) and may return `None` to mean 'config is enough'."""
+    """One external connector. `env_all` all required; `env_any` needs at least one; optional
+    `probe` runs once config is present to confirm real usability (`None` = config is enough)."""
 
     name: str
     summary: str
@@ -84,9 +81,8 @@ def check_all(env: dict[str, str] | None = None) -> list[IntegrationStatus]:
 
 
 def load_env_file(path: str | Path) -> dict[str, str]:
-    """Parse a `KEY=value` file (config.env) over the process env — so `doctor` can preflight before
-    install.sh sources it. Values may be quoted; comments/blank lines are ignored. Missing file is
-    fine (returns just the process env)."""
+    """Parse a `KEY=value` file (config.env) over the process env, so `doctor` can preflight before
+    install.sh sources it. Quoted values ok; missing file returns just the process env."""
     env = dict(os.environ)
     p = Path(path)
     if p.exists():

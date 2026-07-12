@@ -1,10 +1,4 @@
-"""Thin CLI so skills/crons invoke the engine (they never compute numbers themselves).
-
-Examples:
-  hu-engine state init --name "..." --tz Asia/Tashkent --started 2026-07-06 --out state.json
-  hu-engine gpa --records records/grades.jsonl
-  hu-engine proof verify --gate leetcode --evidence '{"username":"u","slug":"two-sum","since_ts":0}'
-"""
+"""Thin CLI so skills/crons invoke the engine (they never compute numbers themselves)."""
 
 from __future__ import annotations
 
@@ -157,8 +151,8 @@ def main(argv: list[str] | None = None) -> int:
     pstat.add_argument("--vault", required=True)
     pstat.add_argument("--courses", required=True)
 
-    # doctor — preflight: which integrations are configured/available (RFC-012). Exit 1 if a
-    # REQUIRED integration isn't ready, so setup can gate on it; skills read --json to degrade.
+    # doctor — preflight integrations (RFC-012); exit 1 if a REQUIRED one isn't ready so setup
+    # can gate on it, skills read --json to degrade.
     pdoc = sub.add_parser("doctor")
     pdoc.add_argument("--env", default=None)  # overlay a config.env before it's sourced
     pdoc.add_argument("--json", action="store_true")
@@ -337,7 +331,7 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps({"code": args.code, "result": "refused", "reason": str(e)}))
             return 2
         R.save_state(vault, st)
-        docs.render_all(vault, args.courses)  # refresh the visible docs
+        docs.render_all(vault, args.courses)
         print(json.dumps({"code": args.code, "result": result, "enrolled": sorted(st.courses)}))
         return 0
     if args.cmd == "drop":

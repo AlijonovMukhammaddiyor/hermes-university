@@ -27,8 +27,7 @@ def test_difficulty_is_keyed_by_topic_not_unit_id():
 
 
 def test_plan_cli_reports_elevated_difficulty(tmp_path, capsys):
-    """End-to-end through the CLI: with hard-tier f1 history, `plan` must report a difficulty above
-    the 'easy' baseline. Before the fix it keyed the learner model by unit id and always said 'easy'."""
+    """E2E: hard-tier f1 → `plan` reports difficulty above 'easy' (bug: keyed by unit id)."""
     (tmp_path / "records").mkdir(parents=True)
     append_record(
         tmp_path / "records" / "grades.jsonl", rec("f1.apply", 0.78, course="GEN101", tier="hard")

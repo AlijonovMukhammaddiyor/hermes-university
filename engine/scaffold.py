@@ -1,9 +1,7 @@
 """Scaffold a stub course module (RFC-009 `course new`).
 
-`create course` needs a real folder to exist before research begins — the professor overwrites this
-stub with the researched, authored course.yaml. The stub is a VALID but deliberately UNAUTHORED
-course (no description/resources/dossier), so the authored gate keeps it in `researching` until the
-research report lands.
+The stub is a VALID but deliberately UNAUTHORED course, so the authored gate keeps it in
+`researching` until the research report lands and the professor overwrites it.
 """
 
 from __future__ import annotations
@@ -23,8 +21,8 @@ def scaffold_course(
     domain: str = "general",
     credits: int = 3,
 ) -> Path:
-    """Write `<courses_dir>/<code>/course.yaml` (a valid, empty-of-units stub). Refuses to clobber an
-    existing module. Returns the file path."""
+    """Write a valid empty-of-units stub at `<code>/course.yaml`; refuses to clobber. Returns the
+    path."""
     cdir = Path(courses_dir) / code
     path = cdir / "course.yaml"
     if path.exists():
