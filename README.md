@@ -105,9 +105,9 @@ in Obsidian, and message the bot **`create course <your goal>`** — it takes it
 
 ## Using it
 **Talk to the bot to *do* things · open Obsidian to *see* things · open Anki to *review*.** You never
-touch a terminal for routine work, and every destructive action is confirmed. Manage everything by course
-name from Telegram (`courses · status · create · enroll · archive · delete · profile`). **Full command
-manual → [GUIDE.md](GUIDE.md).**
+touch a terminal for routine work, and every destructive action is confirmed. Check progress toward your
+objective, adjust the goal, or extend the curriculum — all from Telegram (`status · create · courses ·
+profile`). **Full command manual → [GUIDE.md](GUIDE.md).**
 
 ## Never lose progress
 Your state, grades, authored courses, and an encrypted secrets bundle are backed up to a private git

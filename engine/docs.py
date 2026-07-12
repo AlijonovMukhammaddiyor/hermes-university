@@ -452,6 +452,7 @@ def status_snapshot(vault: str | Path, courses_dir: str | Path, now=None) -> dic
 
     from . import board as B
     from . import srs as S
+    from .profile import load_profile
 
     vault, courses_dir = Path(vault), Path(courses_dir)
     modules = {
@@ -464,6 +465,7 @@ def status_snapshot(vault: str | Path, courses_dir: str | Path, now=None) -> dic
     }
     state = State.load(vault / "Registrar" / "state.json")
     records = load_records(vault / "records" / "grades.jsonl")
+    objective = load_profile(courses_dir.parent).goal  # the single objective everything serves
     thr = {o.id: o.mastery_threshold for m in modules.values() for o in m.all_outcomes()}
     passed = {r.outcome for r in records if band_meets(r.band, thr.get(r.outcome, 0.8))}
 
@@ -480,6 +482,16 @@ def status_snapshot(vault: str | Path, courses_dir: str | Path, now=None) -> dic
                 "mastery_pct": pct,
             }
         )
+
+    # overall progress toward the objective — outcomes mastered across the whole curriculum
+    all_outs = [
+        o for code in state.courses if code in modules for o in modules[code].all_outcomes()
+    ]
+    progress_pct = (
+        int(round(100 * sum(1 for o in all_outs if o.id in passed) / len(all_outs)))
+        if all_outs
+        else 0
+    )
 
     bpath = vault / "Board.md"
     cols = B.parse_board(bpath.read_text()) if bpath.exists() else {}
@@ -516,6 +528,8 @@ def status_snapshot(vault: str | Path, courses_dir: str | Path, now=None) -> dic
 
     return {
         "learner": state.learner.name,
+        "objective": objective,
+        "progress_pct": progress_pct,
         "semester": state.position.semester,
         "week": state.position.week_in_semester,
         "weeks_per_semester": state.program.weeks_per_semester,
@@ -548,7 +562,11 @@ def render_home(snap: dict) -> str:
     out = [
         f"# 🏛️ Home — {snap['learner'] or 'Hermes University'}",
         "",
-        "> [!abstract] Where you are",
+        "> [!abstract] 🎯 Your objective",
+        f"> **{snap.get('objective') or 'Name a goal to begin'}**",
+        f"> {snap.get('progress_pct', 0)}% mastered so far — everything below serves this one goal.",
+        "",
+        "> [!info] Where you are",
         f"> {where}",
         "",
     ]
@@ -561,7 +579,7 @@ def render_home(snap: dict) -> str:
     if snap.get("briefing"):
         out += [f"> [!tip] Today's reads → [[Briefing/{snap['briefing']}|{snap['briefing']}]]", ""]
 
-    out += ["## 📚 Courses"]
+    out += ["## 📚 Your curriculum", "*The courses that ladder up to the objective above.*"]
     if active:
         out += ["| Course | Status | Mastery |", "|---|---|---|"]
         for c in active:
@@ -570,8 +588,8 @@ def render_home(snap: dict) -> str:
             out.append(f"| **{c['title']}** | {badge} | {m} |")
     else:
         out += [
-            "> [!note] No courses yet",
-            "> Message the bot **`create course <your goal>`** to begin.",
+            "> [!note] No objective yet",
+            "> Message the bot **`create course <what you want to become>`** to begin.",
         ]
     out.append("")
 

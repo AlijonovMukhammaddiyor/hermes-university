@@ -265,11 +265,15 @@ def test_home_control_center_aggregates_status(tmp_path):
     (tmp_path / "records" / "grades.jsonl").write_text("")
     snap = docs.status_snapshot(tmp_path, CDIR)
     assert snap["learner"] == "Ada" and snap["semester"] == 1
+    assert snap["objective"] and snap["progress_pct"] == 0  # single objective + overall progress
     by = {c["code"]: c for c in snap["courses"]}
     assert by["GEN101"]["status"] == "active" and by["GEN102"]["status"] == "researching"
     assert any(b["code"] == "GEN102" for b in snap["blocked"])  # research handoff shows as blocked
     home = docs.render_home(snap)
     assert "🏛️ Home — Ada" in home and "🟢 active" in home
+    # leads with the single objective + progress toward it
+    assert "🎯 Your objective" in home and "% mastered" in home
+    assert "## 📚 Your curriculum" in home
     assert "waiting for your research report" in home and "[[Board]]" in home
     # structured like the Board: callout boxes + a courses table
     assert "> [!abstract]" in home and "> [!todo] Blocked on you" in home
