@@ -23,6 +23,27 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
+def _print_doctor(statuses: list, preflight_ok: bool) -> None:
+    from .integrations import get
+
+    mark = {"ok": "✓", "missing_config": "✗", "unavailable": "–"}
+    print("Hermes University — integrations\n")
+    for label, required in (("REQUIRED", True), ("OPTIONAL", False)):
+        rows = [s for s in statuses if s.required == required]
+        if not rows:
+            continue
+        print(label)
+        for s in rows:
+            note = f"  — {s.detail}" if s.detail else ""
+            print(f"  {mark.get(s.status, '?')} {s.name:<16}{get(s.name).summary}{note}")
+        print()
+    if preflight_ok:
+        print("All required integrations are ready. ✓")
+    else:
+        bad = ", ".join(s.name for s in statuses if s.required and not s.ok)
+        print(f"Setup incomplete — required integration(s) need config: {bad}")
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="hu-engine")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -135,6 +156,12 @@ def main(argv: list[str] | None = None) -> int:
     pstat = sub.add_parser("status")
     pstat.add_argument("--vault", required=True)
     pstat.add_argument("--courses", required=True)
+
+    # doctor — preflight: which integrations are configured/available (RFC-012). Exit 1 if a
+    # REQUIRED integration isn't ready, so setup can gate on it; skills read --json to degrade.
+    pdoc = sub.add_parser("doctor")
+    pdoc.add_argument("--env", default=None)  # overlay a config.env before it's sourced
+    pdoc.add_argument("--json", action="store_true")
 
     # srs — the Anki forward pipeline (RFC-009 §5): queue cards, count what's due
     psr = sub.add_parser("srs").add_subparsers(dest="sub", required=True)
@@ -388,6 +415,24 @@ def main(argv: list[str] | None = None) -> int:
 
         print(json.dumps(docs.status_snapshot(Path(args.vault), Path(args.courses))))
         return 0
+    if args.cmd == "doctor":
+        from .integrations import check_all, load_env_file
+
+        env = load_env_file(args.env) if args.env else None
+        statuses = check_all(env)
+        preflight_ok = all(s.ok for s in statuses if s.required)
+        if args.json:
+            print(
+                json.dumps(
+                    {
+                        "ok": preflight_ok,
+                        "integrations": [s.model_dump() for s in statuses],
+                    }
+                )
+            )
+        else:
+            _print_doctor(statuses, preflight_ok)
+        return 0 if preflight_ok else 1
     if args.cmd == "srs" and args.sub == "add":
         from pathlib import Path
 

@@ -39,4 +39,4 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["engine", "engine.proofgate"]
+packages = ["engine", "engine.proofgate", "engine.integrations"]

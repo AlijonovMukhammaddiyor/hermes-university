@@ -87,4 +87,8 @@ log "verifying engine"
 "$ROOT/.venv/bin/python" -m pytest "$ROOT" -q
 "$ENGINE" state show --file "$STATE" >/dev/null && log "state OK"
 
+# integrations preflight (RFC-012) — informational; never blocks the engine install
+log "checking integrations"
+"$ENGINE" doctor --env "$ROOT/config.env" || log "some integrations need config (see above) — optional ones are fine to skip"
+
 log "done (phase-1 scope). Vault: $VAULT"
