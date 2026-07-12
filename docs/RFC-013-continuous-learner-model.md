@@ -62,6 +62,24 @@ must map what it hears to a learning-relevant aspect, or not record it.
   sizes to realistic pace. Professor teaches in your preferred format, grounds examples in your interests,
   tunes tone to what motivates you. One file, one query API — no surface invents its own idea of you.
 
+## Fit with the Hermes runtime (see docs/hermes-agent-reference.md)
+Research into the runtime reshapes *how* the signals are wired — the engine schema is unchanged:
+- **Chat-observation instructions live in a shared `references/` file, not inlined per skill.** Skills
+  load by 3-level progressive disclosure; a `SKILL.md` body is pulled whole on every `skill_view`
+  (~5–6k tokens for our 18KB registrar). Inlining the observation protocol into each of the 4 skill
+  bodies multiplies that cost and drifts. Put it in ONE `skills/_shared/references/chat-observe.md`
+  pulled via `skill_view(name, path)`; each skill links to it in a line.
+- **The renderer self-enforces Hermes's caps.** `render_skills.py` writes `SKILL.md` straight to disk,
+  bypassing `skill_manage`, so Hermes never validates its limits — the renderer must fail loud if a
+  rendered body exceeds 100,000 chars or a `description` exceeds 60 chars.
+- **The engine owns the deep model; Hermes `USER.md` at most holds lightweight prefs.** Do NOT route
+  observations into `MEMORY.md`/`USER.md` (hard 2,200/1,375-char caps, no auto-compact, and writes only
+  re-enter the prompt next session). The auditable, decaying Learner Model stays in our engine, updated
+  continuously with no next-session lag.
+- **Observation text must be static within a session.** Anything volatile (timestamps, per-turn state)
+  in a skill body busts Hermes's prompt prefix-cache (a documented 10× cost pitfall) — keep the
+  observation instructions constant; the *data* lives in the engine, not the prompt.
+
 ## Privacy & transparency (firm — a hidden permanent dossier is out of scope)
 - **You can see all of it.** A `LearnerModel.md` surface (and a Home section) — "What I've learned about
   you," grouped by aspect with the evidence and confidence behind each belief.
@@ -75,10 +93,11 @@ must map what it hears to a learning-relevant aspect, or not record it.
 
 ## Plan (phased; each lands behind the gates, TDD)
 - **A — foundation:** `Observation` + the three stores; `learner observe` / `forget` / `reset` CLI;
-  `render_learner_model` visible surface + Home section; decay in a consolidation function. *(No behavior
-  change until signals feed it — safe to land first.)*
-- **B — signals:** chat-observation prompts in the skills; a calendar-adherence pass → observations;
-  task-timing capture at `done`.
+  `render_learner_model` visible surface + Home section; decay in a consolidation function; plus the
+  `render_skills.py` cap-guard (fail loud on >100K body / >60-char description). *(No behavior change
+  until signals feed it — safe to land first.)*
+- **B — signals:** the shared `references/chat-observe.md` protocol (linked from each skill, not inlined);
+  a calendar-adherence pass → observations; task-timing capture at `done`.
 - **C — close the loop:** the `uni-learn` consolidation cron; skills read the new fields to personalize
   format/timing/tone; measure that scheduling + teaching actually shift.
 
