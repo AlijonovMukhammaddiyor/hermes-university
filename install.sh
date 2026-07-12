@@ -70,12 +70,14 @@ else
   log "hermes CLI not found — rendered to $BUILD (install on the droplet to deploy)"
 fi
 
-# 6. crons — on a RESTORE they come back with ~/.hermes/cron/jobs.json (from the encrypted bundle,
-#    via bootstrap.sh). On a first install, create them with `hermes cron create` (see README runbook).
-if [ -f "$HERMES_HOME/cron/jobs.json" ]; then
-  log "crons present ($(python3 -c "import json;print(len(json.load(open('$HERMES_HOME/cron/jobs.json'))['jobs']))" 2>/dev/null || echo '?') jobs)"
+# 6. crons — a RESTORE brings them back in ~/.hermes/cron/jobs.json (bootstrap.sh). On a first install,
+#    create them from crons/crons.yaml (idempotent) once the agent is installed.
+if command -v hermes >/dev/null 2>&1; then
+  log "creating cron jobs (idempotent)"
+  "$ROOT/.venv/bin/python" "$ROOT/scripts/install_crons.py" --vault "$VAULT" \
+    || log "cron creation skipped — run scripts/install_crons.py once the gateway is set up"
 else
-  log "no crons yet — create uni-assign/audit/week/monthly/briefing via 'hermes cron create' (README)"
+  log "hermes CLI not found — create crons later: scripts/install_crons.py --vault $VAULT"
 fi
 
 # 7. externals — restored from the bundle where possible; re-auth only if expired.
@@ -91,4 +93,4 @@ log "verifying engine"
 log "checking integrations"
 "$ENGINE" doctor --env "$ROOT/config.env" || log "some integrations need config (see above) — optional ones are fine to skip"
 
-log "done (phase-1 scope). Vault: $VAULT"
+log "done. Vault: $VAULT"

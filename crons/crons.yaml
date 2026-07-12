@@ -1,4 +1,4 @@
-# Cron definitions — scripts/install_crons.sh renders these and creates them in the agent.
+# Cron definitions — scripts/install_crons.py renders these and creates them in the agent.
 # Each job runs unattended, loads the listed skills, works in the vault, delivers to Telegram.
 # The engine (hu-engine) is invoked by the skills for every number; jobs never compute them.
 
