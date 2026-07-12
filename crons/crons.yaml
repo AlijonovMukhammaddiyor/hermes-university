@@ -1,4 +1,4 @@
-# Cron definitions (rendered + created by install.sh phase 2). Times are in {{TIMEZONE}}.
+# Cron definitions — scripts/install_crons.sh renders these and creates them in the agent.
 # Each job runs unattended, loads the listed skills, works in the vault, delivers to Telegram.
 # The engine (hu-engine) is invoked by the skills for every number; jobs never compute them.
 
@@ -47,9 +47,12 @@ jobs:
       Monthly self-review: re-pace the curriculum from the Learner Model's 2-week trends, advance the
       persona stage if GPA/streak warrant, run any course monthly self-update. Commit, Telegram report.
 
-  - name: leetcode-cookie-check
-    schedule: "50 6 * * *"
+  - name: uni-briefing
+    schedule: "0 8 * * *"
     deliver: telegram
-    no_agent: true
-    script: leetcode-cookie-check.sh
-    intent: "Watchdog: alert on Telegram if the LeetCode session cookie has stopped authenticating."
+    workdir: "{{VAULT}}"
+    skills: [briefer]
+    intent: >
+      Daily briefing as the Briefer (RFC-010): pull the configured sources
+      ({{VAULT}}/Briefing/sources.yaml), curate the few things worth reading across AI and software
+      engineering, write the dated briefing note, and Telegram the top picks + headlines.
