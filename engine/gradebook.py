@@ -39,7 +39,14 @@ class GradeRecord(BaseModel):
     weak_areas: list[str] = []          # misconception tags from grading
 
     def topic_of(self) -> str:
-        return self.topic or self.outcome.rsplit(".", 1)[0]
+        return self.topic or topic_of_outcome(self.outcome)
+
+
+def topic_of_outcome(outcome_id: str) -> str:
+    """The learner-model topic key for an outcome id (`<topic>.<bloom>` → `<topic>`). The ONE place
+    this mapping lives, so a record's `topic_of()` and any caller (e.g. the `plan` difficulty lookup)
+    can never key the topics dict differently."""
+    return outcome_id.rsplit(".", 1)[0]
 
 
 def score_to_band(score: float) -> Band:

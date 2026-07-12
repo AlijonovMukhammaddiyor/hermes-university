@@ -404,7 +404,8 @@ def main(argv: list[str] | None = None) -> int:
         unit = c.unit_of(nxt)
         o = c.outcome(nxt)
         a = next((x for x in c.assessments if o and x.id == o.proof), None)   # module-driven gate
-        tier = difficulty_for(m, unit.id if unit else nxt, baseline=c.starting_tier)
+        # key difficulty by the outcome's TOPIC (how the learner model indexes it), not the unit id
+        tier = difficulty_for(m, gb.topic_of_outcome(nxt), baseline=c.starting_tier)
         print(json.dumps({"course": c.id, "next_outcome": nxt, "unit": unit.id if unit else None,
                           "statement": o.statement if o else None,
                           "proof_gate": a.proof_gate if a else None,

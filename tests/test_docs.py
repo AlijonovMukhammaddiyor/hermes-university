@@ -233,6 +233,16 @@ def test_schedule_has_real_dates():
     assert "Term start: 2026-07-06" in sch and "Projected graduation" in sch and "Semester 2" in sch
 
 
+def test_schedule_defers_exams_to_syllabus_and_invents_nothing():
+    """The assessment calendar has ONE source (_assessment_marks, rendered in each Syllabus). The
+    program Schedule must not fabricate exam weeks that contradict it (regression: it used to hardcode
+    'Midterm (wk 6)' + a fictional 'biweekly exams wk 2,4,8,10' cadence)."""
+    s = fresh_state(name="M", timezone="UTC", started_on="2026-07-06")
+    sch = docs.render_schedule(s)
+    assert "wk 2,4,8,10" not in sch and "Midterm (wk 6)" not in sch
+    assert "Syllabus" in sch          # exams live in the per-course syllabus, not invented here
+
+
 def test_diploma_render_when_awarded():
     s = fresh_state(name="Ada Lovelace", timezone="UTC", started_on="2026-07-06")
     s.degree.awarded_on = "2027-01-01"

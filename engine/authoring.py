@@ -67,8 +67,9 @@ def authoring_status(course_file: Path, uploads_dir: Path, code: str) -> str:
     else blocked on the learner → 'researching'."""
     try:
         c = load_course(course_file)
-    except Exception:
-        return "researching"
+    except FileNotFoundError:
+        return "researching"          # no course.yaml yet → still awaiting the research report
+    # a course.yaml that exists but won't parse/validate is a real fault — fail loud, don't mask it
     if authored_report(c, Path(course_file).parent)["authored"]:
         return "placement"
     if report_present(uploads_dir, code):

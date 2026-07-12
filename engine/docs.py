@@ -308,7 +308,9 @@ def render_degree_progress(state: State, records: list[GradeRecord],
 
 # ---------------------------------------------------------------- schedule (academic calendar)
 def term_calendar(started_on: str | None, total_semesters: int, wps: int) -> dict:
-    """Key dates per semester derived from the start date. Week N of semester S begins
+    """Program-frame dates from the start date — term boundaries only. The exam calendar
+    (quizzes/midterm/finals) is derived per course in `_assessment_marks` and rendered in each
+    Syllabus; it is NOT duplicated here, so the two can never disagree. Week N of semester S begins
     `started_on + ((S-1)*wps + (N-1))` weeks."""
     from datetime import date, timedelta
     if not started_on:
@@ -320,8 +322,7 @@ def term_calendar(started_on: str | None, total_semesters: int, wps: int) -> dic
 
     cal = {}
     for s in range(1, total_semesters + 1):
-        cal[s] = {"start": wk(s, 1), "add_drop_deadline": wk(s, 2),
-                  "midterm": wk(s, 6), "finals": wk(s, wps)}
+        cal[s] = {"start": wk(s, 1), "add_drop_deadline": wk(s, 2), "ends": wk(s, wps)}
     cal["graduation"] = (start + timedelta(weeks=total_semesters * wps)).isoformat()
     return cal
 
@@ -332,13 +333,14 @@ def render_schedule(state: State) -> str:
     out = ["# 🗓️ Academic Schedule", "",
            f"- **Program:** {pr.total_semesters} semesters × {pr.weeks_per_semester} weeks "
            f"· started {pr.started_on}",
-           f"- **Now:** Semester {p.semester}, week {p.week_in_semester}", ""]
+           f"- **Now:** Semester {p.semester}, week {p.week_in_semester}", "",
+           "> Quizzes, the midterm and finals are scheduled per course — see each course's "
+           "**Syllabus → Week-by-week plan**.", ""]
     for s in range(1, pr.total_semesters + 1):
         c = cal.get(s, {})
         out += [f"## Semester {s}",
                 f"- Term start: {c.get('start','?')}  ·  Add/drop deadline: {c.get('add_drop_deadline','?')}",
-                f"- Midterm (wk 6): {c.get('midterm','?')}  ·  **Finals (wk {pr.weeks_per_semester}): {c.get('finals','?')}**",
-                f"- Cadence: biweekly unit exams (wk 2,4,8,10), quiz on other Sundays", ""]
+                f"- **Semester ends (finals week {pr.weeks_per_semester}): {c.get('ends','?')}**", ""]
     out.append(f"🎓 **Projected graduation:** {cal.get('graduation','?')}")
     return "\n".join(out).rstrip() + "\n"
 

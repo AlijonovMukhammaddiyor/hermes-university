@@ -54,6 +54,23 @@ def test_authoring_status_tracks_the_filesystem(tmp_path):
     assert authoring_status(FIXTURES / "GEN101" / "course.yaml", up, "GEN101") == "placement"
 
 
+def test_authoring_status_missing_file_is_researching(tmp_path):
+    # no course.yaml on disk yet is the legitimate "awaiting research" case, not an error
+    assert authoring_status(tmp_path / "GHOST" / "course.yaml", tmp_path / "Uploads",
+                            "GHOST") == "researching"
+
+
+def test_authoring_status_fails_loud_on_a_broken_course(tmp_path):
+    # a course.yaml that exists but won't validate must raise, never be masked as 'researching'
+    import pytest
+    from pydantic import ValidationError
+    cf = tmp_path / "BAD" / "course.yaml"
+    cf.parent.mkdir(parents=True)
+    cf.write_text("id: BAD\ntitle: x\n")     # missing required fields → invalid Course
+    with pytest.raises(ValidationError):
+        authoring_status(cf, tmp_path / "Uploads", "BAD")
+
+
 # ---- scaffold ----
 def test_scaffold_creates_valid_unauthored_stub(tmp_path):
     path = scaffold_course(tmp_path, "AB101", "Alpha Beta", "become great", credits=4)
