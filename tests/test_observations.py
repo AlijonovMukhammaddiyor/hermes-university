@@ -247,3 +247,24 @@ def test_persist_preserves_observations(tmp_path):
     reloaded = LM.load(p)
     assert reloaded.preferences["format"].value == "worked examples"  # observation survived
     assert reloaded.topics  # grade-derived stats were recomputed
+
+
+# ---- Phase B: the observation protocol is placed into the consuming skills ----
+def test_render_skills_places_and_resolves_the_reference(tmp_path):
+    import importlib.util
+
+    root = Path(__file__).resolve().parents[1]
+    spec = importlib.util.spec_from_file_location(
+        "render_skills", root / "scripts" / "render_skills.py"
+    )
+    rs = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(rs)
+    out = tmp_path / "build"
+    rs.main(["render_skills.py", str(root), "_", str(out), "/vault", "/eng/hu-engine"])
+    ref = out / "registrar" / "references" / "observe-the-learner.md"
+    assert ref.exists()
+    text = ref.read_text()
+    assert "/eng/hu-engine learner observe" in text and "--vault /vault" in text
+    assert "{{" not in text  # placeholders resolved
+    assert (out / "professor" / "references" / "observe-the-learner.md").exists()
+    assert not (out / "examiner" / "references").exists()  # only consuming skills get it

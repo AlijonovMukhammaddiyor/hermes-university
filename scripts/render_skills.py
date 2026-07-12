@@ -37,9 +37,16 @@ def main(argv: list[str]) -> int:
     }
     # registrar + examiner + professor (Faculty Handbook: the single professor teaches every course by
     # reading its module — RFC-004) + briefer (the daily digest — RFC-010).
+    # Shared reference docs pulled on demand via skill_view (progressive disclosure, RFC-013).
+    references = {
+        "registrar": ["observe-the-learner.md"],
+        "professor": ["observe-the-learner.md"],
+    }
     for name in ("registrar", "examiner", "professor", "briefer"):
         dst = out / name / "SKILL.md"
         render_file(root / "skills" / f"{name}.template.md", dst, base)
+        for ref in references.get(name, []):
+            render_file(root / "skills" / "references" / ref, out / name / "references" / ref, base)
         for warning in check_skill_caps(dst):  # raises on a hard-cap breach; warns on soft ones
             print(f"warning: {warning}")
         print(f"rendered {name}")
