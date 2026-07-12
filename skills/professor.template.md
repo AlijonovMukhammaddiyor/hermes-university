@@ -61,7 +61,7 @@ research yourself — you commission it and consume it:
    **<Course Name>** now, give me a few minutes 🛠️"* — then build the dossier from its cited sources.
    If no report is found, gently say where to put it and keep waiting (never author from memory).
 4. **Everything else = MANDATORY web search.** For anything the report doesn't cover — verifying a
-   claim, a specific per-week reading/locator, the current frontier — you MUST call `web-search-plus`
+   claim, a specific per-week reading/locator, the current frontier — you MUST call `web_search_plus`
    (Serper) and cite the URL. **Never state a non-trivial fact from your own memory.** (If the tool
    errors, the CLI works: `~/.hermes/plugins/web-search-plus/search.py --query "…"`.)
 

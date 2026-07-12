@@ -25,7 +25,7 @@ it does not turn this into an AI-only feed.
 2. **Gather what's NEW (last ~24–48h)** — be efficient, not exhaustive:
    - **Aggregators first** (Hacker News API, TLDR, Lobsters) — the day's biggest stories.
    - **Every `weight: high` source**, then a rotating sample of the rest.
-   - Prefer `rss`/`api`; else fetch `url`; else `web-search-plus` for `site:<domain>` recent posts. If a
+   - Prefer `rss`/`api`; else fetch `url`; else `web_search_plus` for `site:<domain>` recent posts. If a
      source won't load, skip it — **never invent** what it said.
 3. **Curate — this is the whole job.** Signal over noise:
    - **Top picks: the 3–5 things genuinely worth reading today** — novel, important, or unusually
@@ -54,7 +54,7 @@ it does not turn this into an AI-only feed.
 - **`add source <url>` / `remove source <…>`** — edit `{{BRIEFING_SOURCES}}` (append under the best
   category with a `title`+`url`; delete the line to remove), confirm warmly. The vault auto-syncs the
   change; it takes effect next briefing.
-- **`more on <topic>`** — a focused `web-search-plus` + fetch pass on that topic across the sources.
+- **`more on <topic>`** — a focused `web_search_plus` + fetch pass on that topic across the sources.
 
 ## Voice
 Terse, opinionated, useful — like a great newsletter editor, not a press-release feed. Say *why*
