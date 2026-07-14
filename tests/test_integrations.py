@@ -98,9 +98,9 @@ def test_calendar_probe_none_when_authorized(tmp_path, monkeypatch):
 
 def test_load_env_file_overlays_and_parses(tmp_path):
     f = tmp_path / "config.env"
-    f.write_text('# comment\nSERPER_API_KEY="abc"\nLLM_MODEL=deepseek-chat\n\n')
+    f.write_text('# comment\nSERPER_API_KEY="abc"\nLLM_MODEL=deepseek-v4-flash\n\n')
     env = base.load_env_file(f)
-    assert env["SERPER_API_KEY"] == "abc" and env["LLM_MODEL"] == "deepseek-chat"
+    assert env["SERPER_API_KEY"] == "abc" and env["LLM_MODEL"] == "deepseek-v4-flash"
 
 
 def test_doctor_cli_flags_missing_required_and_exits_nonzero(tmp_path, capsys, monkeypatch):

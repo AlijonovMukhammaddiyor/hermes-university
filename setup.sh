@@ -68,7 +68,7 @@ ask() {
 log "Let's set up Hermes University. Blank keeps the current value / skips an optional one."
 echo "── Required ──────────────────────────────────────────────"
 ask DEEPSEEK_API_KEY "DeepSeek API key" 1 1
-ask LLM_MODEL "LLM model (deepseek-chat / deepseek-reasoner)" 0 0
+ask LLM_MODEL "LLM model (deepseek-v4-flash / deepseek-v4-pro)" 0 0
 ask TELEGRAM_BOT_TOKEN "Telegram bot token (@BotFather)" 1 1
 ask TELEGRAM_ALLOWED_USERS "Your Telegram numeric user id (@userinfobot)" 1 0
 ask SERPER_API_KEY "Serper API key (serper.dev — web search)" 1 1
@@ -81,7 +81,8 @@ ask ANKIWEB_PASSWORD "AnkiWeb password" 0 1
 log "wiring keys into the Hermes agent (~/.hermes)"
 hermes config set DEEPSEEK_API_KEY "$DEEPSEEK_API_KEY"
 hermes config set model.provider deepseek
-hermes config set model.default "${LLM_MODEL:-deepseek-chat}"
+hermes config set model.base_url https://api.deepseek.com/v1   # native DeepSeek — else Hermes routes deepseek via OpenRouter and 401s
+hermes config set model.default "${LLM_MODEL:-deepseek-v4-flash}"
 hermes config set TELEGRAM_BOT_TOKEN "$TELEGRAM_BOT_TOKEN"
 hermes config set TELEGRAM_ALLOWED_USERS "$TELEGRAM_ALLOWED_USERS"
 hermes config set SERPER_API_KEY "$SERPER_API_KEY"
