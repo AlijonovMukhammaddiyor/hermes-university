@@ -498,6 +498,19 @@ def status_snapshot(vault: str | Path, courses_dir: str | Path, now=None) -> dic
                     "code": c["code"],
                     "title": c["title"],
                     "reason": "waiting for your research report",
+                    "hint": f"open `Uploads/{c['code']}/RESEARCH-PROMPT.md`, run it in Claude, "
+                    "drop the report back",
+                }
+            )
+        elif c["status"] == "placement":
+            # Authored but never placed: the daily loop refuses to assign until placement runs, so
+            # this MUST surface — otherwise Home says "all caught up" while nothing can ever move.
+            blocked.append(
+                {
+                    "code": c["code"],
+                    "title": c["title"],
+                    "reason": "waiting for your placement exam",
+                    "hint": f"say `tailor {c['code']}` to take it and skip what you already know",
                 }
             )
     for card in cols.get("Proof Pending", []):
@@ -594,13 +607,8 @@ def render_home(snap: dict) -> str:
         for b in snap["blocked"]:
             who = f"**{b['title']}** — " if b.get("title") else ""
             hint = (
-                (
-                    f" → open `Uploads/{b['code']}/RESEARCH-PROMPT.md`, run it in Claude, drop the "
-                    "report back"
-                )
-                if b["reason"].startswith("waiting for your research")
-                else ""
-            )
+                f" → {b['hint']}" if b.get("hint") else ""
+            )  # travels with the item, not re-derived
             out.append(f"> - {who}{b['reason']}{hint}")
     else:
         out += ["> [!success] You're all caught up", "> Nothing is waiting on you right now."]

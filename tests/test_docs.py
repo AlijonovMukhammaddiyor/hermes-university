@@ -279,6 +279,27 @@ def test_home_control_center_aggregates_status(tmp_path):
     assert "| Course | Status | Mastery |" in home
 
 
+def test_placement_pending_course_is_surfaced_as_blocked(tmp_path):
+    # regression (found by driving the real daily loop): the registrar refuses to assign work until
+    # placement runs, so an authored-but-unplaced course stalls forever — yet Home reported
+    # "You're all caught up" because only `researching` counted as blocked.
+    (tmp_path / "Registrar").mkdir(parents=True)
+    (tmp_path / "records").mkdir()
+    s = fresh_state(name="Ada", timezone="UTC", started_on="2026-07-06")
+    R.enroll(s, CDIR, "GEN101", today="2026-07-06")  # authored -> placement, never activated
+    s.save(tmp_path / "Registrar" / "state.json")
+    (tmp_path / "records" / "grades.jsonl").write_text("")
+    snap = docs.status_snapshot(tmp_path, CDIR)
+    assert {c["code"]: c["status"] for c in snap["courses"]}["GEN101"] == "placement"
+    blocked = {b["code"]: b for b in snap["blocked"]}
+    assert "GEN101" in blocked, "a placement-pending course must never look 'caught up'"
+    assert "placement exam" in blocked["GEN101"]["reason"]
+    home = docs.render_home(snap)
+    assert "> [!todo] Blocked on you" in home and "placement exam" in home
+    assert "You're all caught up" not in home  # the actual bug
+    assert "tailor GEN101" in home  # the actionable hint travels with the item
+
+
 def test_home_links_the_latest_briefing(tmp_path):
     (tmp_path / "Registrar").mkdir(parents=True)
     (tmp_path / "records").mkdir()
