@@ -49,6 +49,11 @@ mkdir -p "$VAULT"
 cp -rn "$ROOT/vault-template/." "$VAULT/" 2>/dev/null || true
 if [ ! -d "$VAULT/.git" ]; then git -C "$VAULT" init -q -b main; fi
 mkdir -p "$VAULT/Registrar" "$VAULT/records"
+# The timers below are systemd --user units, which exist only while a login session does. Linger
+# keeps the user manager up from boot — without it every timer stops the moment you log out.
+loginctl enable-linger "$(id -un)" >/dev/null 2>&1 \
+  || log "couldn't enable linger — timers will only run while you're logged in"
+
 # durable sync: a vault commit can never stay unpushed (hook + 2-min reconciler timer)
 if git -C "$VAULT" remote get-url origin >/dev/null 2>&1; then
   bash "$ROOT/scripts/install_vault_sync.sh" "$VAULT" "$ROOT" || log "vault-sync install skipped"

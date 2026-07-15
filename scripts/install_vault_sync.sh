@@ -39,13 +39,15 @@ cat > "$UD/hermes-vault-sync.timer" <<EOF
 Description=Reconcile the vault every 2 minutes (never leave a commit unpushed)
 
 [Timer]
-OnBootSec=1min
-OnUnitActiveSec=2min
+# wall-clock, not OnUnitActiveSec: a monotonic timer never re-arms once it has elapsed, so a user
+# manager that restarts leaves the reconciler dead (Trigger: n/a) and the vault silently unsynced.
+OnCalendar=*:0/2
 Persistent=true
 
 [Install]
 WantedBy=timers.target
 EOF
 systemctl --user daemon-reload
-systemctl --user enable --now hermes-vault-sync.timer
+systemctl --user enable hermes-vault-sync.timer >/dev/null 2>&1
+systemctl --user restart hermes-vault-sync.timer   # not `enable --now`: that won't re-read a changed unit
 echo "enabled hermes-vault-sync.timer (every 2 min)"
