@@ -33,6 +33,10 @@ ignore = ["E501"]
 include = ["engine"]
 pythonVersion = "3.11"
 typeCheckingMode = "basic"
+# Resolve the project venv, so local pyright sees the installed deps and matches CI. Without this
+# it silently treats every third-party type as Unknown and reports nothing.
+venvPath = "."
+venv = ".venv"
 
 [build-system]
 requires = ["setuptools>=68"]
