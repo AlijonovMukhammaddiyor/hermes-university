@@ -30,6 +30,8 @@ if [ -f "$ENC" ]; then
   cp "$TMP/hermes/auth.json"     "$HR/"       2>/dev/null || true
   cp "$TMP/hermes/cron/jobs.json" "$HR/cron/" 2>/dev/null || true
   cp "$TMP/gcal/tokens.json" "$HOME/.config/google-calendar-mcp/" 2>/dev/null || true
+  # the restored config.yaml points the calendar MCP at this path, so it has to come back too
+  cp "$TMP/gcal/gcp-oauth.keys.json" "$HR/" 2>/dev/null || true
   echo "$PASS" | tr -d '\n' > "$HR/backup.key"; chmod 600 "$HR/backup.key"   # future backups reuse
   rm -rf "$TMP"
   echo "  secrets + config + crons restored"

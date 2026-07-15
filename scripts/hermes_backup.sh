@@ -9,6 +9,7 @@ HR="$HOME/.hermes"
 SRC="$V/_source"
 KEY="$HR/backup.key"
 GCT="$HOME/.config/google-calendar-mcp/tokens.json"
+GCK="$HR/gcp-oauth.keys.json"   # the OAuth client the token was minted against — useless apart
 mkdir -p "$SRC/courses"
 
 # 1) course sources → vault/_source/courses/<CODE>/ (course.yaml + research/)
@@ -38,7 +39,7 @@ fi
   echo "════════════════════════════════════════════════════════════════════════"
 }
 FILES=("$R/profile.yaml" "$R/config.env" "$HR/.env" "$HR/config.yaml" "$HR/auth.json" \
-       "$HR/cron/jobs.json" "$GCT")
+       "$HR/cron/jobs.json" "$GCT" "$GCK")
 present=(); for f in "${FILES[@]}"; do [ -f "$f" ] && present+=("$f"); done
 HASH=$(cat "${present[@]}" 2>/dev/null | sha256sum | cut -d' ' -f1)
 if [ "$(cat "$HR/.backup.hash" 2>/dev/null)" != "$HASH" ]; then
@@ -48,6 +49,7 @@ if [ "$(cat "$HR/.backup.hash" 2>/dev/null)" != "$HASH" ]; then
   for f in .env config.yaml auth.json; do cp "$HR/$f" "$STAGE/hermes/" 2>/dev/null || true; done
   cp "$HR/cron/jobs.json" "$STAGE/hermes/cron/" 2>/dev/null || true
   [ -f "$GCT" ] && cp "$GCT" "$STAGE/gcal/" 2>/dev/null || true
+  [ -f "$GCK" ] && cp "$GCK" "$STAGE/gcal/" 2>/dev/null || true
   TAR=$(mktemp); tar -czf "$TAR" -C "$STAGE" . 2>/dev/null
   openssl enc -aes-256-cbc -pbkdf2 -salt -in "$TAR" -out "$SRC/secrets.tar.gz.enc" -pass file:"$KEY"
   echo "$HASH" > "$HR/.backup.hash"
@@ -62,7 +64,8 @@ cat > "$SRC/README.md" <<EOF
 This folder is the durable backup that rides the vault's git remote.
 - \`courses/<CODE>/\` — authored course sources (course.yaml + research dossier).
 - \`secrets.tar.gz.enc\` — profile.yaml, config.env, ~/.hermes/{.env,config.yaml,cron/jobs.json,auth.json},
-  Google-Calendar token — AES-256 encrypted. Decrypt only with your passphrase (~/.hermes/backup.key).
+  Google-Calendar OAuth client + token — AES-256 encrypted. Decrypt only with your passphrase
+  (~/.hermes/backup.key).
 To restore on a fresh droplet: run \`bootstrap.sh <code-repo> <vault-repo>\`.
 EOF
 echo "backup ok: courses=[$(ls "$SRC/courses" 2>/dev/null | tr '\n' ' ')] secrets=$enc_status"
