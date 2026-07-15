@@ -1,13 +1,27 @@
 #!/usr/bin/env bash
 # Install Anki push + review-back sync (RFC-009 §5): a wrapper + a systemd --user timer (every 6h).
-# Uses the bundled Anki desktop python. No-ops with a warning if Anki isn't installed. Idempotent.
+# Runs headless — no GUI needed. Idempotent.
 set -euo pipefail
 R="${1:-$HOME/hermes-university}"; V="${2:-$HOME/vault}"
+
+# The sync only needs a python that can import `anki`. Anki desktop bundles one; a server has no
+# desktop, so fall back to the official headless library (`aqt` is the GUI half — never needed here).
 PY=$(ls /usr/local/share/anki/python/bin/python3* 2>/dev/null | head -1 || true)
 if [ -z "$PY" ]; then
-  echo "  Anki backend not found (/usr/local/share/anki) — install Anki desktop to enable SRS sync. Skipping."
-  exit 0
+  AV="$R/.venv-anki"   # kept out of the engine venv: anki pins protobuf/orjson/requests
+  [ -x "$AV/bin/python" ] || python3 -m venv "$AV" >/dev/null 2>&1 || true
+  if ! "$AV/bin/python" -c "import anki" >/dev/null 2>&1; then
+    echo "  installing the anki library (headless backend, no GUI)"
+    "$AV/bin/pip" -q install --upgrade pip >/dev/null 2>&1 || true
+    "$AV/bin/pip" -q install anki >/dev/null 2>&1 || true
+  fi
+  "$AV/bin/python" -c "import anki" >/dev/null 2>&1 || {
+    echo "  couldn't install the anki library — SRS sync disabled. Retry: $AV/bin/pip install anki"
+    exit 0
+  }
+  PY="$AV/bin/python"
 fi
+
 mkdir -p "$HOME/.hermes/bin"
 cat > "$HOME/.hermes/bin/hermes_anki_sync.sh" <<EOF
 #!/usr/bin/env bash
@@ -15,8 +29,13 @@ cat > "$HOME/.hermes/bin/hermes_anki_sync.sh" <<EOF
 set -uo pipefail
 set -a; . $R/config.env 2>/dev/null || true; . $HOME/.hermes/.env 2>/dev/null || true; set +a
 export AW_USER="\${ANKIWEB_USERNAME:-}" AW_PASS="\${ANKIWEB_PASSWORD:-}"
+[ -n "\$AW_USER" ] && [ -n "\$AW_PASS" ] || { echo "no AnkiWeb credentials — skipping"; exit 0; }
 COLL="\$(ls "$HOME/.local/share/Anki2"/*/collection.anki2 2>/dev/null | head -1)"
-[ -n "\$COLL" ] || { echo "no Anki collection yet"; exit 0; }
+# None yet (headless box): use the default path. anki creates the collection, and the first sync is
+# a FULL_DOWNLOAD that seeds it from AnkiWeb — anki_sync.py refuses the reverse, so this can't
+# clobber the phone's cards.
+[ -n "\$COLL" ] || COLL="$HOME/.local/share/Anki2/User 1/collection.anki2"
+mkdir -p "\$(dirname "\$COLL")"
 "$PY" "$R/scripts/anki_sync.py" "$V" "\$COLL"
 "$PY" "$R/scripts/anki_review_pull.py" "$V" "\$COLL" "$R/.venv/bin/hu-engine"
 EOF
@@ -40,5 +59,6 @@ Persistent=true
 WantedBy=timers.target
 EOF
 systemctl --user daemon-reload
-systemctl --user enable --now hermes-anki-sync.timer >/dev/null 2>&1 || true
+systemctl --user enable hermes-anki-sync.timer >/dev/null 2>&1 || true
+systemctl --user restart hermes-anki-sync.timer >/dev/null 2>&1 || true  # `enable --now` won't re-read a changed unit
 echo "  installed anki-sync timer (python: $PY)"

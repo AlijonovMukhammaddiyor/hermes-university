@@ -50,23 +50,27 @@ def test_registry_holds_the_real_integrations():
     assert {"llm", "telegram", "web-search", "google-calendar", "anki"} <= names
 
 
-def test_anki_probe_none_when_a_desktop_is_installed(monkeypatch):
+def test_anki_probe_none_when_the_sync_is_installed(tmp_path, monkeypatch):
     from pathlib import Path
 
     from engine.integrations import _anki_probe
 
-    monkeypatch.setattr(Path, "exists", lambda self: True)
-    assert _anki_probe({}) is None  # a desktop path exists → config is enough
+    wrapper = tmp_path / ".hermes/bin/hermes_anki_sync.sh"
+    wrapper.parent.mkdir(parents=True)
+    wrapper.write_text("#!/bin/sh\n")
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    assert _anki_probe({}) is None  # sync wrapper exists → it will run
 
 
-def test_anki_probe_unavailable_when_no_desktop(monkeypatch):
+def test_anki_probe_unavailable_when_the_sync_is_not_installed(tmp_path, monkeypatch):
     from pathlib import Path
 
     from engine.integrations import _anki_probe
 
-    monkeypatch.setattr(Path, "exists", lambda self: False)
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)  # no wrapper under this home
     st = _anki_probe({})
-    assert st is not None and st.status == "unavailable"
+    # a headless box has no desktop and never will — the wrapper, not the GUI, is the real signal
+    assert st is not None and st.status == "unavailable" and "queue" in st.detail
 
 
 def test_calendar_probe_unavailable_when_creds_file_missing(tmp_path):

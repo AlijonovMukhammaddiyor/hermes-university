@@ -19,22 +19,16 @@ from .base import (
 
 
 def _anki_probe(env: dict[str, str]) -> IntegrationStatus | None:
-    """Creds already checked; confirm the Anki desktop is actually installed."""
-    found = any(
-        p.exists()
-        for p in (
-            Path("/usr/local/share/anki"),
-            Path.home() / ".local/share/Anki2",
-            Path("/Applications/Anki.app"),
-        )
-    )
-    if found:
+    """Creds already checked; confirm the sync is installed. Report the wrapper, not a desktop: the
+    sync needs only a python that can import `anki`, which install_anki_sync.sh resolves (desktop
+    bundle or the headless library). Without it cards queue forever and nothing reviews them."""
+    if (Path.home() / ".hermes/bin/hermes_anki_sync.sh").exists():
         return None
     return IntegrationStatus(
         name="anki",
         required=False,
         status="unavailable",
-        detail="Anki desktop not found — install it to enable spaced-repetition sync",
+        detail="sync not installed — re-run install.sh (cards will queue but never reach Anki)",
     )
 
 

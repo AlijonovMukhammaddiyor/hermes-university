@@ -1,8 +1,9 @@
-"""Anki forward pipeline (RFC-009 §5): a proven outcome → review cards.
+"""Anki pipeline (RFC-009 §5): a proven outcome → review cards → retention back.
 
 Writes the push queue `SRS/pending.jsonl` (anki_sync.py uploads, clears on a clean sync) and an
-append-only `ledger.jsonl` (due/created counts without reading Anki back). Review-back into live
-mastery is deferred (RFC-009 §5); until then `due` comes from the initial FSRS schedule.
+append-only `ledger.jsonl`. Reviews come back via anki_review_pull.py → `ingest_reviews` →
+`retention.json`: that is the trustworthy retention signal. `due` here is only the engine's own
+initial FSRS estimate and drifts from Anki's scheduler once a card is synced.
 """
 
 from __future__ import annotations

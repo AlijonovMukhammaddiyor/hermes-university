@@ -12,7 +12,11 @@ import subprocess
 import sys
 from datetime import UTC, datetime
 
-sys.path.insert(0, "/usr/local/share/anki/app_packages")
+# Droplet: make the bundled Anki backend importable (absent when we run on the headless `anki` lib).
+for p in ("/usr/local/share/anki/app_packages",):
+    if os.path.isdir(p):
+        sys.path.insert(0, p)
+
 from anki.collection import Collection  # noqa: E402
 
 TAG = "hu-o::"
