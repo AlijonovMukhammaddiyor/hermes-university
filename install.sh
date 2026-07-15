@@ -20,6 +20,23 @@ fi
 log "config + profile loaded"
 
 # 2. engine venv + install
+# On Debian/Ubuntu the venv bootstrapper (ensurepip) ships as a SEPARATE package, so `python3 -m
+# venv` dies half-way through a fresh install. Check up front: self-heal when we're root on apt,
+# otherwise stop with the exact command to run rather than a traceback mid-install.
+if ! python3 -c "import ensurepip" >/dev/null 2>&1; then
+  PYV="$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
+  if [ "$(id -u)" = 0 ] && command -v apt-get >/dev/null 2>&1; then
+    log "python3-venv missing — installing python${PYV}-venv"
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -qq >/dev/null 2>&1 || true
+    apt-get install -y -qq "python${PYV}-venv" >/dev/null 2>&1 \
+      || apt-get install -y -qq python3-venv >/dev/null 2>&1 || true
+  fi
+  python3 -c "import ensurepip" >/dev/null 2>&1 \
+    || die "python3 cannot create virtualenvs (no ensurepip). Install it, then re-run:
+    apt install python${PYV}-venv"
+fi
+
 log "installing deterministic engine"
 python3 -m venv "$ROOT/.venv"
 "$ROOT/.venv/bin/pip" -q install --upgrade pip >/dev/null

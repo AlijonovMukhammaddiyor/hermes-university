@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    name: lint + types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]" ruff pyright
+      - name: ruff check
+        run: ruff check .
+      - name: ruff format
+        run: ruff format --check .
+      - name: pyright
+        run: pyright
+      - name: private ban list must never be committed
+        run: test ! -f .pii-banlist || (echo "::error::.pii-banlist is private and must not be committed" && exit 1)
+
+  test:
+    name: tests (py${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.13"] # oldest supported + recent
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: pip install -e ".[dev]"
+      - run: pytest -q
+
+  install-smoke:
+    # The gap that let the base_url + python3-venv bugs ship: nothing ever ran install.sh on a
+    # bare box. This runs the documented install path in a clean container with only what a
+    # fresh VPS has — so a missing system dep fails CI instead of a user's first install.
+    name: fresh-box install
+    runs-on: ubuntu-latest
+    container: ubuntu:24.04
+    steps:
+      - name: bare-box prerequisites only (git + curl + system python)
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq git curl python3 ca-certificates
+      - uses: actions/checkout@v4
+      - name: run the documented install path
+        env:
+          HERMES_UNIVERSITY_VAULT: /tmp/smoke-vault
+        run: |
+          cp config.env.example config.env
+          bash install.sh
+      - name: the engine actually works after install
+        env:
+          HERMES_UNIVERSITY_VAULT: /tmp/smoke-vault
+        run: |
+          .venv/bin/hu-engine state show --file /tmp/smoke-vault/Registrar/state.json > /dev/null
+          .venv/bin/hu-engine doctor --env config.env || true  # optional integrations may be unset
+          echo "fresh-box install OK"
