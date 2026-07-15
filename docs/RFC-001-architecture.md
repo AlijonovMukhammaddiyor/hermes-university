@@ -9,7 +9,7 @@ Date: 2026-07-06
 > **RFC-007 (human-in-the-loop research + placement-driven curriculum)**, all consolidated into
 > `ARCHITECTURE.md`. Where this document disagrees with `ARCHITECTURE.md` or the code, **this document
 > is the stale one.** Kept for provenance; do not treat sections below (per-course professors, seed
-> courses, a top-tier company/interview framing, `credits_weight`, USER.md/Mem0/Bitwarden) as current.
+> courses, the old interview framing, `credits_weight`, USER.md/Mem0/Bitwarden) as current.
 
 ---
 
@@ -116,7 +116,7 @@ The compounding per-learner model every teaching decision reads from (see §15):
                  "avg_time_per_task_min": {...}, "no_show_pattern": [...] },
   "pace":      { "actual_vs_planned": 0.9, "rest_day": "Sun", "task_cap_observed": 3 },
   "prefs":     { "modality": "video-first", "notes": "..." },
-  "goals":     { "target": "a senior role", "interests": ["graphs","distributed-systems"] },
+  "goals":     { "target": "<target level>", "interests": ["graphs","distributed-systems"] },
   "trend_window": "14d"   // adapt on trends, never on a single day
 }
 ```
@@ -154,7 +154,7 @@ Stored per course as `courses/<CODE>/course.yaml` (+ `units/`, `rubrics/`, `reso
 - **Adaptive within the spine (D12):** the unit *order* is the vetted skeleton, but the engine
   personalizes within it — a **placement diagnostic** lets you test out of already-mastered outcomes,
   weak/error-prone outcomes get more assignments + depth, interleaving resurfaces your weak topics,
-  and optional **interest branches** add depth where you want it. No topic the a top-tier company bar requires is
+  and optional **interest branches** add depth where you want it. No topic the target bar requires is
   ever silently dropped.
 
 ---

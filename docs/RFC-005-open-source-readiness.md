@@ -8,7 +8,7 @@ identity/config across RFC-001..004.
 The system works but has accumulated patchiness and **hardcoded personal/organizational data**, which
 blocks open-sourcing. Two owner rules now bind everything:
 1. **No hardcoded person- or org-specific data anywhere in the code, skills, or shipped courses.**
-   (No learner name, no "a top-tier company", no employer, no "a mobile app".)
+   (No learner name, no employer, no school, no target-company framing.)
 2. **Personalize to the learner's *goals*, never their *work*.** Applied projects advance the learner
    toward who they want to become (portfolio / signature work), not their day job.
 
@@ -36,7 +36,7 @@ credential_name: "Hermes University Certificate of Mastery"   # was a hardcoded 
 
 ## 2. De-personalization (surgical, complete)
 - **Engine:** remove `DEGREE_NAME`/`Degree.name` hardcoded strings → profile-driven, generic default.
-- **Skills:** professor/registrar reference `{{GOAL}}` / `{{TARGET_LEVEL}}` — never "a senior role".
+- **Skills:** professor/registrar reference `{{GOAL}}` / `{{TARGET_LEVEL}}` — never a hardcoded level.
   Applied work is grounded in the learner's **goal**, never an employer/product.
 - **Courses:** the shipped repo contains **no personal courses** (see §3). The `_TEMPLATE` and the
   authoring protocol reference goals, not work.
@@ -70,7 +70,7 @@ to professors.)
 - Deploy via the reproducible script, not manual git surgery (the drift source).
 
 ## 7. Acceptance
-`grep -riE "employer|top-tier-company|<name>|interview readiness"` over `engine/ skills/ courses/_TEMPLATE/ *.md`
+`pytest tests/test_profile.py` — scans the tree against your private, git-ignored `.pii-banlist`
 returns **nothing**. Fresh clone + `profile.example.yaml` + keys → a working, empty-catalog instance
 that authors its first course on demand. Tests green. Skill versions aligned. README/ARCHITECTURE
 present.

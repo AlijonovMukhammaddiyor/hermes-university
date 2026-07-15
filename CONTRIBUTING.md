@@ -18,7 +18,8 @@ Python: ruff-formatted, type-friendly, 4-space indent, ~100-char lines.
    per-course skills. The single Faculty professor + Examiner teach any course from its module.
 4. **No hardcoded personal/organizational data** in code, skills, or shipped content. Identity/goals
    live in `profile.yaml`; personalize to goals, not work. CI-style check:
-   `grep -riE "employer|top-tier-company|<yourname>" engine/ skills/ courses/_TEMPLATE/` must be empty.
+   `pytest tests/test_profile.py` must pass — it scans the tree against your private
+   `.pii-banlist` (git-ignored; copy `.pii-banlist.example` and add your own identifiers).
 5. **Telegram messages are plain text** — no tables/markdown pipe-rows (Telegram can't render them).
 
 ## Adding a course

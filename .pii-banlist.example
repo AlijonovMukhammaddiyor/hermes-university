@@ -1,0 +1,10 @@
+# Private identifiers the PII guard scans the tree for (tests/test_profile.py).
+#
+# Copy this to `.pii-banlist` (git-ignored) and list YOUR identifiers — one case-insensitive
+# substring per line. That file never gets committed, so this repo never ships your details.
+# A clean clone has no `.pii-banlist`, so the guard simply skips (nothing private to protect).
+#
+# your-real-name
+# your-employer
+# your-school
+# your-target-company

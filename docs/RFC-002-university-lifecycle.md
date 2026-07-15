@@ -1,7 +1,7 @@
 # RFC-002 — University Lifecycle (the full, real-university model)
 
 Status: **HISTORICAL** — canonical description is [`ARCHITECTURE.md`](../ARCHITECTURE.md). Date: 2026-07-07
-> Superseded where it disagrees with later RFCs: the `"B.S. Interview Readiness"` degree
+> Superseded where it disagrees with later RFCs: the old hardcoded interview-readiness degree
 > name is now the generic, profile-driven `credential_name` (RFC-005). Lifecycle + rendering stand.
 
 ## 0. Why
@@ -49,7 +49,7 @@ supplies the **band** + evidence; the engine computes everything downstream.
 ```jsonc
 "enrollment": { "credit_cap": 14, "records": [ {code, enrolled_on, dropped_on?} ] },
 "hold": null,                 // e.g. "probation" — blocks new material until cleared
-"degree": { "name": "B.S. Interview Readiness",
+"degree": { "name": "<credential name>",
             "requirement": "pass finals of both semesters (>=B)", "awarded_on": null }
 ```
 
