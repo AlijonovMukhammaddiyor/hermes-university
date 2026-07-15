@@ -2,12 +2,30 @@
 name = "hermes-university-engine"
 version = "0.1.0"
 description = "Deterministic Registrar engine for Hermes University (owns all numbers)."
+readme = "README.md"
 requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "AlijonovMukhammaddiyor" }]
+keywords = ["learning", "education", "spaced-repetition", "agent", "hermes", "fsrs"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Education",
+]
 dependencies = [
     "pydantic>=2.6",
     "fsrs>=4.0",
     "pyyaml>=6.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/AlijonovMukhammaddiyor/hermes-university"
+Repository = "https://github.com/AlijonovMukhammaddiyor/hermes-university"
+Issues = "https://github.com/AlijonovMukhammaddiyor/hermes-university/issues"
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
