@@ -104,8 +104,9 @@ if [ -n "${GOOGLE_OAUTH_CREDENTIALS:-}" ]; then
     || die "Calendar: $KEYS is not a Desktop OAuth client — recreate it as 'Desktop app', not 'Web application'"
   log "registering the google-calendar MCP"
   hermes mcp remove google-calendar >/dev/null 2>&1 || true   # re-register cleanly when re-run
-  hermes mcp add google-calendar --command npx --env "GOOGLE_OAUTH_CREDENTIALS=$KEYS" \
-    --args -y @cocal/google-calendar-mcp \
+  # `mcp add` asks "Enable all N tools?" and cancels on EOF — answer it, we want the whole toolset.
+  printf 'y\n' | hermes mcp add google-calendar --command npx \
+    --env "GOOGLE_OAUTH_CREDENTIALS=$KEYS" --args -y @cocal/google-calendar-mcp \
     || log "calendar MCP registration failed — see PREREQUISITES.md"
   if [ -f "$HOME/.config/google-calendar-mcp/tokens.json" ]; then
     log "Calendar: already authorized"
