@@ -76,6 +76,7 @@ echo "── Optional (press Enter to skip) ────────────
 ask TELEGRAM_HOME_CHANNEL "Telegram chat id for scheduled digests" 0 0
 ask ANKIWEB_USERNAME "AnkiWeb username (spaced repetition)" 0 0
 ask ANKIWEB_PASSWORD "AnkiWeb password" 0 1
+ask GOOGLE_OAUTH_CREDENTIALS "Google Calendar OAuth client json — path (books your study routine)" 0 0
 
 # wire into the agent — config set auto-routes: secrets → .env, settings → config.yaml
 log "wiring keys into the Hermes agent (~/.hermes)"
@@ -94,8 +95,28 @@ log "installing the web-search plugin"
 hermes plugins install robbyczgw-cla/hermes-web-search-plus --enable \
   || log "plugin install skipped — run later: hermes plugins install robbyczgw-cla/hermes-web-search-plus --enable"
 
-# Google Calendar (optional, guided) — the OAuth flow can't be scripted
-log "Calendar (optional): follow PREREQUISITES.md to add a Google OAuth client, then 'hermes mcp login google-calendar'"
+# Google Calendar — we register the MCP; Google has no headless consent flow, so the one-time browser
+# approval stays manual. Tokens are portable: authorize anywhere, copy tokens.json to a headless box.
+if [ -n "${GOOGLE_OAUTH_CREDENTIALS:-}" ]; then
+  KEYS="${GOOGLE_OAUTH_CREDENTIALS/#\~/$HOME}"
+  [ -f "$KEYS" ] || die "Calendar: no file at $KEYS (PREREQUISITES.md § Google Calendar)"
+  python3 -c 'import json,sys; sys.exit(0 if "installed" in json.load(open(sys.argv[1])) else 1)' "$KEYS" \
+    || die "Calendar: $KEYS is not a Desktop OAuth client — recreate it as 'Desktop app', not 'Web application'"
+  log "registering the google-calendar MCP"
+  hermes mcp remove google-calendar >/dev/null 2>&1 || true   # re-register cleanly when re-run
+  hermes mcp add google-calendar --command npx --env "GOOGLE_OAUTH_CREDENTIALS=$KEYS" \
+    --args -y @cocal/google-calendar-mcp \
+    || log "calendar MCP registration failed — see PREREQUISITES.md"
+  if [ -f "$HOME/.config/google-calendar-mcp/tokens.json" ]; then
+    log "Calendar: already authorized"
+  else
+    log "Calendar: authorize once — opens a browser:"
+    printf '      GOOGLE_OAUTH_CREDENTIALS=%s npx -y @cocal/google-calendar-mcp auth\n' "$KEYS"
+    log "  no browser here? run it on your laptop, then copy ~/.config/google-calendar-mcp/tokens.json over"
+  fi
+else
+  log "Calendar: skipped, no OAuth client json (PREREQUISITES.md § Google Calendar to add it later)"
+fi
 
 # engine · vault · skills · crons · timers · preflight
 log "running install.sh"

@@ -7,6 +7,7 @@ absent. Adding a connector = one `Integration(...)` entry.
 from __future__ import annotations
 
 import os
+import shlex
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -91,5 +92,11 @@ def load_env_file(path: str | Path) -> dict[str, str]:
             if not line or line.startswith("#") or "=" not in line:
                 continue
             key, _, val = line.partition("=")
-            env[key.strip()] = val.strip().strip('"').strip("'")
+            key = key.strip()
+            # setup.sh writes values with shlex.quote, so read them back the same way: this drops a
+            # trailing comment without eating a '#' that is inside quotes (passwords have them).
+            try:
+                env[key] = " ".join(shlex.split(val, comments=True))
+            except ValueError as e:
+                raise ValueError(f"{p}: cannot parse {key} — {e}") from e
     return env

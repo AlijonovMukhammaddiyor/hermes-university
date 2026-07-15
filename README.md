@@ -138,9 +138,10 @@ Then message your bot: **`create course <what you want to get good at>`**.
 and **Obsidian Git** (keeps it in sync). Now you can watch the board and read every syllabus and transcript.
 
 **Put study on your calendar (optional).** In the [Google Cloud console](https://console.cloud.google.com):
-enable the *Google Calendar API*, create an *OAuth client → Desktop app*, download the JSON to
-`~/.hermes/gcp-oauth.keys.json`, then run `hermes mcp login google-calendar` and approve it in the browser
-once. (Only that sign-in is manual; the rest is automatic.)
+enable the *Google Calendar API*, create an *OAuth client → Desktop app*, and download the JSON to
+`~/.hermes/gcp-oauth.keys.json`. The wizard asks for that path and registers the calendar; you approve it
+in a browser once (see [PREREQUISITES.md](PREREQUISITES.md) — publish the consent screen, or Google expires
+the login weekly). Only that sign-in is manual; the rest is automatic.
 
 > **The one manual step, by design:** when you create a course, the bot hands you a research prompt to run
 > in [Claude](https://claude.ai) (Deep Research). You drop the report back into your vault and it builds

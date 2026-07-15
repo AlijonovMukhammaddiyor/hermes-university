@@ -50,12 +50,22 @@ Point Obsidian at the vault folder (`~/vault`) and install three community plugi
 ## Google Calendar (optional) — one-time OAuth
 1. In the [Google Cloud console](https://console.cloud.google.com): create/select a project and
    **enable the Google Calendar API**.
-2. **OAuth consent screen** → *External* → add your own account as a test user.
-3. **Credentials → Create OAuth client ID → Desktop app** → download the JSON.
-4. Save it to `~/.hermes/gcp-oauth.keys.json` (or point `GOOGLE_OAUTH_CREDENTIALS` at its path).
-5. Register + authorize the calendar MCP: `hermes mcp catalog` to find it, then
-   `hermes mcp login google-calendar`. *(This step is guided, not scripted — the OAuth browser consent
-   can't be automated.)*
+2. **OAuth consent screen** → *External* → **Publish app**. Leave it in *Testing* and Google expires the
+   refresh token after **7 days**, so booking dies every week. It's your own unverified app, so the
+   browser warns once — *Advanced → Go to … (unsafe)*.
+3. **Credentials → Create OAuth client ID → Desktop app** → download the JSON. It must be *Desktop app*;
+   a *Web application* client can't do the loopback redirect this uses.
+4. Save it to `~/.hermes/gcp-oauth.keys.json` and give the wizard that path (`GOOGLE_OAUTH_CREDENTIALS`).
+   `setup.sh` registers the MCP for you.
+5. Authorize once — opens a browser, so it can't be scripted:
+   ```bash
+   GOOGLE_OAUTH_CREDENTIALS=~/.hermes/gcp-oauth.keys.json npx -y @cocal/google-calendar-mcp auth
+   ```
+   **Headless server?** Tokens aren't machine-bound: run that on your laptop, then copy them over.
+   ```bash
+   ssh you@server mkdir -p .config/google-calendar-mcp
+   scp ~/.config/google-calendar-mcp/tokens.json you@server:~/.config/google-calendar-mcp/
+   ```
 
 ## How course research works
 Deep research is **human-in-the-loop**: when you create a course, the bot hands you a research prompt to

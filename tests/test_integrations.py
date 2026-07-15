@@ -2,6 +2,8 @@
 
 import json
 
+import pytest
+
 from engine import cli
 from engine.integrations import base
 
@@ -101,6 +103,28 @@ def test_load_env_file_overlays_and_parses(tmp_path):
     f.write_text('# comment\nSERPER_API_KEY="abc"\nLLM_MODEL=deepseek-v4-flash\n\n')
     env = base.load_env_file(f)
     assert env["SERPER_API_KEY"] == "abc" and env["LLM_MODEL"] == "deepseek-v4-flash"
+
+
+def test_load_env_file_drops_inline_comment_but_keeps_a_quoted_hash(tmp_path):
+    f = tmp_path / "config.env"
+    f.write_text(
+        'GOOGLE_OAUTH_CREDENTIALS="~/.hermes/gcp-oauth.keys.json"   # the client json\n'
+        "ANKIWEB_PASSWORD='p@ss#word'\n"
+        "EMPTY=\n"
+    )
+    env = base.load_env_file(f)
+    assert (
+        env["GOOGLE_OAUTH_CREDENTIALS"] == "~/.hermes/gcp-oauth.keys.json"
+    )  # comment not swallowed
+    assert env["ANKIWEB_PASSWORD"] == "p@ss#word"  # a '#' inside quotes is data
+    assert env["EMPTY"] == ""
+
+
+def test_load_env_file_names_the_line_it_cannot_parse(tmp_path):
+    f = tmp_path / "config.env"
+    f.write_text('BROKEN="unbalanced\n')
+    with pytest.raises(ValueError, match="BROKEN"):
+        base.load_env_file(f)
 
 
 def test_doctor_cli_flags_missing_required_and_exits_nonzero(tmp_path, capsys, monkeypatch):
