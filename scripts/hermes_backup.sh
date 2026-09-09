@@ -10,7 +10,7 @@ SRC="$V/_source"
 KEY="$HR/backup.key"
 GCT="$HOME/.config/google-calendar-mcp/tokens.json"
 GCK="$HR/gcp-oauth.keys.json"   # the OAuth client the token was minted against — useless apart
-mkdir -p "$SRC/courses"
+mkdir -p "$SRC/courses" "$HR"   # $HR may not exist yet on a fresh box — the key write below needs it
 
 # 1) course sources → vault/_source/courses/<CODE>/ (course.yaml + research/)
 if [ -d "$R/courses" ]; then
@@ -51,10 +51,13 @@ if [ "$(cat "$HR/.backup.hash" 2>/dev/null)" != "$HASH" ]; then
   [ -f "$GCT" ] && cp "$GCT" "$STAGE/gcal/" 2>/dev/null || true
   [ -f "$GCK" ] && cp "$GCK" "$STAGE/gcal/" 2>/dev/null || true
   TAR=$(mktemp); tar -czf "$TAR" -C "$STAGE" . 2>/dev/null
-  openssl enc -aes-256-cbc -pbkdf2 -salt -in "$TAR" -out "$SRC/secrets.tar.gz.enc" -pass file:"$KEY"
-  echo "$HASH" > "$HR/.backup.hash"
+  if openssl enc -aes-256-cbc -pbkdf2 -salt -in "$TAR" -out "$SRC/secrets.tar.gz.enc" -pass file:"$KEY"; then
+    echo "$HASH" > "$HR/.backup.hash"
+    enc_status="rewritten"
+  else
+    enc_status="FAILED (secrets NOT backed up)"   # never claim success on a failed encrypt
+  fi
   rm -f "$TAR"; rm -rf "$STAGE"
-  enc_status="rewritten"
 else
   enc_status="unchanged"
 fi
