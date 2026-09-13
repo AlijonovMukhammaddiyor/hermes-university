@@ -7,16 +7,21 @@
 #
 # First run clones the engine and builds its reader (needs Node); after that it is about a second.
 #
-# Usage: paper_render.sh [vault] [--no-open] [--port N]
+# Usage: paper_render.sh [vault] [--paper NAME] [--no-open] [--port N]
+#
+# A vault can hold several papers under Papers/<name>/. With one, it is picked
+# automatically; with more, name it.
 set -euo pipefail
 
 VAULT="${HERMES_UNIVERSITY_VAULT:-$HOME/vault}"
 ENGINE="${VAEL_PAPER_HOME:-$HOME/vael-paper}"
 OPEN=1
 PORT=8791
+PAPER=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
+    --paper) PAPER="$2"; shift 2 ;;
     --no-open) OPEN=0; shift ;;
     --port) PORT="$2"; shift 2 ;;
     -h|--help) sed -n '2,10p' "$0"; exit 0 ;;
@@ -24,13 +29,24 @@ while [ $# -gt 0 ]; do
   esac
 done
 VAULT="${VAULT/#\~/$HOME}"
-EDITIONS="$VAULT/Paper"
-OUT="$EDITIONS/.site"
+PAPERS="$VAULT/Papers"
 
 die() { printf '\033[1;31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
 log() { printf '\033[1;36m==>\033[0m %s\n' "$*"; }
 
-[ -d "$EDITIONS" ] || die "no editions at $EDITIONS — has the agent written one yet?"
+[ -d "$PAPERS" ] || die "no papers at $PAPERS — has the agent written an edition yet?"
+
+# One paper needs no naming; several do.
+if [ -z "$PAPER" ]; then
+  found=$(find "$PAPERS" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort)
+  count=$(printf '%s\n' "$found" | grep -c . || true)
+  [ "$count" = 1 ] || die "which paper? $PAPERS holds: $(printf '%s ' $found)
+    name one:  $(basename "$0") --paper <name>"
+  PAPER="$found"
+fi
+EDITIONS="$PAPERS/$PAPER"
+OUT="$EDITIONS/.site"
+[ -f "$EDITIONS/paper.json" ] || die "no paper.json in $EDITIONS — is $PAPER a paper?"
 command -v node >/dev/null 2>&1 || die "Node 20+ is needed to build the reader once (brew install node)"
 
 # 1. the engine — cloned once, updated quietly after
@@ -68,7 +84,7 @@ log "printing the edition"
 rm -f "$OUT"/assets/*.map          # dev-only, and a third of the bundle
 
 LATEST=$(ls -d "$EDITIONS"/2*/ 2>/dev/null | sort | tail -1 | xargs -I{} basename {})
-log "printed ${LATEST:-the archive} → $OUT"
+log "printed $PAPER ${LATEST:-archive} → $OUT"
 
 [ "$OPEN" = 1 ] || exit 0
 
