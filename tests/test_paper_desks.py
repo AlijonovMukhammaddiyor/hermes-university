@@ -369,13 +369,28 @@ def test_print_edition_sets_a_real_page_size(tmp_path):
 
     broadsheet = pdf.build_html(edition, paper, "broadsheet")
     assert "size: 305mm 560mm" in broadsheet
-    assert "column-count: 6" in broadsheet
+    assert "column-count: 5" in broadsheet
 
     tabloid = pdf.build_html(edition, paper, "tabloid")
     assert "size: 279mm 432mm" in tabloid
-    assert "column-count: 5" in tabloid
+    assert "column-count: 4" in tabloid
 
     assert "column-count: 3" in pdf.build_html(edition, paper, "tabloid", columns=3)
+
+
+def test_print_edition_keeps_the_furniture_off_the_tail(tmp_path):
+    """A byline and a source list on every one of sixteen items is the clutter."""
+    pdf = load("make_pdf")
+    edition = tmp_path / "2026-09-13"
+    (edition / "articles").mkdir(parents=True)
+    (edition / "articles" / "01-lead.md").write_text(ARTICLE)
+    (edition / "articles" / "70-tail.md").write_text(
+        ARTICLE.replace("priority: 1", "priority: 4")
+               .replace("headline: A Headline", "headline: A Tail Item")
+               .replace("byline: The Desk", "byline: The Tail Desk"))
+    out = pdf.build_html(edition, {"masthead": "X", "sections": [{"id": "today", "name": "Today"}]})
+    assert "The Desk" in out, "the lead keeps its byline"
+    assert "The Tail Desk" not in out, "the tail does not"
 
 
 def test_print_edition_forces_a_light_ground(tmp_path):

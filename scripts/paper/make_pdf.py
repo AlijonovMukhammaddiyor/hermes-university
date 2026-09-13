@@ -38,96 +38,94 @@ CHROME_CANDIDATES = [
 # Page sizes a paper is actually set at. Broadsheet is the real thing; tabloid and
 # berliner are what compacts use; a4 exists for anyone printing at home.
 SIZES = {
-    "broadsheet": ("305mm", "560mm", 6),
-    "tabloid":    ("279mm", "432mm", 5),
-    "berliner":   ("315mm", "470mm", 5),
-    "a3":         ("297mm", "420mm", 5),
-    "a4":         ("210mm", "297mm", 3),
+    "broadsheet": ("305mm", "560mm", 5),
+    "tabloid":    ("279mm", "432mm", 4),
+    "berliner":   ("315mm", "470mm", 4),
+    "a3":         ("297mm", "420mm", 4),
+    "a4":         ("210mm", "297mm", 2),
 }
 
 STYLE = """
-@page {{ size: {w} {h}; margin: 13mm 11mm 15mm; }}
+@page {{ size: {w} {h}; margin: 16mm 14mm 16mm; }}
 @media print {{ body {{ background: #fff; }} }}
 
-html, body {{ margin: 0; padding: 0; }}
-/* Newsprint is a light surface, always. Without this the viewer's dark theme
-   shows through on screen and the page renders dark-on-dark. */
 html {{ color-scheme: light; }}
+html, body {{ margin: 0; padding: 0; }}
 body {{
-  background: #fbf9f3; color: #16130d;
+  background: #fbf9f3; color: #1a1712;
   font-family: "Source Serif 4", "Georgia", "Times New Roman", serif;
-  font-size: {body}pt; line-height: 1.33;
+  font-size: {body}pt; line-height: 1.46;
   text-rendering: optimizeLegibility;
   -webkit-font-feature-settings: "kern" 1, "liga" 1, "onum" 1;
 }}
 
-/* ── the masthead: full measure, once, on page one ───────────────── */
-.masthead {{ text-align: center; border-bottom: 3pt double #16130d; padding-bottom: 5pt;
-             margin: 0 0 7pt; }}
-.masthead h1 {{ font-family: "Playfair Display", "Didot", "Bodoni MT", Georgia, serif;
+.masthead {{ text-align: center; border-bottom: 1pt solid #1a1712; padding-bottom: 6pt;
+            margin: 0 0 14pt; }}
+.masthead h1 {{ font-family: "Playfair Display", "Didot", Georgia, serif;
   font-size: {mast}pt; font-weight: 900; letter-spacing: -1pt; margin: 0; line-height: 0.95; }}
 .masthead .rule {{ display: flex; justify-content: space-between; align-items: baseline;
-  border-top: 0.6pt solid #16130d; margin-top: 5pt; padding-top: 3pt;
-  font-size: 7pt; text-transform: uppercase; letter-spacing: 1.6pt; color: #4a433a; }}
+  margin-top: 7pt; font-size: 7pt; text-transform: uppercase; letter-spacing: 1.8pt;
+  color: #6b6154; }}
 .masthead .motto {{ font-style: italic; text-transform: none; letter-spacing: 0; font-size: 8pt; }}
 
-/* ── the lead: spans the page, then breaks into its own columns ──── */
-.lead {{ border-bottom: 1.2pt solid #16130d; padding-bottom: 7pt; margin: 0 0 8pt; }}
+.lead {{ margin: 0 0 18pt; padding-bottom: 14pt; border-bottom: 0.6pt solid #d8d0c0; }}
 .lead h2 {{ font-family: "Playfair Display", Georgia, serif; font-size: {leadsize}pt;
-  line-height: 1.02; font-weight: 900; text-align: center; margin: 2pt 0 4pt;
+  line-height: 1.06; font-weight: 900; text-align: center; margin: 0 0 7pt;
   letter-spacing: -0.4pt; }}
-.lead .deck {{ text-align: center; font-size: {deck}pt; font-style: italic; color: #3d3730;
-  margin: 0 auto 6pt; max-width: 82%; line-height: 1.3; }}
-.lead .flow {{ column-count: {leadcols}; column-gap: 6mm; column-rule: 0.4pt solid #c8c0b0; }}
+.lead .deck {{ text-align: center; font-size: {deck}pt; font-style: italic; color: #4a4238;
+  margin: 0 auto 12pt; max-width: 74%; line-height: 1.4; }}
+.lead .flow {{ column-count: {leadcols}; column-gap: 9mm; }}
 .lead .flow > p:first-of-type::first-letter {{
   float: left; font-family: "Playfair Display", Georgia, serif; font-size: {dropcap}pt;
-  line-height: 0.78; font-weight: 900; padding: 2pt 3pt 0 0; }}
+  line-height: 0.76; font-weight: 900; padding: 3pt 5pt 0 0; }}
 
-/* ── the body of the paper flows in columns ─────────────────────── */
-.paper {{ column-count: {cols}; column-gap: 5mm; column-rule: 0.4pt solid #c8c0b0;
-          text-align: justify; hyphens: auto; -webkit-hyphens: auto; }}
+.paper {{ column-count: {cols}; column-gap: 9mm;
+         text-align: justify; hyphens: auto; -webkit-hyphens: auto; }}
 
-article {{ break-inside: avoid-column; margin: 0 0 9pt; padding-bottom: 7pt;
-           border-bottom: 0.4pt solid #ddd6c8; }}
+article {{ break-inside: avoid-column; margin: 0 0 17pt; }}
 article.long {{ break-inside: auto; }}
 
-.section-head {{ column-span: all; border-top: 1.6pt solid #16130d;
-  border-bottom: 0.5pt solid #16130d; margin: 6pt 0 7pt; padding: 2pt 0;
-  font-family: "Playfair Display", Georgia, serif; font-size: 10pt; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 3pt; text-align: center; }}
+.section-head {{ column-span: all; border-bottom: 0.8pt solid #1a1712;
+  margin: 10pt 0 13pt; padding-bottom: 3pt;
+  font-family: "Playfair Display", Georgia, serif; font-size: 8.5pt; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 3.4pt; color: #1a1712; }}
 
-h2 {{ font-family: "Playfair Display", Georgia, serif; font-size: {head}pt; line-height: 1.08;
-  font-weight: 700; margin: 0 0 3pt; text-align: left; letter-spacing: -0.2pt; }}
-.deck {{ font-style: italic; color: #4a433a; font-size: {deck}pt; margin: 0 0 4pt;
-         text-align: left; line-height: 1.25; }}
-.byline {{ font-size: 6.2pt; text-transform: uppercase; letter-spacing: 1.1pt; color: #6d6558;
-  margin: 0 0 4pt; text-align: left; }}
+h2 {{ font-family: "Playfair Display", Georgia, serif; font-size: {head}pt; line-height: 1.14;
+  font-weight: 700; margin: 0 0 5pt; text-align: left; letter-spacing: -0.1pt; }}
+.deck {{ font-style: italic; color: #4a4238; font-size: {deck}pt; margin: 0 0 6pt;
+        text-align: left; line-height: 1.34; }}
+.byline {{ font-size: 6pt; text-transform: uppercase; letter-spacing: 1.2pt; color: #8a8073;
+  margin: 0 0 6pt; text-align: left; }}
 
-p {{ margin: 0 0 4pt; }}
-p + p {{ text-indent: 1.1em; }}
-ul {{ margin: 0 0 5pt; padding-left: 10pt; }}
-li {{ margin: 0 0 2.5pt; text-align: left; }}
-h3 {{ font-size: 6.6pt; text-transform: uppercase; letter-spacing: 1.3pt; color: #4a433a;
-  margin: 6pt 0 3pt; border-bottom: 0.4pt solid #c8c0b0; padding-bottom: 1.5pt;
-  text-align: left; }}
+p {{ margin: 0 0 5pt; }}
+p + p {{ text-indent: 1.15em; }}
+ul {{ margin: 0 0 7pt; padding-left: 0; list-style: none; }}
+li {{ margin: 0 0 5pt; text-align: left; padding-left: 8pt; text-indent: -8pt; }}
+li::before {{ content: "— "; color: #a89e8e; }}
+h3 {{ font-size: 6.4pt; text-transform: uppercase; letter-spacing: 1.5pt; color: #8a8073;
+  margin: 9pt 0 4pt; text-align: left; font-weight: 600; }}
 
-table {{ border-collapse: collapse; width: 100%; font-size: 6.4pt; margin: 0 0 5pt;
-         break-inside: avoid; }}
-th, td {{ border-bottom: 0.35pt solid #ddd6c8; padding: 1.6pt 2.4pt; text-align: left; }}
-th {{ font-size: 5.9pt; text-transform: uppercase; letter-spacing: 0.5pt; color: #4a433a;
-      border-bottom: 0.7pt solid #16130d; }}
+table {{ border-collapse: collapse; width: 100%; font-size: 7pt; margin: 2pt 0 8pt;
+        break-inside: avoid; }}
+th, td {{ padding: 2.6pt 5pt 2.6pt 0; text-align: left; border: 0; }}
+th:last-child, td:last-child {{ padding-right: 0; }}
+th {{ font-size: 5.9pt; text-transform: uppercase; letter-spacing: 0.7pt; color: #8a8073;
+     border-bottom: 0.6pt solid #1a1712; font-weight: 600; }}
+tbody tr + tr td {{ border-top: 0.3pt solid #e8e1d4; }}
+/* Right-aligned figures keep their gutter — only the last column loses it,
+   or the rank runs straight into the name beside it. */
 td.num, th.num {{ text-align: right; font-variant-numeric: tabular-nums lining-nums; }}
 
-img {{ max-width: 100%; height: auto; margin: 3pt 0 2pt; break-inside: avoid;
-       filter: grayscale(100%) contrast(108%); }}
-.caption {{ font-size: 6.2pt; font-style: italic; color: #4a433a; margin: 0 0 5pt;
-  line-height: 1.25; text-align: left; border-bottom: 0.4pt solid #c8c0b0; padding-bottom: 3pt; }}
+img {{ max-width: 100%; height: auto; margin: 4pt 0 3pt; break-inside: avoid;
+      filter: grayscale(100%) contrast(105%); }}
+.caption {{ font-size: 6.4pt; font-style: italic; color: #6b6154; margin: 0 0 8pt;
+  line-height: 1.35; text-align: left; }}
 
 a {{ color: inherit; text-decoration: none; }}
-.sources {{ font-size: 5.8pt; color: #6d6558; margin-top: 3pt; text-align: left;
-            line-height: 1.2; }}
+.sources {{ font-size: 5.8pt; color: #a89e8e; margin-top: 5pt; text-align: left;
+           line-height: 1.3; }}
 strong {{ font-weight: 700; }}
-code {{ font-family: "SF Mono", Menlo, monospace; font-size: 6pt; }}
+code {{ font-family: "SF Mono", Menlo, monospace; font-size: 6.4pt; }}
 """
 
 
@@ -277,15 +275,17 @@ def build_html(edition_dir: Path, paper: dict, size: str = "tabloid",
     cols = columns or default_cols
     # Type scales with the measure: a broadsheet column is wider, so it can carry
     # a larger face without the line getting too long to track.
-    body_pt = 9.2 if cols >= 6 else 9.0 if cols >= 5 else 9.6
+    wide = cols <= 2          # A4: two columns, so the measure is generous
+    mid = cols == 4           # tabloid
     style = STYLE.format(
-        w=width, h=height, cols=cols, body=body_pt,
-        mast=64 if cols >= 6 else 54 if cols >= 5 else 40,
-        leadsize=34 if cols >= 6 else 30 if cols >= 5 else 24,
-        head=12.5 if cols >= 5 else 13.5,
-        deck=7.6 if cols >= 5 else 8.2,
-        leadcols=max(2, cols - 2),
-        dropcap=34 if cols >= 5 else 28,
+        w=width, h=height, cols=cols,
+        body=10.4 if wide else 9.8 if mid else 9.5,
+        mast=44 if wide else 58 if mid else 64,
+        leadsize=26 if wide else 32 if mid else 36,
+        head=13 if wide else 12.8 if mid else 12.4,
+        deck=8.4 if wide else 8 if mid else 7.8,
+        leadcols=max(2, cols - 1),
+        dropcap=30 if wide else 36,
     )
 
     order = {s["id"]: i for i, s in enumerate(paper.get("sections") or [])}
@@ -316,7 +316,9 @@ def build_html(edition_dir: Path, paper: dict, size: str = "tabloid",
         out.append(f'<h2>{inline(meta.get("headline", ""))}</h2>')
         if meta.get("deck"):
             out.append(f'<p class="deck">{inline(meta["deck"])}</p>')
-        if meta.get("byline"):
+        # A byline on every one of sixteen items is noise; the lead and the
+        # section's lead story carry one, the tail does not.
+        if meta.get("byline") and (lead or entry["priority"] <= 2):
             out.append(f'<div class="byline">By {html.escape(meta["byline"])}</div>')
 
         inner = []
@@ -327,7 +329,7 @@ def build_html(edition_dir: Path, paper: dict, size: str = "tabloid",
                 inner.append(f'<p class="caption">{inline(meta["caption"])}</p>')
         inner.append(render_markdown(body))
         sources = [x for x in (meta.get("sources_list") or []) if not x.startswith("url:")]
-        if sources:
+        if sources and (lead or entry["priority"] <= 2):
             inner.append('<div class="sources">Sources: '
                          + "; ".join(html.escape(x.replace("name:", "").strip()) for x in sources)
                          + "</div>")
