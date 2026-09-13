@@ -33,7 +33,12 @@ from _common import DeskError, clip, write_article  # noqa: E402
 FILENAME = "02-the-revenue-board.md"
 API = "https://trustmrr.com/api/ai/discovery"
 TIMEOUT = 30
-LABEL_LIMIT = 12
+# The engine measures labels in RENDERED pixels against the gap between bars (plates.py: a label
+# must fit 92% of the spacing). Measured against its own font: six bars leave room for about
+# FOUR characters, eight for three. Product names cannot be bar labels at that width — the
+# sample edition uses three-letter weekdays — so the bars are numbered and the table directly
+# beneath carries the names in the same order.
+CHART_BARS = 6
 
 FEEDS = {
     "recent": ["recentlyAddedStartups"],
@@ -117,12 +122,14 @@ def build_body(rows: list[dict], min_30d: float, max_30d: float) -> str:
     rows_out = [
         "### Verified revenue",
         "",
-        "| Product | 30-day | MRR | All-time |",
-        "|:---|---:|---:|---:|",
+        # Five columns is within the rule when all but one are numbers (docs/WRITING.md),
+        # and all three metrics have to be visible side by side or the point is lost.
+        "| # | Product | 30-day | MRR | All-time |",
+        "|---:|:---|---:|---:|---:|",
     ]
-    for row in rows:
+    for index, row in enumerate(rows, 1):
         rows_out.append(
-            f"| {clip(row['name'], 18)} | {money(row['last30'])} "
+            f"| {index} | {clip(row['name'], 18)} | {money(row['last30'])} "
             f"| {money(row['mrr'])} | {money(row['total'])} |"
         )
 
@@ -153,17 +160,17 @@ def build_article(edition_dir: Path, limit: int, min_30d: float,
         "span": "2col",
     }
 
-    charted = [row for row in rows if row["last30"] > 0][:8]
+    charted = [row for row in rows if row["last30"] > 0][:CHART_BARS]
     if len(charted) >= 2:
         fields["chart"] = {
             "kind": "bars",
             "values": [round(row["last30"]) for row in charted],
-            "labels": [clip(row["name"], LABEL_LIMIT) for row in charted],
+            "labels": [str(i) for i in range(1, len(charted) + 1)],
             "show_values": True,
         }
         fields["caption"] = (
-            "Revenue over the last thirty days, in US dollars, as reported by each "
-            "product's own payment provider. Not MRR."
+            "Revenue over the last thirty days, in US dollars, as reported by each product's "
+            "own payment provider — not MRR. Numbered as in the table below."
         )
 
     ceiling = max_30d if max_30d else max(row["last30"] for row in rows)

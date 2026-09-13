@@ -197,7 +197,7 @@ def test_revenue_desk_keeps_the_three_metrics_apart(tmp_path):
     assert (warmap["last30"], warmap["mrr"], warmap["total"]) == (7864.08, 0, 9487.08)
 
     body = desk.build_body(rows, 500.0, 25000.0)
-    assert "| Product | 30-day | MRR | All-time |" in body
+    assert "| # | Product | 30-day | MRR | All-time |" in body
     assert "$7,864" in body and "$9,487" in body
 
 

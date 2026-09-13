@@ -85,9 +85,12 @@ def _scalar(value) -> str:
         return str(value)
     text = str(value)
     risky = text.startswith(("#", "-", "[", "{", "*", "&", "!", "%", "@", "`", ">", "|"))
+    # A string that LOOKS numeric must round-trip as a string: an unquoted "1" comes
+    # back as int 1, and a chart label has to stay text.
+    looks_numeric = text.replace(".", "", 1).replace("-", "", 1).isdigit()
     # Any colon is quoted: YAML 1.1 reads 21:00 as a sexagesimal number, and a
     # time label must survive as the string the desk wrote.
-    if not text or risky or ":" in text or "," in text or '"' in text:
+    if not text or risky or looks_numeric or ":" in text or "," in text or '"' in text:
         return '"' + text.replace("\\", "\\\\").replace('"', '\\"') + '"'
     return text
 
