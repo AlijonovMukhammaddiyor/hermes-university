@@ -11,11 +11,15 @@ unicode-range for each subset) and only repoints `src` at the downloaded file, s
 Cyrillic and Latin-ext subsets keep working.
 
 The choices, and why:
-  Old Standard TT   masthead and headlines. A revival of the late-19th-century
-                    book and newspaper letter — high stroke contrast, sharp
-                    serifs, the form a broadsheet nameplate is cut from.
-  PT Serif          body. Drawn for news text at small sizes: sturdy serifs and
-                    economical setting.
+  PT Serif          everything set as text, and the headlines too. Drawn for news:
+                    sturdy serifs, economical setting, and a bold with enough
+                    weight to hold a headline. Three display faces were tried
+                    before this — Bodoni Moda, Archivo, Old Standard TT, Libre
+                    Baskerville — and each loaded in a browser and then failed to
+                    embed in the PDF. A face the printer will not embed is not a
+                    choice, it is a silent fallback. Setting a paper in one
+                    superfamily is what The Times does with Times; rank is carried
+                    by size and weight, which is enough.
   PT Sans Narrow    labels, kickers, bylines, folios. Papers set their furniture
                     in a condensed sans against the serif text — it fits a label
                     into a column and gives the page a third voice.
@@ -45,7 +49,6 @@ UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
 # instance — it silently prints the fallback serif, which is how the first pick
 # (Bodoni Moda + Archivo, both variable) produced a paper set in Liberation.
 FAMILIES = [
-    "Old+Standard+TT:ital,wght@0,400;0,700;1,400",
     "PT+Serif:ital,wght@0,400;0,700;1,400",
     "PT+Sans+Narrow:wght@400;700",
 ]

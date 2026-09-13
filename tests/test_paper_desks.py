@@ -282,7 +282,17 @@ def test_print_edition_sets_a_real_page_size(tmp_path):
     assert "size: 210mm 297mm" in pdf.build_html(edition, paper, "a4")
 
     # An explicit column count still wins over the chooser.
-    assert "column-count: 3" in pdf.build_html(edition, paper, "tabloid", columns=3)
+    assert "column-count: 1" in pdf.build_html(edition, paper, "tabloid", columns=1)
+
+
+def test_the_page_never_sets_more_than_two_columns(tmp_path):
+    """Three narrow measures on a sheet this size is what made the page crowded."""
+    pdf = load("make_pdf")
+    for words in (300, 1500, 4000, 20000):
+        for ceiling in (2,):
+            cols, body = pdf.fit_layout(words, ceiling)
+            assert cols <= 2
+            assert body >= 11.0, "a wider column needs a larger face to keep the measure"
 
 
 def test_print_page_varies_its_width_and_still_fills(tmp_path):
@@ -414,9 +424,9 @@ def test_margins_scale_with_the_sheet(tmp_path):
     (edition / "articles").mkdir(parents=True)
     (edition / "articles" / "01-lead.md").write_text(ARTICLE)
     paper = {"masthead": "X", "sections": []}
-    assert "margin: 22mm 18mm" in pdf.build_html(edition, paper, "broadsheet")
-    assert "margin: 19mm 16mm" in pdf.build_html(edition, paper, "tabloid")
-    assert "margin: 16mm 14mm" in pdf.build_html(edition, paper, "a4")
+    assert "margin: 24mm 20mm" in pdf.build_html(edition, paper, "broadsheet")
+    assert "margin: 22mm 18mm" in pdf.build_html(edition, paper, "tabloid")
+    assert "margin: 18mm 15mm" in pdf.build_html(edition, paper, "a4")
 
 
 # ── the house rules ───────────────────────────────────────────────────────

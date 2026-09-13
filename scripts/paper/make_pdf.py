@@ -43,11 +43,11 @@ SIZES = {
     # measure gets too narrow to read. The count itself is chosen from content.
     # width, height, column ceiling, and the margin the sheet is printed with.
     # A bigger sheet carries a bigger margin; the page never crowds its edge.
-    "broadsheet": ("305mm", "560mm", 6, "22mm", "18mm"),
-    "tabloid":    ("279mm", "432mm", 5, "19mm", "16mm"),
-    "berliner":   ("315mm", "470mm", 5, "20mm", "17mm"),
-    "a3":         ("297mm", "420mm", 5, "19mm", "16mm"),
-    "a4":         ("210mm", "297mm", 3, "16mm", "14mm"),
+    "broadsheet": ("305mm", "560mm", 2, "24mm", "20mm"),
+    "tabloid":    ("279mm", "432mm", 2, "22mm", "18mm"),
+    "berliner":   ("315mm", "470mm", 2, "22mm", "19mm"),
+    "a3":         ("297mm", "420mm", 2, "22mm", "18mm"),
+    "a4":         ("210mm", "297mm", 2, "18mm", "15mm"),
 }
 
 
@@ -59,27 +59,22 @@ def measure(parsed: list[dict]) -> int:
 def fit_layout(words: int, ceiling: int) -> tuple[int, float]:
     """Pick a column count and body size for this much copy.
 
-    A thin edition set in five narrow columns reads like a leaflet with gaps; a
-    fat one set in two reads like a thesis. So the grid follows the copy: fewer,
-    wider columns and larger type when there is little to say, more and smaller
-    when there is a lot — never past what the page can carry.
+    Two columns is the ceiling: three narrow measures on a sheet this size is what
+    made the page feel crowded. A wider column needs a larger face to keep the line
+    near the 35-45 characters that reads fastest — set 10pt across 119mm and the
+    eye loses its place coming back to the left margin.
     """
-    for limit, cols, body in (
-        (700,  2, 11.4),
-        (1400, 3, 10.8),
-        (2400, 3, 10.2),
-        (3800, 4, 9.9),
-        (5600, 4, 9.5),
-        (8000, 5, 9.2),
-    ):
-        if words <= limit:
-            return min(cols, ceiling), body
-    return min(6, ceiling), 8.9
+    if words <= 500:
+        return min(1, ceiling), 13.5      # a thin edition reads better unbroken
+    if words <= 1500:
+        return min(2, ceiling), 13.0
+    if words <= 3000:
+        return min(2, ceiling), 12.2
+    return min(2, ceiling), 11.5
 
 
 STYLE = """
 @page {{ size: {w} {h}; margin: {mv} {mh}; }}
-@media print {{ body {{ background: #fff; }} }}
 
 html {{ color-scheme: light; }}
 html, body {{ margin: 0; padding: 0; }}
@@ -99,8 +94,8 @@ body {{
 
 .masthead {{ text-align: center; border-bottom: 1pt solid #1a1712;
             padding-bottom: {gap}pt; margin: 0 0 {gap3}pt; }}
-.masthead h1 {{ font-family: "Old Standard TT", Georgia, serif;
-  font-size: {mast}pt; font-weight: 900; letter-spacing: -1pt; margin: 0; line-height: 0.95; }}
+.masthead h1 {{ font-family: "PT Serif", Georgia, serif;
+  font-size: {mast}pt; font-weight: 700; letter-spacing: -1pt; margin: 0; line-height: 0.95; }}
 .masthead .rule {{ display: flex; justify-content: space-between; align-items: baseline;
   margin-top: 7pt; font-size: 7pt; text-transform: uppercase; letter-spacing: 1.8pt;
   color: #6b6154; }}
@@ -108,15 +103,15 @@ body {{
 
 .lead {{ margin: 0 0 {gap3}pt; padding-bottom: {gap2}pt;
          border-bottom: 0.6pt solid #d8d0c0; break-inside: avoid; }}
-.lead h2 {{ font-family: "Old Standard TT", Georgia, serif; font-size: {leadsize}pt;
-  line-height: 1.06; font-weight: 900; text-align: center; margin: 0 0 7pt;
+.lead h2 {{ font-family: "PT Serif", Georgia, serif; font-size: {leadsize}pt;
+  line-height: 1.06; font-weight: 700; text-align: center; margin: 0 0 7pt;
   letter-spacing: -0.4pt; }}
 .lead .deck {{ text-align: center; font-size: {deck}pt; font-style: italic; color: #4a4238;
   margin: 0 auto 12pt; max-width: 74%; line-height: 1.4; }}
 .lead .flow {{ column-count: {leadcols}; column-gap: 9mm; }}
 .lead .flow > p:first-of-type::first-letter {{
-  float: left; font-family: "Old Standard TT", Georgia, serif; font-size: {dropcap}pt;
-  line-height: 0.76; font-weight: 900; padding: 3pt 5pt 0 0; }}
+  float: left; font-family: "PT Serif", Georgia, serif; font-size: {dropcap}pt;
+  line-height: 0.76; font-weight: 700; padding: 3pt 5pt 0 0; }}
 
 /* Print cannot have both at once: a grid gives modular spans but sizes every row
    to its tallest item, so short modules leave holes and the page never fills — a
@@ -144,10 +139,10 @@ article.long {{ break-inside: auto; }}
 
 .section-head {{ column-span: all; border-bottom: 0.8pt solid #1a1712;
   margin: {gap2}pt 0 {gap2}pt; padding-bottom: 3pt; break-after: avoid; break-inside: avoid;
-  font-family: "Old Standard TT", Georgia, serif; font-size: 8.5pt; font-weight: 700;
+  font-family: "PT Serif", Georgia, serif; font-size: 8.5pt; font-weight: 700;
   text-transform: uppercase; letter-spacing: 3.4pt; color: #1a1712; }}
 
-h2 {{ font-family: "Old Standard TT", Georgia, serif; line-height: 1.14;
+h2 {{ font-family: "PT Serif", Georgia, serif; line-height: 1.14;
   font-weight: 700; margin: 0 0 {gap}pt; text-align: left; letter-spacing: -0.1pt;
   break-after: avoid; }}
 /* Weight follows priority: a section's lead story is set larger than its tail,
@@ -196,6 +191,11 @@ a {{ color: inherit; text-decoration: none; }}
            line-height: 1.3; }}
 strong {{ font-weight: 700; }}
 code {{ font-family: "SF Mono", Menlo, monospace; font-size: 6.4pt; }}
+
+/* Last, so it wins: a printed sheet is white to its edges. Declared
+   earlier, the body rule below it took precedence and the page came out
+   as a cream box inside white margins. */
+@media print {{ html, body {{ background: #fff; }} }}
 """
 
 
@@ -415,8 +415,9 @@ def build_html(edition_dir: Path, paper: dict, size: str = "tabloid",
     words = measure(parsed)
     auto_cols, body_pt = fit_layout(words, ceiling)
     cols = columns or auto_cols
-    if columns:                      # an explicit grid still gets a sane measure
-        body_pt = max(8.8, min(11.6, body_pt * (auto_cols / cols) ** 0.5))
+    if columns:                      # an explicit column count still gets a sane measure
+        body_pt = max(10.5, min(14.0, body_pt * (auto_cols / cols) ** 0.5))
+    single = cols <= 1
 
     # Everything else is a ratio of the body size, so the page scales as one thing.
     style = STYLE.format(
@@ -426,14 +427,14 @@ def build_html(edition_dir: Path, paper: dict, size: str = "tabloid",
         gap2=round(body_pt * 1.3, 2),
         gap3=round(body_pt * 1.85, 2),
         tbl=round(body_pt * 0.72, 2),
-        mast=round(body_pt * (5.2 if cols >= 4 else 4.2), 1),
-        leadsize=round(body_pt * (3.3 if cols >= 4 else 2.6), 1),
-        deck=round(body_pt * 0.82, 2),
-        leadcols=max(2, cols - 1),
-        dropcap=round(body_pt * 3.4, 1),
-        h_major=round(body_pt * 1.5, 2),
-        h_standard=round(body_pt * 1.24, 2),
-        h_brief=round(body_pt * 1.04, 2),
+        mast=round(body_pt * 4.4, 1),
+        leadsize=round(body_pt * 2.5, 1),
+        deck=round(body_pt * 0.8, 2),
+        leadcols=1 if single else 2,
+        dropcap=round(body_pt * 3.2, 1),
+        h_major=round(body_pt * 1.55, 2),
+        h_standard=round(body_pt * 1.28, 2),
+        h_brief=round(body_pt * 1.08, 2),
     )
 
     names = {sec["id"]: sec["name"] for sec in (paper.get("sections") or [])}
