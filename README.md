@@ -187,7 +187,9 @@ one private `profile.yaml`.
 - **[GUIDE.md](GUIDE.md)** — the full command manual, the daily loop in depth, troubleshooting.
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** — how it works inside (engine · skills · courses · lifecycle).
 - **[PREREQUISITES.md](PREREQUISITES.md)** — the accounts and keys on their own.
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** · **`docs/RFC-00*.md`** — how to help and the design record.
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** · **`docs/RFC-0*.md`** — how to help and the design record.
+- **[RFC-014](docs/RFC-014-the-builders-daily.md)** — *The Builder's Daily*, the optional nightly
+  newspaper built from the same vault (data desks, print and screen editions, Telegram delivery).
 
 ## Built on
 The [Hermes Agent](https://github.com/NousResearch/hermes-agent) (skills, cron, Telegram gateway) and a

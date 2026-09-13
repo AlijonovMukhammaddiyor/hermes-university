@@ -51,6 +51,17 @@ If the **old** droplet is still running, **stop its gateway first** (`systemctl 
 hermes-gateway`) — two gateways on one Telegram bot token conflict (409). If you deleted the old box,
 this is moot.
 
+## Two things that will bite on a rebuild
+
+- **Hand-authored skills.** Anything written directly into `~/.hermes/skills/hermes-university/`
+  rather than rendered from `skills/*.template.md` is in neither this repo nor the encrypted bundle.
+  `hermes_backup.sh` mirrors that directory into the vault's `_source/skills/`, so restore from there
+  and copy it back after `install.sh`.
+- **Cron jobs pinned to a model.** Changing the agent's global model makes every unpinned job
+  `drift_skip` — it is skipped to prevent unintended spend, and *stays* skipped until pinned. After
+  any model change: `hermes cron edit <id> --model <model>` for every job, then check
+  `hermes cron runs <id>`.
+
 ## What survives without the passphrase
 Even if you lose the passphrase: your **vault** (state, grades, progress) and **`_source/courses/`**
 (authored course sources, plaintext) restore fine. You'd only re-provide the secrets manually
