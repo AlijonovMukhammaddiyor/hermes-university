@@ -246,3 +246,66 @@ def test_revenue_desk_chart_labels_fit_the_column(tmp_path, monkeypatch):
     assert front["priority"] != 1
     assert all(len(label) < LABEL_CEILING for label in front["chart"]["labels"])
     assert front["chart"]["values"] == [7864, 771]
+
+
+# ── the launch desk (the audience half) ───────────────────────────────────
+
+def _hit(title, points, comments=0, url="", oid="1"):
+    return {"title": title, "points": points, "num_comments": comments,
+            "url": url, "objectID": oid, "author": "someone",
+            "created_at": "2026-09-12T10:00:00Z"}
+
+
+def test_launch_desk_pulls_the_project_name_out_of_the_title():
+    """A dash or colon separates name from pitch; a comma only when prose follows."""
+    desk = load("showhn_desk")
+    assert desk._project_name("Toast, a by default in-terminal IDE") == "Toast"
+    assert desk._project_name("Hacker News, Without AI") == "Hacker News, Without AI"
+    assert desk._project_name("ResolveHQ – A Helpdesk Built on Cloudflare") == "ResolveHQ"
+    assert desk._project_name("Graphify C#: compiler-accurate graphs") == "Graphify C#"
+    assert desk._project_name("Hopera") == "Hopera"
+
+
+def _fake_urlopen(payload):
+    import io
+    import json as _json
+
+    class _Resp(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    return lambda *a, **k: _Resp(_json.dumps(payload).encode())
+
+
+def test_launch_desk_counts_a_relisted_launch_once(monkeypatch):
+    """The same launch gets posted twice; the better-scored copy is the one that counts."""
+    desk = load("showhn_desk")
+    payload = {"hits": [
+        _hit("Show HN: Hacker News, without AI", 193, 80, "https://a.example", "1"),
+        _hit("Show HN: Hacker News, Without AI", 200, 88, "https://b.example", "2"),
+        _hit("Show HN: Toast, a by default in-terminal IDE", 81, 88, "https://c.example", "3"),
+    ]}
+    monkeypatch.setattr(desk.urllib.request, "urlopen", _fake_urlopen(payload))
+    rows = desk.fetch(48, 20, 8)
+    assert len(rows) == 2, "the relist must collapse"
+    assert rows[0]["points"] == 200, "and keep the higher score"
+
+
+def test_launch_desk_says_points_are_not_users(tmp_path, monkeypatch):
+    desk = load("showhn_desk")
+    payload = {"hits": [_hit("Show HN: A", 100, 10, "https://a.example", "1"),
+                        _hit("Show HN: B", 50, 5, "https://b.example", "2")]}
+    monkeypatch.setattr(desk.urllib.request, "urlopen", _fake_urlopen(payload))
+    body = desk.build_article(tmp_path / "edition", 48, 20, 8).read_text()
+    assert "not adoption" in body or "not users" in body
+
+
+def test_launch_desk_drops_the_story_when_nothing_clears_the_bar(tmp_path, monkeypatch):
+    desk = load("showhn_desk")
+    monkeypatch.setattr(desk, "fetch", lambda *a, **k: [])
+    with pytest.raises(desk.DeskError):
+        desk.build_article(tmp_path / "edition", 48, 20, 8)
+    assert desk.main([str(tmp_path / "edition")]) == 1

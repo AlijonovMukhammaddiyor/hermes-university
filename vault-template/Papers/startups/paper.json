@@ -3,11 +3,29 @@
   "motto": "Proven revenue, printed nightly, for one builder",
   "founded": "2026-08-22",
   "sections": [
-    { "id": "today", "name": "Today" },
-    { "id": "projects", "name": "Buildable" },
-    { "id": "startups", "name": "New Startups" },
-    { "id": "funding", "name": "Funding" },
-    { "id": "capabilities", "name": "New Capabilities" },
-    { "id": "whitespace", "name": "Whitespace" }
+    {
+      "id": "today",
+      "name": "Today"
+    },
+    {
+      "id": "projects",
+      "name": "Opportunities"
+    },
+    {
+      "id": "startups",
+      "name": "New Startups"
+    },
+    {
+      "id": "funding",
+      "name": "Funding"
+    },
+    {
+      "id": "capabilities",
+      "name": "Emerging Trends"
+    },
+    {
+      "id": "whitespace",
+      "name": "Whitespace"
+    }
   ]
 }
