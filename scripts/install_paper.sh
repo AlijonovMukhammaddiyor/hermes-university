@@ -38,6 +38,8 @@ add_ignore() {
 grep -q "^# The Hermes Daily" "$GI" 2>/dev/null || printf '\n# The Hermes Daily — rendered output, redrawn on demand, never source\n' >> "$GI"
 add_ignore "Papers/*/.site/"
 add_ignore "Papers/*/*/images/*-chart.png"
+# The PDF is ~700 KB and regenerated from the same markdown on demand.
+add_ignore "Papers/*/*/*.pdf"
 
 # 3. the format check — the only half of the engine the writer needs
 if [ ! -x "$PV/bin/vael-paper-check" ]; then

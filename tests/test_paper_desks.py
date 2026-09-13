@@ -309,3 +309,75 @@ def test_launch_desk_drops_the_story_when_nothing_clears_the_bar(tmp_path, monke
     with pytest.raises(desk.DeskError):
         desk.build_article(tmp_path / "edition", 48, 20, 8)
     assert desk.main([str(tmp_path / "edition")]) == 1
+
+
+# ── the print edition ─────────────────────────────────────────────────────
+
+ARTICLE = """---
+id: 01-lead
+headline: A Headline
+deck: The standfirst
+section: today
+byline: The Desk
+priority: 1
+---
+
+An opening paragraph with **bold** and a [link](https://example.com).
+
+### A table
+
+| # | Product | 30-day |
+|---:|:---|---:|
+| 1 | Warmap | $7,864 |
+
+- a bullet
+- another
+"""
+
+
+def test_print_edition_orders_by_section_then_priority(tmp_path):
+    """The PDF must print in the paper's own running order, not alphabetically."""
+    pdf = load("make_pdf")
+    edition = tmp_path / "2026-09-13"
+    (edition / "articles").mkdir(parents=True)
+    (edition / "articles" / "50-late.md").write_text(
+        ARTICLE.replace("section: today", "section: whitespace").replace("priority: 1", "priority: 3"))
+    (edition / "articles" / "01-lead.md").write_text(ARTICLE)
+    (edition / "articles" / "10-mid.md").write_text(
+        ARTICLE.replace("section: today", "section: projects").replace("priority: 1", "priority: 2"))
+
+    paper = {"masthead": "The Builder's Daily", "founded": "2026-08-22",
+             "sections": [{"id": "today", "name": "Today"}, {"id": "projects", "name": "Opportunities"},
+                          {"id": "whitespace", "name": "Whitespace"}]}
+    out = pdf.build_html(edition, paper)
+    assert out.index("Today") < out.index("Opportunities") < out.index("Whitespace")
+
+
+def test_print_edition_numbers_the_issue_from_the_founding_date(tmp_path):
+    pdf = load("make_pdf")
+    # 2026-08-22 → 2026-09-13 is 22 days later; the paper counts inclusively.
+    assert pdf.issue_number({"founded": "2026-08-22"}, "2026-09-13") == "23"
+    assert pdf.issue_number({}, "2026-09-13") == ""
+
+
+def test_print_edition_renders_the_markdown_subset():
+    pdf = load("make_pdf")
+    out = pdf.render_markdown("### Head\n\n| a | b |\n|---:|:---|\n| 1 | x |\n\n- one\n- two\n\nText **bold**.")
+    assert "<h3>Head</h3>" in out
+    assert "<table>" in out and "<th" in out and "<td" in out
+    assert out.count("<li>") == 2
+    assert "<strong>bold</strong>" in out
+
+
+def test_print_edition_escapes_before_it_formats():
+    """A headline containing markup must not become markup."""
+    pdf = load("make_pdf")
+    assert "<script>" not in pdf.inline("<script>alert(1)</script>")
+
+
+def test_print_edition_reads_the_frontmatter_subset():
+    pdf = load("make_pdf")
+    meta, body = pdf.split_frontmatter(ARTICLE)
+    assert meta["headline"] == "A Headline"
+    assert meta["priority"] == "1"
+    assert body.strip().startswith("An opening paragraph")

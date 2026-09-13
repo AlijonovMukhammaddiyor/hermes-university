@@ -1,6 +1,6 @@
 {
   "masthead": "The Builder's Daily",
-  "motto": "Proven revenue, printed nightly, for one builder",
+  "motto": "Everything that matters, briefly",
   "founded": "2026-08-22",
   "sections": [
     {
@@ -22,6 +22,14 @@
     {
       "id": "capabilities",
       "name": "Emerging Trends"
+    },
+    {
+      "id": "ai",
+      "name": "AI Labs & Research"
+    },
+    {
+      "id": "engineering",
+      "name": "Systems & Craft"
     },
     {
       "id": "whitespace",
