@@ -118,13 +118,23 @@ body {{
   float: left; font-family: "Old Standard TT", Georgia, serif; font-size: {dropcap}pt;
   line-height: 0.76; font-weight: 900; padding: 3pt 5pt 0 0; }}
 
-.paper {{ column-count: {cols}; column-gap: 9mm;
+/* Modular, like the screen edition: stories are rectangles of differing span,
+   which is what separates a newspaper from a journal. Chromium paginates a grid,
+   so this survives the page break. */
+.paper {{ display: grid; grid-template-columns: repeat({cols}, 1fr);
+         grid-auto-flow: dense;
+         column-gap: 8mm; row-gap: {gap3}pt; align-items: start;
          text-align: justify; hyphens: auto; -webkit-hyphens: auto; }}
+article.major {{ grid-column: span 2; }}
+article.major .cols {{ columns: 2; column-gap: 6mm; }}
+article.standard, article.brief {{ grid-column: span 1; }}
+article.digest {{ grid-column: span 1; background: #f2eee3; padding: {gap2}pt;
+  border-top: 1.2pt solid #1a1712; }}
 
-article {{ break-inside: avoid-column; margin: 0 0 {gap3}pt; }}
+article {{ break-inside: avoid; margin: 0; }}
 article.long {{ break-inside: auto; }}
 
-.section-head {{ column-span: all; border-bottom: 0.8pt solid #1a1712;
+.section-head {{ grid-column: 1 / -1; border-bottom: 0.8pt solid #1a1712;
   margin: {gap2}pt 0 {gap2}pt; padding-bottom: 3pt; break-after: avoid; break-inside: avoid;
   font-family: "Old Standard TT", Georgia, serif; font-size: 8.5pt; font-weight: 700;
   text-transform: uppercase; letter-spacing: 3.4pt; color: #1a1712; }}
@@ -139,8 +149,6 @@ article.standard h2 {{ font-size: {h_standard}pt; }}
 /* One display face throughout — size and weight carry the rank, not a second
    typeface, which reads as inconsistency rather than hierarchy. */
 article.brief h2 {{ font-size: {h_brief}pt; font-weight: 700; letter-spacing: 0; }}
-article.major {{ margin-bottom: {gap3}pt; }}
-article.brief {{ margin-bottom: {gap2}pt; }}
 article.brief .deck {{ display: none; }}
 .deck {{ font-style: italic; color: #4a4238; font-size: {deck}pt; margin: 0 0 6pt;
         text-align: left; line-height: 1.34; }}
@@ -240,12 +248,39 @@ def split_frontmatter(text: str) -> tuple[dict, str]:
     return meta, body
 
 
+def safe_url(url: str) -> str | None:
+    """A URL only if it is one we are willing to print.
+
+    html.escape leaves `javascript:` untouched — it has no characters to escape —
+    so escaping alone turns a markdown link into a live script link. The format
+    only ever prints http and https (docs/FORMAT.md), and the edition's own chart
+    plates are relative, so everything else degrades to plain text.
+    """
+    url = url.strip()
+    if url.startswith(("http://", "https://")):
+        return html.escape(url, quote=True)
+    if url.startswith(("images/", "./images/")) or url.startswith("data:image/"):
+        return html.escape(url, quote=True)
+    return None
+
+
 def inline(text: str) -> str:
     out = html.escape(text)
-    out = re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", r'<img src="\2" alt="\1">', out)
-    out = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', out)
-    out = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", out)
-    out = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"<em>\1</em>", out)
+
+    def _img(match: re.Match) -> str:
+        url = safe_url(match.group(2))
+        return f'<img src="{url}" alt="{match.group(1)}">' if url else match.group(1)
+
+    def _link(match: re.Match) -> str:
+        url = safe_url(match.group(2))
+        return f'<a href="{url}">{match.group(1)}</a>' if url else match.group(1)
+
+    out = re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", _img, out)
+    out = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", _link, out)
+    # Non-greedy, so bold survives an italic inside it: `**a *b* c**` was leaving
+    # its asterisks on the page because the pattern refused any * between them.
+    out = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", out, flags=re.S)
+    out = re.sub(r"(?<!\*)\*([^*\n]+)\*(?!\*)", r"<em>\1</em>", out)
     out = re.sub(r"`([^`]+)`", r"<code>\1</code>", out)
     return out
 
@@ -404,7 +439,9 @@ def build_html(edition_dir: Path, paper: dict, size: str = "tabloid",
         out = []
         # A long piece may break across columns; a short one should not be split.
         long = len(body) > 1400
-        weight = ("major" if entry["priority"] <= 2
+        is_digest = "digest" in entry["name"].lower() or body.count("\n- ") >= 3
+        weight = ("digest" if is_digest and not lead
+                  else "major" if entry["priority"] <= 2
                   else "standard" if entry["priority"] == 3 else "brief")
         classes = " ".join(filter(None, [weight, "long" if long else ""]))
         out.append(f'<article class="{classes}">' if not lead else "")
@@ -437,7 +474,8 @@ def build_html(edition_dir: Path, paper: dict, size: str = "tabloid",
         if lead:
             out.append('<div class="flow">' + "\n".join(inner) + "</div>")
         else:
-            out.append("\n".join(inner))
+            body_html = "\n".join(inner)
+            out.append(f'<div class="cols">{body_html}</div>' if weight == "major" else body_html)
             out.append("</article>")
         return "\n".join(out)
 

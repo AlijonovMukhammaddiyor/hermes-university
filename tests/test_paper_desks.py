@@ -281,8 +281,28 @@ def test_print_edition_sets_a_real_page_size(tmp_path):
     assert "size: 279mm 432mm" in pdf.build_html(edition, paper, "tabloid")
     assert "size: 210mm 297mm" in pdf.build_html(edition, paper, "a4")
 
-    # An explicit grid still wins over the chooser.
-    assert "column-count: 3" in pdf.build_html(edition, paper, "tabloid", columns=3)
+    # An explicit grid still wins over the chooser. The print build is modular
+    # now, so the grid is a track list rather than a column count.
+    out = pdf.build_html(edition, paper, "tabloid", columns=3)
+    assert "grid-template-columns: repeat(3, 1fr)" in out
+    assert "grid-auto-flow: dense" in out, "a paper tiles without leftover holes"
+
+
+def test_print_edition_is_modular_not_a_flow(tmp_path):
+    """Stories are rectangles of differing span — that is what separates a
+    newspaper from a journal, and it is the thing easiest to regress."""
+    pdf = load("make_pdf")
+    edition = tmp_path / "2026-09-13"
+    (edition / "articles").mkdir(parents=True)
+    (edition / "articles" / "01-lead.md").write_text(ARTICLE)
+    (edition / "articles" / "10-major.md").write_text(ARTICLE.replace("priority: 1", "priority: 2"))
+    (edition / "articles" / "20-brief.md").write_text(ARTICLE.replace("priority: 1", "priority: 5"))
+    out = pdf.build_html(edition, {"masthead": "X", "sections": [{"id": "today", "name": "Today"}]})
+
+    assert "display: grid" in out
+    assert "article.major {{ grid-column: span 2; }}".replace("{{", "{").replace("}}", "}") in out
+    assert "article.major .cols".replace("{{", "{") in out, "a wide module keeps a narrow measure"
+    assert 'class="cols"' in out
 
 
 def test_print_edition_forces_a_light_ground(tmp_path):

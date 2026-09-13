@@ -85,6 +85,7 @@ body { background: var(--ground); color: var(--ink);
    story ends without reading a word. `columns:` here is what made the page read
    as a journal. */
 .body { display: grid; grid-template-columns: repeat(6, 1fr);
+  grid-auto-flow: dense;
         column-gap: var(--s4); row-gap: var(--s5); align-items: start; }
 
 /* Span for rank. The text inside still sets in a narrow measure — a four-column
