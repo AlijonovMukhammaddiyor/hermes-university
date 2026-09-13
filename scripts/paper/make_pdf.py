@@ -135,8 +135,9 @@ h2 {{ font-family: "Playfair Display", Georgia, serif; line-height: 1.14;
    which is how a reader sees what matters without being told. */
 article.major h2 {{ font-size: {h_major}pt; line-height: 1.08; }}
 article.standard h2 {{ font-size: {h_standard}pt; }}
-article.brief h2 {{ font-size: {h_brief}pt; font-family: "Source Serif 4", Georgia, serif;
-  font-weight: 700; letter-spacing: 0; }}
+/* One display face throughout — size and weight carry the rank, not a second
+   typeface, which reads as inconsistency rather than hierarchy. */
+article.brief h2 {{ font-size: {h_brief}pt; font-weight: 700; letter-spacing: 0; }}
 article.major {{ margin-bottom: {gap3}pt; }}
 article.brief {{ margin-bottom: {gap2}pt; }}
 article.brief .deck {{ display: none; }}

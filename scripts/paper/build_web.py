@@ -29,6 +29,9 @@ STYLE = """
 :root {
   --ground: #f7f4ec; --ink: #17140f; --muted: #6f6659; --rule: #d9d2c2;
   --rule-strong: #17140f; --accent: #9c2b1b; --plate: #efeadd;
+  /* One spacing rhythm. Every gap below is a step on it, so the page breathes
+     evenly instead of drifting with hand-picked values. */
+  --s1: 0.45rem; --s2: 0.85rem; --s3: 1.5rem; --s4: 2.6rem; --s5: 4rem;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -46,66 +49,71 @@ STYLE = """
 html { background: var(--ground); }
 body { background: var(--ground); color: var(--ink);
   font-family: "Source Serif 4", Georgia, "Times New Roman", serif;
-  font-size: 17px; line-height: 1.56; margin: 0;
+  font-size: 17px; line-height: 1.66; margin: 0;
   font-variant-numeric: oldstyle-nums; -webkit-font-smoothing: antialiased; }
-.sheet { max-width: 1180px; margin: 0 auto; padding: 40px 24px 80px; }
+.sheet { max-width: 1220px; margin: 0 auto; padding: var(--s5) var(--s3) calc(var(--s5) * 1.5); }
 
 .masthead { text-align: center; border-bottom: 2px solid var(--rule-strong);
-  padding-bottom: 12px; margin-bottom: 10px; }
+  padding-bottom: var(--s2); margin-bottom: var(--s2); }
 .masthead h1 { font-family: "Playfair Display", Georgia, serif; font-weight: 900;
   font-size: clamp(2.4rem, 8.5vw, 5.2rem); line-height: 0.94; letter-spacing: -0.02em;
   margin: 0; text-wrap: balance; }
 .folio { display: flex; flex-wrap: wrap; gap: 10px 20px; justify-content: space-between;
   align-items: baseline; font-size: 0.7rem; text-transform: uppercase;
-  letter-spacing: 0.16em; color: var(--muted); margin: 12px 0 34px;
+  letter-spacing: 0.16em; color: var(--muted); margin: var(--s2) 0 var(--s5);
   font-variant-numeric: lining-nums tabular-nums; }
 .folio .motto { text-transform: none; letter-spacing: 0; font-style: italic; font-size: 0.85rem; }
 
-.lead { border-bottom: 1px solid var(--rule); padding-bottom: 30px; margin-bottom: 30px; }
+.lead { border-bottom: 1px solid var(--rule); padding-bottom: var(--s5);
+  margin-bottom: var(--s5); }
 .lead h2 { font-family: "Playfair Display", Georgia, serif; font-weight: 900;
   font-size: clamp(1.85rem, 5.2vw, 3.1rem); line-height: 1.06; letter-spacing: -0.015em;
-  text-align: center; margin: 0 0 14px; text-wrap: balance; }
+  text-align: center; margin: 0 0 var(--s3); text-wrap: balance; }
 .lead .deck { text-align: center; font-style: italic; color: var(--muted);
-  font-size: 1.06rem; max-width: 46ch; margin: 0 auto 22px; line-height: 1.45; }
-.lead .flow { columns: 2 19rem; column-gap: 2.6rem; }
+  font-size: 1.06rem; max-width: 46ch; margin: 0 auto var(--s4); line-height: 1.5; }
+.lead .flow { columns: 2 21rem; column-gap: var(--s4); }
 .lead .flow > p:first-of-type::first-letter { float: left; font-family: "Playfair Display", Georgia, serif;
   font-size: 3.5em; line-height: 0.76; font-weight: 900; padding: 0.06em 0.09em 0 0; color: var(--accent); }
 
-.body { columns: 3 17rem; column-gap: 2.6rem; }
-article { break-inside: avoid; margin: 0 0 30px; }
+/* A wider minimum column: three cramped measures is most of what made this
+   feel dense, so the grid drops to two before it squeezes. */
+.body { columns: 3 21rem; column-gap: var(--s4); }
+article { break-inside: avoid; margin: 0 0 var(--s5); }
 article.long { break-inside: auto; }
-article.major { margin-bottom: 34px; }
-article.brief { margin-bottom: 22px; }
+article.major { margin-bottom: var(--s5); }
+article.brief { margin-bottom: var(--s4); }
 article.brief .deck { display: none; }
 
 .section-head { column-span: all; border-bottom: 1.5px solid var(--rule-strong);
-  margin: 18px 0 24px; padding-bottom: 5px; font-family: "Playfair Display", Georgia, serif;
+  margin: var(--s5) 0 var(--s4); padding-bottom: var(--s1); font-family: "Playfair Display", Georgia, serif;
   font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3em;
   color: var(--accent); }
 
-h2 { font-family: "Playfair Display", Georgia, serif; font-weight: 700; margin: 0 0 8px;
+h2 { font-family: "Playfair Display", Georgia, serif; font-weight: 700; margin: 0 0 var(--s2);
   line-height: 1.16; text-wrap: balance; }
 article.major h2 { font-size: 1.42rem; }
 article.standard h2 { font-size: 1.2rem; }
-article.brief h2 { font-family: "Source Serif 4", Georgia, serif; font-size: 1.04rem;
-  font-weight: 700; }
-.deck { font-style: italic; color: var(--muted); font-size: 0.95rem; margin: 0 0 10px;
-  line-height: 1.42; }
+/* One display face throughout. Hierarchy is carried by size and weight, not by
+   swapping the typeface — a second face in the headlines reads as inconsistency,
+   not as rank. */
+article.brief h2 { font-size: 1.04rem; font-weight: 700; }
+.deck { font-style: italic; color: var(--muted); font-size: 0.95rem; margin: 0 0 var(--s2);
+  line-height: 1.5; }
 .byline { font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.14em;
-  color: var(--muted); margin: 0 0 10px; }
+  color: var(--muted); margin: 0 0 var(--s3); }
 
-p { margin: 0 0 0.72em; }
+p { margin: 0 0 var(--s2); }
 p + p { text-indent: 1.1em; }
-ul { margin: 0 0 0.9em; padding: 0; list-style: none; }
-li { margin: 0 0 0.6em; padding-left: 1em; text-indent: -1em; }
+ul { margin: var(--s2) 0 var(--s3); padding: 0; list-style: none; }
+li { margin: 0 0 var(--s2); padding-left: 1em; text-indent: -1em; }
 li::before { content: "—\\00a0"; color: var(--accent); }
 h3 { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.17em; color: var(--muted);
-  margin: 1.3em 0 0.5em; font-weight: 600; }
+  margin: var(--s3) 0 var(--s1); font-weight: 600; }
 
-.scroll { overflow-x: auto; margin: 0 0 1em; }
+.scroll { overflow-x: auto; margin: var(--s2) 0 var(--s3); }
 table { border-collapse: collapse; width: 100%; font-size: 0.78rem;
   font-variant-numeric: lining-nums tabular-nums; }
-th, td { padding: 5px 10px 5px 0; text-align: left; }
+th, td { padding: var(--s1) var(--s2) var(--s1) 0; text-align: left; }
 th:last-child, td:last-child { padding-right: 0; }
 th { font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted);
   border-bottom: 1.5px solid var(--rule-strong); font-weight: 600; white-space: nowrap; }
@@ -113,7 +121,7 @@ tbody tr + tr td { border-top: 1px solid var(--rule); }
 td.num, th.num { text-align: right; }
 th:first-child, td:first-child { width: 1.6em; }
 
-img { max-width: 100%; height: auto; display: block; margin: 8px 0 6px;
+img { max-width: 100%; height: auto; display: block; margin: var(--s2) 0 var(--s1);
   background: var(--plate); border: 1px solid var(--rule); }
 :root[data-theme="dark"] img, :root:not([data-theme="light"]) img { filter: invert(1) hue-rotate(180deg); }
 @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) img { filter: none; } }
@@ -123,8 +131,9 @@ img { max-width: 100%; height: auto; display: block; margin: 8px 0 6px;
 
 a { color: inherit; text-decoration: none; border-bottom: 1px solid var(--accent); }
 a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.sources { font-size: 0.68rem; color: var(--muted); margin-top: 8px; line-height: 1.35; }
-.colophon { border-top: 1px solid var(--rule); margin-top: 40px; padding-top: 14px;
+.sources { font-size: 0.68rem; color: var(--muted); margin-top: var(--s3);
+  line-height: 1.45; }
+.colophon { border-top: 1px solid var(--rule); margin-top: var(--s5); padding-top: var(--s3);
   font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.14em; }
 * { overflow-wrap: anywhere; }
 @media (max-width: 640px) { body { font-size: 16px; } .sheet { padding: 20px 16px 56px; } }
