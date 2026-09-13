@@ -484,3 +484,68 @@ def test_margins_scale_with_the_sheet(tmp_path):
     assert "margin: 22mm 18mm" in pdf.build_html(edition, paper, "broadsheet")
     assert "margin: 19mm 16mm" in pdf.build_html(edition, paper, "tabloid")
     assert "margin: 16mm 14mm" in pdf.build_html(edition, paper, "a4")
+
+
+# ── the house rules ───────────────────────────────────────────────────────
+
+HOUSE = {"max_words": 300, "max_section_articles": 2, "max_pillar_words": 150,
+         "pillars": {"tech": ["ai"], "startup": ["projects"]}}
+
+
+def _arts(**sections):
+    """{'ai': [40, 40]} -> article dicts of those word counts."""
+    out = []
+    for sec, sizes in sections.items():
+        for i, w in enumerate(sizes):
+            out.append({"file": f"{sec}-{i}.md", "section": sec, "words": w, "headline": "H"})
+    return out
+
+
+def test_house_check_passes_a_paper_within_its_rules():
+    hc = load("house_check")
+    assert hc.audit(_arts(ai=[40, 40], projects=[40]), HOUSE) == []
+
+
+def test_house_check_catches_a_crowded_section():
+    hc = load("house_check")
+    codes = [f["code"] for f in hc.audit(_arts(projects=[20, 20, 20]), HOUSE)]
+    assert "section_crowded" in codes
+
+
+def test_house_check_never_tells_you_to_fold_the_digest_away():
+    """The digest is where the tail goes; folding it in is not an instruction."""
+    hc = load("house_check")
+    articles = [
+        {"file": "30-a.md", "section": "projects", "words": 90, "headline": ""},
+        {"file": "31-b.md", "section": "projects", "words": 80, "headline": ""},
+        {"file": "32-c.md", "section": "projects", "words": 70, "headline": ""},
+        {"file": "33-projects-digest.md", "section": "projects", "words": 10, "headline": ""},
+    ]
+    msg = next(f for f in hc.audit(articles, HOUSE) if f["code"] == "section_crowded")["message"]
+    assert "digest.md" not in msg
+    assert "32-c.md" in msg, "it should name the smallest real story"
+
+
+def test_house_check_catches_a_pillar_taking_another_pillars_room():
+    hc = load("house_check")
+    findings = hc.audit(_arts(projects=[200]), HOUSE)
+    heavy = next(f for f in findings if f["code"] == "pillar_heavy")
+    assert "startup" in heavy["scope"]
+    assert "50" in heavy["message"], "it should say how much to cut"
+
+
+def test_house_check_says_how_much_the_edition_is_over():
+    hc = load("house_check")
+    over = next(f for f in hc.audit(_arts(ai=[100], projects=[100, 150]), HOUSE)
+                if f["code"] == "edition_long")
+    assert "50" in over["message"]
+
+
+def test_house_rules_come_from_paper_json(tmp_path):
+    """They are the owner's numbers, not the script's."""
+    hc = load("house_check")
+    edition = tmp_path / "2026-09-13"
+    (edition / "articles").mkdir(parents=True)
+    (edition / "articles" / "01-lead.md").write_text(ARTICLE)
+    (tmp_path / "paper.json").write_text(json.dumps({"masthead": "X", "house": {"max_words": 1}}))
+    assert hc.main([str(edition)]) == 1, "a one-word cap must fail a real article"

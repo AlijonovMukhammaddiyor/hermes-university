@@ -35,5 +35,25 @@
       "id": "whitespace",
       "name": "Whitespace"
     }
-  ]
+  ],
+  "house": {
+    "max_words": 3000,
+    "max_section_articles": 4,
+    "max_pillar_words": 1000,
+    "pillars": {
+      "tech": [
+        "ai",
+        "engineering"
+      ],
+      "startup": [
+        "projects",
+        "startups",
+        "funding"
+      ],
+      "emerging": [
+        "capabilities",
+        "whitespace"
+      ]
+    }
+  }
 }
