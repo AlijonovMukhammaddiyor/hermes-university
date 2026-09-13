@@ -281,16 +281,18 @@ def test_print_edition_sets_a_real_page_size(tmp_path):
     assert "size: 279mm 432mm" in pdf.build_html(edition, paper, "tabloid")
     assert "size: 210mm 297mm" in pdf.build_html(edition, paper, "a4")
 
-    # An explicit grid still wins over the chooser. The print build is modular
-    # now, so the grid is a track list rather than a column count.
-    out = pdf.build_html(edition, paper, "tabloid", columns=3)
-    assert "grid-template-columns: repeat(3, 1fr)" in out
-    assert "grid-auto-flow: dense" in out, "a paper tiles without leftover holes"
+    # An explicit column count still wins over the chooser.
+    assert "column-count: 3" in pdf.build_html(edition, paper, "tabloid", columns=3)
 
 
-def test_print_edition_is_modular_not_a_flow(tmp_path):
-    """Stories are rectangles of differing span — that is what separates a
-    newspaper from a journal, and it is the thing easiest to regress."""
+def test_print_page_varies_its_width_and_still_fills(tmp_path):
+    """Print is a column flow with full-measure banners cut through it.
+
+    A grid gave modular spans but sized each row to its tallest module, so short
+    ones left holes and a third of page one came back blank. Multicol balances and
+    fills; the banners are what keep the width varying. Both halves matter, so
+    both are asserted.
+    """
     pdf = load("make_pdf")
     edition = tmp_path / "2026-09-13"
     (edition / "articles").mkdir(parents=True)
@@ -299,10 +301,11 @@ def test_print_edition_is_modular_not_a_flow(tmp_path):
     (edition / "articles" / "20-brief.md").write_text(ARTICLE.replace("priority: 1", "priority: 5"))
     out = pdf.build_html(edition, {"masthead": "X", "sections": [{"id": "today", "name": "Today"}]})
 
-    assert "display: grid" in out
-    assert "article.major {{ grid-column: span 2; }}".replace("{{", "{").replace("}}", "}") in out
-    assert "article.major .cols".replace("{{", "{") in out, "a wide module keeps a narrow measure"
+    assert "column-count:" in out and "column-fill: balance" in out, "the page must fill"
+    assert "article.major { column-span: all;" in out, "majors run the full measure"
+    assert "article.major .cols { columns:" in out, "a banner keeps a narrow measure inside"
     assert 'class="cols"' in out
+    assert "display: grid" not in out, "the grid left holes; it should not come back"
 
 
 def test_print_edition_forces_a_light_ground(tmp_path):

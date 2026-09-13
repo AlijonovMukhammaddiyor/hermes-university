@@ -118,23 +118,31 @@ body {{
   float: left; font-family: "Old Standard TT", Georgia, serif; font-size: {dropcap}pt;
   line-height: 0.76; font-weight: 900; padding: 3pt 5pt 0 0; }}
 
-/* Modular, like the screen edition: stories are rectangles of differing span,
-   which is what separates a newspaper from a journal. Chromium paginates a grid,
-   so this survives the page break. */
-.paper {{ display: grid; grid-template-columns: repeat({cols}, 1fr);
-         grid-auto-flow: dense;
-         column-gap: 8mm; row-gap: {gap3}pt; align-items: start;
+/* Print cannot have both at once: a grid gives modular spans but sizes every row
+   to its tallest item, so short modules leave holes and the page never fills — a
+   third of page one came back blank. Multi-column balances and fills, but cannot
+   span a story across a subset of columns.
+   So the page is a column flow with full-measure banners cut through it, which is
+   what a broadsheet actually does: a lead across the top, then columns, then the
+   next banner. Width still varies, and the page fills. */
+/* balance, not auto: between two banners the copy should even out across the
+   measure. With `auto` it fills column one to the bottom and leaves the last
+   one empty, which is the hole that made the first attempt look unfinished. */
+.paper {{ column-count: {cols}; column-gap: 8mm; column-fill: balance;
          text-align: justify; hyphens: auto; -webkit-hyphens: auto; }}
-article.major {{ grid-column: span 2; }}
-article.major .cols {{ columns: 2; column-gap: 6mm; }}
-article.standard, article.brief {{ grid-column: span 1; }}
-article.digest {{ grid-column: span 1; background: #f2eee3; padding: {gap2}pt;
+
+/* A major story is a banner: full measure, its own narrow columns inside. */
+article.major {{ column-span: all; border-top: 0.8pt solid #1a1712; padding-top: {gap2}pt;
+  margin: {gap2}pt 0 {gap3}pt; }}
+article.major .cols {{ columns: {leadcols}; column-gap: 7mm; }}
+article.standard, article.brief {{ break-inside: avoid-column; }}
+article.digest {{ break-inside: avoid; background: #f2eee3; padding: {gap2}pt;
   border-top: 1.2pt solid #1a1712; }}
 
-article {{ break-inside: avoid; margin: 0; }}
+article {{ break-inside: avoid-column; margin: 0 0 {gap3}pt; }}
 article.long {{ break-inside: auto; }}
 
-.section-head {{ grid-column: 1 / -1; border-bottom: 0.8pt solid #1a1712;
+.section-head {{ column-span: all; border-bottom: 0.8pt solid #1a1712;
   margin: {gap2}pt 0 {gap2}pt; padding-bottom: 3pt; break-after: avoid; break-inside: avoid;
   font-family: "Old Standard TT", Georgia, serif; font-size: 8.5pt; font-weight: 700;
   text-transform: uppercase; letter-spacing: 3.4pt; color: #1a1712; }}
