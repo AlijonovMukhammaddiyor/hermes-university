@@ -350,7 +350,43 @@ def test_print_edition_orders_by_section_then_priority(tmp_path):
              "sections": [{"id": "today", "name": "Today"}, {"id": "projects", "name": "Opportunities"},
                           {"id": "whitespace", "name": "Whitespace"}]}
     out = pdf.build_html(edition, paper)
-    assert out.index("Today") < out.index("Opportunities") < out.index("Whitespace")
+
+    # The lead is lifted out of the column flow into its own spanning block, so it
+    # carries no section rule — it comes first, and the flow starts after it.
+    assert out.index('class="lead"') < out.index('class="paper"')
+    assert "Today" not in out, "the front page does not print under a section rule"
+    # Everything else keeps the paper's running order inside the flow.
+    assert out.index("Opportunities") < out.index("Whitespace")
+
+
+def test_print_edition_sets_a_real_page_size(tmp_path):
+    """A newspaper is not A4: the page and column count come from the size."""
+    pdf = load("make_pdf")
+    edition = tmp_path / "2026-09-13"
+    (edition / "articles").mkdir(parents=True)
+    (edition / "articles" / "01-lead.md").write_text(ARTICLE)
+    paper = {"masthead": "X", "sections": [{"id": "today", "name": "Today"}]}
+
+    broadsheet = pdf.build_html(edition, paper, "broadsheet")
+    assert "size: 305mm 560mm" in broadsheet
+    assert "column-count: 6" in broadsheet
+
+    tabloid = pdf.build_html(edition, paper, "tabloid")
+    assert "size: 279mm 432mm" in tabloid
+    assert "column-count: 5" in tabloid
+
+    assert "column-count: 3" in pdf.build_html(edition, paper, "tabloid", columns=3)
+
+
+def test_print_edition_forces_a_light_ground(tmp_path):
+    """Newsprint is light; a viewer's dark theme must not show through."""
+    pdf = load("make_pdf")
+    edition = tmp_path / "2026-09-13"
+    (edition / "articles").mkdir(parents=True)
+    (edition / "articles" / "01-lead.md").write_text(ARTICLE)
+    out = pdf.build_html(edition, {"masthead": "X", "sections": []})
+    assert "color-scheme: light" in out
+    assert "background: #fbf9f3" in out
 
 
 def test_print_edition_numbers_the_issue_from_the_founding_date(tmp_path):

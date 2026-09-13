@@ -35,38 +35,102 @@ CHROME_CANDIDATES = [
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
 ]
 
+# Page sizes a paper is actually set at. Broadsheet is the real thing; tabloid and
+# berliner are what compacts use; a4 exists for anyone printing at home.
+SIZES = {
+    "broadsheet": ("305mm", "560mm", 6),
+    "tabloid":    ("279mm", "432mm", 5),
+    "berliner":   ("315mm", "470mm", 5),
+    "a3":         ("297mm", "420mm", 5),
+    "a4":         ("210mm", "297mm", 3),
+}
+
 STYLE = """
-@page { size: A4; margin: 16mm 14mm 18mm; }
-body { font-family: "Source Serif 4", Georgia, serif; font-size: 10.5pt; line-height: 1.42;
-       color: #14110c; margin: 0; }
-.masthead { text-align: center; border-bottom: 2.5pt solid #14110c; padding-bottom: 6pt;
-            margin-bottom: 14pt; }
-.masthead h1 { font-size: 30pt; margin: 0 0 4pt; letter-spacing: -0.5pt; font-weight: 700; }
-.masthead .rule { font-size: 8pt; text-transform: uppercase; letter-spacing: 1.4pt; color: #5b5348; }
-article { break-inside: auto; margin: 0 0 16pt; }
-article + article { border-top: 0.5pt solid #cfc7b8; padding-top: 12pt; }
-h2 { font-size: 15pt; line-height: 1.2; margin: 0 0 3pt; }
-.deck { font-style: italic; color: #5b5348; margin: 0 0 5pt; font-size: 10pt; }
-.byline { font-size: 7.5pt; text-transform: uppercase; letter-spacing: 1pt; color: #7a7062;
-          margin: 0 0 7pt; }
-.section-tag { font-size: 7.5pt; text-transform: uppercase; letter-spacing: 1.2pt;
-               color: #a8480f; font-weight: 600; }
-p { margin: 0 0 6pt; }
-ul { margin: 0 0 7pt; padding-left: 13pt; }
-li { margin: 0 0 3pt; }
-h3 { font-size: 9pt; text-transform: uppercase; letter-spacing: 1pt; margin: 9pt 0 4pt;
-     color: #5b5348; }
-table { border-collapse: collapse; width: 100%; font-size: 8.5pt; margin: 0 0 8pt; }
-th, td { border-bottom: 0.5pt solid #cfc7b8; padding: 2.5pt 4pt; text-align: left; }
-th { font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.6pt; color: #5b5348; }
-td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-img { max-width: 100%; height: auto; margin: 5pt 0; }
-.caption { font-size: 8pt; font-style: italic; color: #5b5348; margin: 0 0 8pt; }
-a { color: inherit; text-decoration: none; border-bottom: 0.4pt solid #b9b0a0; }
-.sources { font-size: 7.5pt; color: #7a7062; margin-top: 5pt; }
-.lead h2 { font-size: 21pt; }
-.lead { break-after: page; }
+@page {{ size: {w} {h}; margin: 13mm 11mm 15mm; }}
+@media print {{ body {{ background: #fff; }} }}
+
+html, body {{ margin: 0; padding: 0; }}
+/* Newsprint is a light surface, always. Without this the viewer's dark theme
+   shows through on screen and the page renders dark-on-dark. */
+html {{ color-scheme: light; }}
+body {{
+  background: #fbf9f3; color: #16130d;
+  font-family: "Source Serif 4", "Georgia", "Times New Roman", serif;
+  font-size: {body}pt; line-height: 1.33;
+  text-rendering: optimizeLegibility;
+  -webkit-font-feature-settings: "kern" 1, "liga" 1, "onum" 1;
+}}
+
+/* ── the masthead: full measure, once, on page one ───────────────── */
+.masthead {{ text-align: center; border-bottom: 3pt double #16130d; padding-bottom: 5pt;
+             margin: 0 0 7pt; }}
+.masthead h1 {{ font-family: "Playfair Display", "Didot", "Bodoni MT", Georgia, serif;
+  font-size: {mast}pt; font-weight: 900; letter-spacing: -1pt; margin: 0; line-height: 0.95; }}
+.masthead .rule {{ display: flex; justify-content: space-between; align-items: baseline;
+  border-top: 0.6pt solid #16130d; margin-top: 5pt; padding-top: 3pt;
+  font-size: 7pt; text-transform: uppercase; letter-spacing: 1.6pt; color: #4a433a; }}
+.masthead .motto {{ font-style: italic; text-transform: none; letter-spacing: 0; font-size: 8pt; }}
+
+/* ── the lead: spans the page, then breaks into its own columns ──── */
+.lead {{ border-bottom: 1.2pt solid #16130d; padding-bottom: 7pt; margin: 0 0 8pt; }}
+.lead h2 {{ font-family: "Playfair Display", Georgia, serif; font-size: {leadsize}pt;
+  line-height: 1.02; font-weight: 900; text-align: center; margin: 2pt 0 4pt;
+  letter-spacing: -0.4pt; }}
+.lead .deck {{ text-align: center; font-size: {deck}pt; font-style: italic; color: #3d3730;
+  margin: 0 auto 6pt; max-width: 82%; line-height: 1.3; }}
+.lead .flow {{ column-count: {leadcols}; column-gap: 6mm; column-rule: 0.4pt solid #c8c0b0; }}
+.lead .flow > p:first-of-type::first-letter {{
+  float: left; font-family: "Playfair Display", Georgia, serif; font-size: {dropcap}pt;
+  line-height: 0.78; font-weight: 900; padding: 2pt 3pt 0 0; }}
+
+/* ── the body of the paper flows in columns ─────────────────────── */
+.paper {{ column-count: {cols}; column-gap: 5mm; column-rule: 0.4pt solid #c8c0b0;
+          text-align: justify; hyphens: auto; -webkit-hyphens: auto; }}
+
+article {{ break-inside: avoid-column; margin: 0 0 9pt; padding-bottom: 7pt;
+           border-bottom: 0.4pt solid #ddd6c8; }}
+article.long {{ break-inside: auto; }}
+
+.section-head {{ column-span: all; border-top: 1.6pt solid #16130d;
+  border-bottom: 0.5pt solid #16130d; margin: 6pt 0 7pt; padding: 2pt 0;
+  font-family: "Playfair Display", Georgia, serif; font-size: 10pt; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 3pt; text-align: center; }}
+
+h2 {{ font-family: "Playfair Display", Georgia, serif; font-size: {head}pt; line-height: 1.08;
+  font-weight: 700; margin: 0 0 3pt; text-align: left; letter-spacing: -0.2pt; }}
+.deck {{ font-style: italic; color: #4a433a; font-size: {deck}pt; margin: 0 0 4pt;
+         text-align: left; line-height: 1.25; }}
+.byline {{ font-size: 6.2pt; text-transform: uppercase; letter-spacing: 1.1pt; color: #6d6558;
+  margin: 0 0 4pt; text-align: left; }}
+
+p {{ margin: 0 0 4pt; }}
+p + p {{ text-indent: 1.1em; }}
+ul {{ margin: 0 0 5pt; padding-left: 10pt; }}
+li {{ margin: 0 0 2.5pt; text-align: left; }}
+h3 {{ font-size: 6.6pt; text-transform: uppercase; letter-spacing: 1.3pt; color: #4a433a;
+  margin: 6pt 0 3pt; border-bottom: 0.4pt solid #c8c0b0; padding-bottom: 1.5pt;
+  text-align: left; }}
+
+table {{ border-collapse: collapse; width: 100%; font-size: 6.4pt; margin: 0 0 5pt;
+         break-inside: avoid; }}
+th, td {{ border-bottom: 0.35pt solid #ddd6c8; padding: 1.6pt 2.4pt; text-align: left; }}
+th {{ font-size: 5.9pt; text-transform: uppercase; letter-spacing: 0.5pt; color: #4a433a;
+      border-bottom: 0.7pt solid #16130d; }}
+td.num, th.num {{ text-align: right; font-variant-numeric: tabular-nums lining-nums; }}
+
+img {{ max-width: 100%; height: auto; margin: 3pt 0 2pt; break-inside: avoid;
+       filter: grayscale(100%) contrast(108%); }}
+.caption {{ font-size: 6.2pt; font-style: italic; color: #4a433a; margin: 0 0 5pt;
+  line-height: 1.25; text-align: left; border-bottom: 0.4pt solid #c8c0b0; padding-bottom: 3pt; }}
+
+a {{ color: inherit; text-decoration: none; }}
+.sources {{ font-size: 5.8pt; color: #6d6558; margin-top: 3pt; text-align: left;
+            line-height: 1.2; }}
+strong {{ font-weight: 700; }}
+code {{ font-family: "SF Mono", Menlo, monospace; font-size: 6pt; }}
 """
+
+
 
 
 def find_chrome(explicit: str | None) -> str:
@@ -202,10 +266,27 @@ def read_paper(editions_root: Path) -> dict:
     return meta
 
 
-def build_html(edition_dir: Path, paper: dict) -> str:
+def build_html(edition_dir: Path, paper: dict, size: str = "tabloid",
+               columns: int | None = None) -> str:
+    """The edition as one print-ready newspaper page-flow."""
     articles = sorted((edition_dir / "articles").glob("*.md"))
     if not articles:
         raise SystemExit(f"no articles in {edition_dir}")
+
+    width, height, default_cols = SIZES[size]
+    cols = columns or default_cols
+    # Type scales with the measure: a broadsheet column is wider, so it can carry
+    # a larger face without the line getting too long to track.
+    body_pt = 9.2 if cols >= 6 else 9.0 if cols >= 5 else 9.6
+    style = STYLE.format(
+        w=width, h=height, cols=cols, body=body_pt,
+        mast=64 if cols >= 6 else 54 if cols >= 5 else 40,
+        leadsize=34 if cols >= 6 else 30 if cols >= 5 else 24,
+        head=12.5 if cols >= 5 else 13.5,
+        deck=7.6 if cols >= 5 else 8.2,
+        leadcols=max(2, cols - 2),
+        dropcap=34 if cols >= 5 else 28,
+    )
 
     order = {s["id"]: i for i, s in enumerate(paper.get("sections") or [])}
     names = {s["id"]: s["name"] for s in (paper.get("sections") or [])}
@@ -218,51 +299,74 @@ def build_html(edition_dir: Path, paper: dict) -> str:
             priority = int(meta.get("priority") or 5)
         except ValueError:
             priority = 5
-        parsed.append((order.get(section, 99), priority, path.name, meta, body, section))
-    # the paper's own running order: section, then priority, then filename
-    parsed.sort(key=lambda row: (row[0], row[1], row[2]))
+        parsed.append({"order": order.get(section, 99), "priority": priority,
+                       "name": path.name, "meta": meta, "body": body, "section": section})
+    parsed.sort(key=lambda a: (a["order"], a["priority"], a["name"]))
 
     date_str = edition_dir.name
     number = issue_number(paper, date_str)
-    chunks = [
-        '<div class="masthead">',
-        f'<h1>{html.escape(paper.get("masthead", "The Daily"))}</h1>',
-        f'<div class="rule">{html.escape(paper.get("motto", ""))}'
-        + (f" &nbsp;·&nbsp; No. {number}" if number else "")
-        + f" &nbsp;·&nbsp; {html.escape(date_str)}</div>",
-        "</div>",
-    ]
+    masthead = paper.get("masthead", "The Daily")
 
-    for _, priority, _, meta, body, section in parsed:
-        lead = " lead" if priority == 1 else ""
-        chunks.append(f'<article class="{lead.strip()}">')
-        if section in names:
-            chunks.append(f'<div class="section-tag">{html.escape(names[section])}</div>')
-        chunks.append(f'<h2>{inline(meta.get("headline", ""))}</h2>')
+    def article_html(entry: dict, *, lead: bool = False) -> str:
+        meta, body = entry["meta"], entry["body"]
+        out = []
+        # A long piece may break across columns; a short one should not be split.
+        long = len(body) > 1400
+        out.append(f'<article class="{"long" if long else ""}">' if not lead else "")
+        out.append(f'<h2>{inline(meta.get("headline", ""))}</h2>')
         if meta.get("deck"):
-            chunks.append(f'<p class="deck">{inline(meta["deck"])}</p>')
+            out.append(f'<p class="deck">{inline(meta["deck"])}</p>')
         if meta.get("byline"):
-            chunks.append(f'<div class="byline">By {html.escape(meta["byline"])}</div>')
+            out.append(f'<div class="byline">By {html.escape(meta["byline"])}</div>')
 
+        inner = []
         plate = edition_dir / "images" / f"{meta.get('id', '')}-chart.png"
         if plate.is_file():
-            chunks.append(f'<img src="{plate.as_uri()}" alt="chart">')
-        if meta.get("caption"):
-            chunks.append(f'<p class="caption">{inline(meta["caption"])}</p>')
-
-        chunks.append(render_markdown(body))
-
-        sources = meta.get("sources_list") or []
+            inner.append(f'<img src="{plate.as_uri()}" alt="">')
+            if meta.get("caption"):
+                inner.append(f'<p class="caption">{inline(meta["caption"])}</p>')
+        inner.append(render_markdown(body))
+        sources = [x for x in (meta.get("sources_list") or []) if not x.startswith("url:")]
         if sources:
-            chunks.append('<div class="sources">Sources: '
-                          + "; ".join(html.escape(s.replace("name:", "").strip()) for s in sources
-                                      if not s.startswith("url:"))
-                          + "</div>")
-        chunks.append("</article>")
+            inner.append('<div class="sources">Sources: '
+                         + "; ".join(html.escape(x.replace("name:", "").strip()) for x in sources)
+                         + "</div>")
 
-    return (f"<!doctype html><meta charset='utf-8'><title>"
-            f"{html.escape(paper.get('masthead', 'Daily'))} {html.escape(date_str)}</title>"
-            f"<style>{STYLE}</style>" + "\n".join(chunks))
+        if lead:
+            out.append('<div class="flow">' + "\n".join(inner) + "</div>")
+        else:
+            out.append("\n".join(inner))
+            out.append("</article>")
+        return "\n".join(out)
+
+    chunks = [
+        '<div class="masthead">',
+        f"<h1>{html.escape(masthead)}</h1>",
+        '<div class="rule">',
+        f"<span>Vol. 1 &nbsp;·&nbsp; No. {number}</span>" if number else "<span></span>",
+        f'<span class="motto">{html.escape(paper.get("motto", ""))}</span>',
+        f"<span>{html.escape(date_str)}</span>",
+        "</div></div>",
+    ]
+
+    lead = next((a for a in parsed if a["priority"] == 1), None)
+    if lead:
+        chunks.append('<div class="lead">' + article_html(lead, lead=True) + "</div>")
+
+    chunks.append('<div class="paper">')
+    current = None
+    for entry in parsed:
+        if entry is lead:
+            continue
+        if entry["section"] != current:
+            current = entry["section"]
+            label = names.get(current, current.title())
+            chunks.append(f'<div class="section-head">{html.escape(label)}</div>')
+        chunks.append(article_html(entry))
+    chunks.append("</div>")
+
+    return (f"<!doctype html><meta charset='utf-8'><title>{html.escape(masthead)} "
+            f"{html.escape(date_str)}</title><style>{style}</style>" + "\n".join(chunks))
 
 
 def to_pdf(html_text: str, out: Path, chrome: str) -> None:
@@ -272,6 +376,8 @@ def to_pdf(html_text: str, out: Path, chrome: str) -> None:
         cmd = [
             chrome, "--headless", "--disable-gpu", "--no-sandbox",
             "--no-pdf-header-footer", "--run-all-compositor-stages-before-draw",
+            # the @page size is authoritative; without this Chromium refits to Letter
+            "--print-to-pdf-no-header",
             "--virtual-time-budget=10000",
             f"--print-to-pdf={out}", source.as_uri(),
         ]
@@ -285,6 +391,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("edition_dir", type=Path)
     parser.add_argument("--out", type=Path, default=None)
     parser.add_argument("--chrome", default=None)
+    parser.add_argument("--size", choices=sorted(SIZES), default="tabloid",
+                        help="page size; broadsheet is the full-size original")
+    parser.add_argument("--columns", type=int, default=None,
+                        help="override the column count for the size")
     args = parser.parse_args(argv)
 
     edition = args.edition_dir.expanduser().resolve()
@@ -292,9 +402,11 @@ def main(argv: list[str] | None = None) -> int:
     out = (args.out or edition / f"{edition.name}.pdf").expanduser()
     out.parent.mkdir(parents=True, exist_ok=True)
 
-    to_pdf(build_html(edition, paper), out, find_chrome(args.chrome))
+    to_pdf(build_html(edition, paper, args.size, args.columns),
+           out, find_chrome(args.chrome))
     size = out.stat().st_size
-    print(f"wrote {out} ({size // 1024} KB)")
+    print(f"wrote {out} ({size // 1024} KB, {args.size}"
+          f"{f', {args.columns} cols' if args.columns else ''})")
     return 0
 
 
