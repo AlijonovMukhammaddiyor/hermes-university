@@ -1,11 +1,19 @@
 {
   "masthead": "The Builder's Daily",
-  "motto": "Everything that matters, briefly",
+  "motto": "Tech, startups, and what is newly possible",
   "founded": "2026-08-22",
   "sections": [
     {
       "id": "today",
       "name": "Today"
+    },
+    {
+      "id": "ai",
+      "name": "AI Labs & Research"
+    },
+    {
+      "id": "engineering",
+      "name": "Systems & Craft"
     },
     {
       "id": "projects",
@@ -22,14 +30,6 @@
     {
       "id": "capabilities",
       "name": "Emerging Trends"
-    },
-    {
-      "id": "ai",
-      "name": "AI Labs & Research"
-    },
-    {
-      "id": "engineering",
-      "name": "Systems & Craft"
     },
     {
       "id": "whitespace",
