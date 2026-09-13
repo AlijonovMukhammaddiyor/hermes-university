@@ -624,3 +624,33 @@ def test_a_failed_delivery_never_fails_the_print(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(send, "main", boom)
     pdf.deliver(out, edition, {"masthead": "X"}, tmp_path / "config.env")   # must not raise
     assert "did not go out" in capsys.readouterr().err
+
+
+def test_print_credit_line_links_each_source(tmp_path):
+    """A source name is a place to go, not a thing to retype into a browser."""
+    pdf = load("make_pdf")
+    edition = tmp_path / "2026-09-13"
+    (edition / "articles").mkdir(parents=True)
+    (edition / "articles" / "01-lead.md").write_text(
+        "---\nheadline: H\nsection: today\npriority: 1\nsources:\n"
+        "  - name: Axios\n    url: https://axios.com/a\n"
+        "  - name: Techmeme\n    url: https://techmeme.com/b\n"
+        "  - name: No Link\n---\n\nBody text here.\n")
+    out = pdf.build_html(edition, {"masthead": "X", "sections": [{"id": "today", "name": "Today"}]})
+
+    assert '<a href="https://axios.com/a">Axios</a>' in out
+    assert '<a href="https://techmeme.com/b">Techmeme</a>' in out
+    assert "No Link" in out and '<a href="">No Link</a>' not in out, \
+        "a source with no url stays plain rather than becoming an empty anchor"
+
+
+def test_print_credit_line_refuses_an_unsafe_source_url(tmp_path):
+    pdf = load("make_pdf")
+    edition = tmp_path / "2026-09-13"
+    (edition / "articles").mkdir(parents=True)
+    (edition / "articles" / "01-lead.md").write_text(
+        "---\nheadline: H\nsection: today\npriority: 1\nsources:\n"
+        "  - name: Bad\n    url: javascript:alert(1)\n---\n\nBody.\n")
+    out = pdf.build_html(edition, {"masthead": "X", "sections": [{"id": "today", "name": "Today"}]})
+    assert "javascript:" not in out
+    assert "Bad" in out

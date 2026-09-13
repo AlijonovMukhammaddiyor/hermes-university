@@ -187,6 +187,7 @@ img {{ max-width: 100%; height: auto; margin: 4pt 0 3pt; break-inside: avoid;
   line-height: 1.35; text-align: left; }}
 
 a {{ color: inherit; text-decoration: none; }}
+.sources a {{ border-bottom: 0.3pt solid #c9c0b0; }}
 .sources {{ font-family: "PT Sans Narrow", "Helvetica Neue", sans-serif; font-size: 5.8pt; color: #a89e8e; margin-top: 5pt; text-align: left;
            line-height: 1.3; }}
 strong {{ font-weight: 700; }}
@@ -475,10 +476,16 @@ def build_html(edition_dir: Path, paper: dict, size: str = "tabloid",
         inner.append(render_markdown(body))
         sources = meta.get("sources_list") or []
         if sources and (lead or entry["priority"] <= 2):
-            inner.append('<div class="sources">Sources: '
-                         + "; ".join(html.escape(src.get("name", "")) for src in sources
-                                     if src.get("name"))
-                         + "</div>")
+            # Each source carries its own link: Chromium writes real annotations
+            # into the PDF, so a name in the credit line is a place to go rather
+            # than a thing to retype into a browser.
+            cited = []
+            for src in sources:
+                name = html.escape(src.get("name", "") or "source")
+                url = safe_url(src.get("url", ""))
+                cited.append(f'<a href="{url}">{name}</a>' if url else name)
+            if cited:
+                inner.append('<div class="sources">Sources: ' + " · ".join(cited) + "</div>")
 
         if lead:
             out.append('<div class="flow">' + "\n".join(inner) + "</div>")
