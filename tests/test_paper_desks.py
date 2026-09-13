@@ -549,3 +549,53 @@ def test_house_rules_come_from_paper_json(tmp_path):
     (edition / "articles" / "01-lead.md").write_text(ARTICLE)
     (tmp_path / "paper.json").write_text(json.dumps({"masthead": "X", "house": {"max_words": 1}}))
     assert hc.main([str(edition)]) == 1, "a one-word cap must fail a real article"
+
+
+# ── getting the edition to the reader ─────────────────────────────────────
+
+def test_sender_builds_a_multipart_telegram_can_read(tmp_path):
+    send = load("send_edition")
+    pdf = tmp_path / "2026-09-13.pdf"
+    pdf.write_bytes(b"%PDF-1.4 fake")
+    body, content_type = send.multipart({"chat_id": "-100", "caption": "x"}, "document", pdf)
+    boundary = content_type.split("boundary=")[1]
+    assert content_type.startswith("multipart/form-data")
+    assert body.startswith(f"--{boundary}".encode())
+    assert body.endswith(f"--{boundary}--\r\n".encode())
+    assert b'name="document"; filename="2026-09-13.pdf"' in body
+    assert b"%PDF-1.4 fake" in body
+    assert b'name="chat_id"' in body
+
+
+def test_sender_prefers_the_home_channel_then_falls_back(tmp_path):
+    send = load("send_edition")
+    env = tmp_path / "config.env"
+    env.write_text('TELEGRAM_BOT_TOKEN="t"\nTELEGRAM_HOME_CHANNEL="-100999"\n'
+                   'TELEGRAM_ALLOWED_USERS="12345,678"\n')
+    assert send.read_env(env)["TELEGRAM_HOME_CHANNEL"] == "-100999"
+
+    env.write_text('TELEGRAM_BOT_TOKEN="t"\nTELEGRAM_HOME_CHANNEL=""\n'
+                   'TELEGRAM_ALLOWED_USERS="12345,678"\n')
+    values = send.read_env(env)
+    chat = values.get("TELEGRAM_HOME_CHANNEL") or values["TELEGRAM_ALLOWED_USERS"].split(",")[0]
+    assert chat == "12345", "with no group, it goes to the first allowed user"
+
+
+def test_sender_refuses_a_document_telegram_would_reject(tmp_path, monkeypatch):
+    """The bot API caps a document at 50 MB; fail with that reason, not a timeout."""
+    send = load("send_edition")
+    pdf = tmp_path / "big.pdf"
+    pdf.write_bytes(b"x")
+    monkeypatch.setattr(send.Path, "stat", lambda self: type("S", (), {"st_size": 60 * 1024 * 1024})())
+    with pytest.raises(SystemExit, match="50 MB"):
+        send.send(pdf, "token", "-100", "caption")
+
+
+def test_sender_fails_loudly_without_a_token(tmp_path):
+    send = load("send_edition")
+    pdf = tmp_path / "e.pdf"
+    pdf.write_bytes(b"%PDF")
+    env = tmp_path / "config.env"
+    env.write_text('TELEGRAM_HOME_CHANNEL="-100"\n')
+    with pytest.raises(SystemExit, match="TELEGRAM_BOT_TOKEN"):
+        send.main([str(pdf), "--env", str(env)])
