@@ -38,12 +38,41 @@ CHROME_CANDIDATES = [
 # Page sizes a paper is actually set at. Broadsheet is the real thing; tabloid and
 # berliner are what compacts use; a4 exists for anyone printing at home.
 SIZES = {
-    "broadsheet": ("305mm", "560mm", 5),
-    "tabloid":    ("279mm", "432mm", 4),
-    "berliner":   ("315mm", "470mm", 4),
-    "a3":         ("297mm", "420mm", 4),
-    "a4":         ("210mm", "297mm", 2),
+    # width, height, and how much column room the page can carry before the
+    # measure gets too narrow to read. The count itself is chosen from content.
+    "broadsheet": ("305mm", "560mm", 6),
+    "tabloid":    ("279mm", "432mm", 5),
+    "berliner":   ("315mm", "470mm", 5),
+    "a3":         ("297mm", "420mm", 5),
+    "a4":         ("210mm", "297mm", 3),
 }
+
+
+def measure(parsed: list[dict]) -> int:
+    """Words in the edition — the number the layout is chosen from."""
+    return sum(len(re.findall(r"\S+", a["body"])) for a in parsed)
+
+
+def fit_layout(words: int, ceiling: int) -> tuple[int, float]:
+    """Pick a column count and body size for this much copy.
+
+    A thin edition set in five narrow columns reads like a leaflet with gaps; a
+    fat one set in two reads like a thesis. So the grid follows the copy: fewer,
+    wider columns and larger type when there is little to say, more and smaller
+    when there is a lot — never past what the page can carry.
+    """
+    for limit, cols, body in (
+        (700,  2, 11.4),
+        (1400, 3, 10.8),
+        (2400, 3, 10.2),
+        (3800, 4, 9.9),
+        (5600, 4, 9.5),
+        (8000, 5, 9.2),
+    ):
+        if words <= limit:
+            return min(cols, ceiling), body
+    return min(6, ceiling), 8.9
+
 
 STYLE = """
 @page {{ size: {w} {h}; margin: 16mm 14mm 16mm; }}
@@ -90,8 +119,17 @@ article.long {{ break-inside: auto; }}
   font-family: "Playfair Display", Georgia, serif; font-size: 8.5pt; font-weight: 700;
   text-transform: uppercase; letter-spacing: 3.4pt; color: #1a1712; }}
 
-h2 {{ font-family: "Playfair Display", Georgia, serif; font-size: {head}pt; line-height: 1.14;
+h2 {{ font-family: "Playfair Display", Georgia, serif; line-height: 1.14;
   font-weight: 700; margin: 0 0 5pt; text-align: left; letter-spacing: -0.1pt; }}
+/* Weight follows priority: a section's lead story is set larger than its tail,
+   which is how a reader sees what matters without being told. */
+article.major h2 {{ font-size: {h_major}pt; line-height: 1.08; }}
+article.standard h2 {{ font-size: {h_standard}pt; }}
+article.brief h2 {{ font-size: {h_brief}pt; font-family: "Source Serif 4", Georgia, serif;
+  font-weight: 700; letter-spacing: 0; }}
+article.major {{ margin-bottom: 19pt; }}
+article.brief {{ margin-bottom: 13pt; }}
+article.brief .deck {{ display: none; }}
 .deck {{ font-style: italic; color: #4a4238; font-size: {deck}pt; margin: 0 0 6pt;
         text-align: left; line-height: 1.34; }}
 .byline {{ font-size: 6pt; text-transform: uppercase; letter-spacing: 1.2pt; color: #8a8073;
@@ -271,26 +309,9 @@ def build_html(edition_dir: Path, paper: dict, size: str = "tabloid",
     if not articles:
         raise SystemExit(f"no articles in {edition_dir}")
 
-    width, height, default_cols = SIZES[size]
-    cols = columns or default_cols
-    # Type scales with the measure: a broadsheet column is wider, so it can carry
-    # a larger face without the line getting too long to track.
-    wide = cols <= 2          # A4: two columns, so the measure is generous
-    mid = cols == 4           # tabloid
-    style = STYLE.format(
-        w=width, h=height, cols=cols,
-        body=10.4 if wide else 9.8 if mid else 9.5,
-        mast=44 if wide else 58 if mid else 64,
-        leadsize=26 if wide else 32 if mid else 36,
-        head=13 if wide else 12.8 if mid else 12.4,
-        deck=8.4 if wide else 8 if mid else 7.8,
-        leadcols=max(2, cols - 1),
-        dropcap=30 if wide else 36,
-    )
+    width, height, ceiling = SIZES[size]
 
-    order = {s["id"]: i for i, s in enumerate(paper.get("sections") or [])}
-    names = {s["id"]: s["name"] for s in (paper.get("sections") or [])}
-
+    order = {sec["id"]: i for i, sec in enumerate(paper.get("sections") or [])}
     parsed = []
     for path in articles:
         meta, body = split_frontmatter(path.read_text())
@@ -303,6 +324,27 @@ def build_html(edition_dir: Path, paper: dict, size: str = "tabloid",
                        "name": path.name, "meta": meta, "body": body, "section": section})
     parsed.sort(key=lambda a: (a["order"], a["priority"], a["name"]))
 
+    words = measure(parsed)
+    auto_cols, body_pt = fit_layout(words, ceiling)
+    cols = columns or auto_cols
+    if columns:                      # an explicit grid still gets a sane measure
+        body_pt = max(8.8, min(11.6, body_pt * (auto_cols / cols) ** 0.5))
+
+    # Everything else is a ratio of the body size, so the page scales as one thing.
+    style = STYLE.format(
+        w=width, h=height, cols=cols, body=round(body_pt, 2),
+        mast=round(body_pt * (5.2 if cols >= 4 else 4.2), 1),
+        leadsize=round(body_pt * (3.3 if cols >= 4 else 2.6), 1),
+        deck=round(body_pt * 0.82, 2),
+        leadcols=max(2, cols - 1),
+        dropcap=round(body_pt * 3.4, 1),
+        h_major=round(body_pt * 1.5, 2),
+        h_standard=round(body_pt * 1.24, 2),
+        h_brief=round(body_pt * 1.04, 2),
+    )
+
+    names = {sec["id"]: sec["name"] for sec in (paper.get("sections") or [])}
+
     date_str = edition_dir.name
     number = issue_number(paper, date_str)
     masthead = paper.get("masthead", "The Daily")
@@ -312,7 +354,10 @@ def build_html(edition_dir: Path, paper: dict, size: str = "tabloid",
         out = []
         # A long piece may break across columns; a short one should not be split.
         long = len(body) > 1400
-        out.append(f'<article class="{"long" if long else ""}">' if not lead else "")
+        weight = ("major" if entry["priority"] <= 2
+                  else "standard" if entry["priority"] == 3 else "brief")
+        classes = " ".join(filter(None, [weight, "long" if long else ""]))
+        out.append(f'<article class="{classes}">' if not lead else "")
         out.append(f'<h2>{inline(meta.get("headline", ""))}</h2>')
         if meta.get("deck"):
             out.append(f'<p class="deck">{inline(meta["deck"])}</p>')

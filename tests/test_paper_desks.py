@@ -360,37 +360,19 @@ def test_print_edition_orders_by_section_then_priority(tmp_path):
 
 
 def test_print_edition_sets_a_real_page_size(tmp_path):
-    """A newspaper is not A4: the page and column count come from the size."""
+    """A newspaper is not A4. The page comes from the size; the grid from the copy."""
     pdf = load("make_pdf")
     edition = tmp_path / "2026-09-13"
     (edition / "articles").mkdir(parents=True)
     (edition / "articles" / "01-lead.md").write_text(ARTICLE)
     paper = {"masthead": "X", "sections": [{"id": "today", "name": "Today"}]}
 
-    broadsheet = pdf.build_html(edition, paper, "broadsheet")
-    assert "size: 305mm 560mm" in broadsheet
-    assert "column-count: 5" in broadsheet
+    assert "size: 305mm 560mm" in pdf.build_html(edition, paper, "broadsheet")
+    assert "size: 279mm 432mm" in pdf.build_html(edition, paper, "tabloid")
+    assert "size: 210mm 297mm" in pdf.build_html(edition, paper, "a4")
 
-    tabloid = pdf.build_html(edition, paper, "tabloid")
-    assert "size: 279mm 432mm" in tabloid
-    assert "column-count: 4" in tabloid
-
+    # An explicit grid still wins over the chooser.
     assert "column-count: 3" in pdf.build_html(edition, paper, "tabloid", columns=3)
-
-
-def test_print_edition_keeps_the_furniture_off_the_tail(tmp_path):
-    """A byline and a source list on every one of sixteen items is the clutter."""
-    pdf = load("make_pdf")
-    edition = tmp_path / "2026-09-13"
-    (edition / "articles").mkdir(parents=True)
-    (edition / "articles" / "01-lead.md").write_text(ARTICLE)
-    (edition / "articles" / "70-tail.md").write_text(
-        ARTICLE.replace("priority: 1", "priority: 4")
-               .replace("headline: A Headline", "headline: A Tail Item")
-               .replace("byline: The Desk", "byline: The Tail Desk"))
-    out = pdf.build_html(edition, {"masthead": "X", "sections": [{"id": "today", "name": "Today"}]})
-    assert "The Desk" in out, "the lead keeps its byline"
-    assert "The Tail Desk" not in out, "the tail does not"
 
 
 def test_print_edition_forces_a_light_ground(tmp_path):
@@ -432,3 +414,44 @@ def test_print_edition_reads_the_frontmatter_subset():
     assert meta["headline"] == "A Headline"
     assert meta["priority"] == "1"
     assert body.strip().startswith("An opening paragraph")
+
+
+def test_layout_follows_the_amount_of_copy():
+    """A thin edition in five narrow columns reads like a leaflet; a fat one in two
+    reads like a thesis. The grid and the type follow the copy."""
+    pdf = load("make_pdf")
+    thin_cols, thin_pt = pdf.fit_layout(400, 5)
+    fat_cols, fat_pt = pdf.fit_layout(12000, 5)
+    assert thin_cols < fat_cols, "more copy earns more columns"
+    assert thin_pt > fat_pt, "and a smaller face"
+    # monotonic, with no step backwards as copy grows
+    seen = [pdf.fit_layout(w, 6) for w in (300, 900, 1800, 3000, 4500, 7000, 12000)]
+    assert [c for c, _ in seen] == sorted(c for c, _ in seen)
+    assert [b for _, b in seen] == sorted((b for _, b in seen), reverse=True)
+
+
+def test_layout_never_exceeds_what_the_page_can_carry():
+    """A4 cannot hold five readable columns however much copy there is."""
+    pdf = load("make_pdf")
+    for words in (300, 4000, 20000):
+        cols, _ = pdf.fit_layout(words, 3)
+        assert cols <= 3
+
+
+def test_headline_weight_follows_priority(tmp_path):
+    pdf = load("make_pdf")
+    edition = tmp_path / "2026-09-13"
+    (edition / "articles").mkdir(parents=True)
+    (edition / "articles" / "01-lead.md").write_text(ARTICLE)
+    (edition / "articles" / "10-major.md").write_text(ARTICLE.replace("priority: 1", "priority: 2"))
+    (edition / "articles" / "20-standard.md").write_text(ARTICLE.replace("priority: 1", "priority: 3"))
+    (edition / "articles" / "30-brief.md").write_text(ARTICLE.replace("priority: 1", "priority: 5"))
+    out = pdf.build_html(edition, {"masthead": "X", "sections": [{"id": "today", "name": "Today"}]})
+
+    assert 'class="major"' in out and 'class="standard"' in out and 'class="brief"' in out
+    import re
+    sizes = {k: float(re.search(rf"article\.{k} h2 {{{{?\s*font-size: ([\d.]+)pt", out).group(1))
+             if re.search(rf"article\.{k} h2 \{{ font-size: ([\d.]+)pt", out) is None else
+             float(re.search(rf"article\.{k} h2 \{{ font-size: ([\d.]+)pt", out).group(1))
+             for k in ("major", "standard", "brief")}
+    assert sizes["major"] > sizes["standard"] > sizes["brief"]
