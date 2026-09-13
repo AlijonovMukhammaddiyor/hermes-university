@@ -25,6 +25,16 @@ if [ -d "$R/courses" ]; then
   done
 fi
 
+# 1b) hand-authored skills → vault/_source/skills/. Skills written directly on the box (not
+#     rendered from skills/*.template.md) exist nowhere else: they are not in the code repo and the
+#     encrypted bundle does not carry them. Without this a rebuild silently loses them.
+SKILLS="$HR/skills/hermes-university"
+if [ -d "$SKILLS" ]; then
+  mkdir -p "$SRC/skills"
+  rsync -a --delete "$SKILLS/" "$SRC/skills/" 2>/dev/null \
+    || cp -r "$SKILLS/." "$SRC/skills/" 2>/dev/null || true
+fi
+
 # 2) encrypted secrets bundle → vault/_source/secrets.tar.gz.enc (only if inputs changed)
 [ -f "$KEY" ] || {
   umask 077; head -c 32 /dev/urandom | base64 | tr -d '\n' > "$KEY"
@@ -71,4 +81,4 @@ This folder is the durable backup that rides the vault's git remote.
   (~/.hermes/backup.key).
 To restore on a fresh droplet: run \`bootstrap.sh <code-repo> <vault-repo>\`.
 EOF
-echo "backup ok: courses=[$(ls "$SRC/courses" 2>/dev/null | tr '\n' ' ')] secrets=$enc_status"
+echo "backup ok: courses=[$(ls "$SRC/courses" 2>/dev/null | tr '\n' ' ')] skills=[$(ls "$SRC/skills" 2>/dev/null | tr '\n' ' ')] secrets=$enc_status"

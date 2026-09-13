@@ -161,3 +161,88 @@ def test_desk_fails_when_its_source_is_missing(name, tmp_path):
 def test_desk_exits_nonzero_when_it_cannot_source(name, tmp_path):
     desk = load(name)
     assert desk.main([str(tmp_path / "edition"), "--vault", str(tmp_path / "missing")]) == 1
+
+
+# ── the revenue desk ──────────────────────────────────────────────────────
+
+DISCOVERY = {
+    "fastestGrowingStartups": [
+        {"name": "Rocketship", "slug": "rocket", "url": "https://trustmrr.com/startup/rocket",
+         "category": "AI", "paymentProvider": "stripe", "onSale": False,
+         "revenue": {"last30Days": 180000, "mrr": 175000, "total": 2000000}},
+        {"name": "Warmap.lol", "slug": "warmap", "url": "https://trustmrr.com/startup/warmap",
+         "category": "Marketplace", "paymentProvider": "dodopayment", "onSale": True,
+         "revenue": {"last30Days": 7864.08, "mrr": 0, "total": 9487.08}},
+    ],
+    "recentlyAddedStartups": [
+        # the same product in both feeds must be counted once
+        {"name": "Warmap.lol", "slug": "warmap", "url": "https://trustmrr.com/startup/warmap",
+         "category": "Marketplace", "paymentProvider": "dodopayment", "onSale": True,
+         "revenue": {"last30Days": 7864.08, "mrr": 0, "total": 9487.08}},
+        {"name": "Qoest", "slug": "qoest", "url": "https://trustmrr.com/startup/qoest",
+         "category": "", "paymentProvider": "lemonsqueezy", "onSale": False,
+         "revenue": {"last30Days": 771, "mrr": 4274, "total": 3520}},
+        {"name": "Nothing Yet", "slug": "nothing", "url": "https://trustmrr.com/startup/nothing",
+         "category": "Dev", "paymentProvider": "paddle", "onSale": False,
+         "revenue": {"last30Days": 0, "mrr": 0, "total": 0}},
+    ],
+}
+
+
+def test_revenue_desk_keeps_the_three_metrics_apart(tmp_path):
+    """30-day, MRR and all-time are different numbers; conflating them is the whole risk."""
+    desk = load("trustmrr_desk")
+    rows = desk.rows_from(DISCOVERY, desk.FEEDS["both"], 500.0, 25000.0, 8)
+    warmap = next(r for r in rows if r["slug"] == "warmap")
+    assert (warmap["last30"], warmap["mrr"], warmap["total"]) == (7864.08, 0, 9487.08)
+
+    body = desk.build_body(rows, 500.0, 25000.0)
+    assert "| Product | 30-day | MRR | All-time |" in body
+    assert "$7,864" in body and "$9,487" in body
+
+
+def test_revenue_desk_excludes_rocketships_and_zero_revenue(tmp_path):
+    """A $180k/month product is not something one person copies; £0 is not revenue."""
+    desk = load("trustmrr_desk")
+    slugs = {r["slug"] for r in desk.rows_from(DISCOVERY, desk.FEEDS["both"], 500.0, 25000.0, 8)}
+    assert slugs == {"warmap", "qoest"}, "band should drop the rocketship and the zero"
+
+
+def test_revenue_desk_deduplicates_across_feeds(tmp_path):
+    desk = load("trustmrr_desk")
+    rows = desk.rows_from(DISCOVERY, desk.FEEDS["both"], 500.0, 25000.0, 8)
+    assert [r["slug"] for r in rows].count("warmap") == 1
+
+
+def test_revenue_desk_survives_a_missing_category(tmp_path):
+    """A blank category must not print as a stray dash mid-sentence."""
+    desk = load("trustmrr_desk")
+    rows = desk.rows_from(DISCOVERY, desk.FEEDS["both"], 500.0, 25000.0, 8)
+    body = desk.build_body(rows, 500.0, 25000.0)
+    assert "— via lemonsqueezy." in body
+    assert "— , via" not in body
+
+
+def test_revenue_desk_fails_rather_than_printing_an_empty_board(tmp_path, monkeypatch):
+    desk = load("trustmrr_desk")
+    monkeypatch.setattr(desk, "fetch", lambda *a, **k: {"recentlyAddedStartups": [], "fastestGrowingStartups": []})
+    with pytest.raises(desk.DeskError):
+        desk.build_article(tmp_path / "edition", 8, 500.0, 25000.0, "both")
+
+
+def test_revenue_desk_drops_the_story_when_the_api_is_down(tmp_path, monkeypatch):
+    desk = load("trustmrr_desk")
+    def boom(*a, **k):
+        raise desk.DeskError("TrustMRR discovery unreachable: timed out")
+    monkeypatch.setattr(desk, "fetch", boom)
+    assert desk.main([str(tmp_path / "edition")]) == 1
+
+
+def test_revenue_desk_chart_labels_fit_the_column(tmp_path, monkeypatch):
+    desk = load("trustmrr_desk")
+    monkeypatch.setattr(desk, "fetch", lambda *a, **k: DISCOVERY)
+    front = frontmatter_of(desk.build_article(tmp_path / "edition", 8, 500.0, 25000.0, "both"))
+    assert front["section"] == "projects"
+    assert front["priority"] != 1
+    assert all(len(label) < LABEL_CEILING for label in front["chart"]["labels"])
+    assert front["chart"]["values"] == [7864, 771]

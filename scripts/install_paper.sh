@@ -12,12 +12,17 @@ R="${1:-$HOME/hermes-university}"; V="${2:-$HOME/vault}"
 ENGINE_URL="git+https://github.com/vaelkeep/vael-paper.git#subdirectory=server"
 PV="$R/.venv-paper"   # kept out of the engine venv: vael-paper pins fastapi/uvicorn/pillow
 
-# 1. the paper's identity — seeded once, then it is the owner's file and we never touch it again
-mkdir -p "$V/Paper"
-if [ ! -f "$V/Paper/paper.json" ] && [ -f "$R/vault-template/Paper/paper.json" ]; then
-  cp "$R/vault-template/Paper/paper.json" "$V/Paper/paper.json"
-  echo "  seeded $V/Paper/paper.json — masthead and sections are yours to edit"
-fi
+# 1. each paper's identity — seeded once, then it is the owner's file and we never touch it again.
+#    A paper is an editions root: paper.json beside date-named folders of articles.
+for TPL in "$R"/vault-template/Papers/*/; do
+  [ -d "$TPL" ] || continue
+  NAME=$(basename "$TPL")
+  mkdir -p "$V/Papers/$NAME"
+  if [ ! -f "$V/Papers/$NAME/paper.json" ] && [ -f "$TPL/paper.json" ]; then
+    cp "$TPL/paper.json" "$V/Papers/$NAME/paper.json"
+    echo "  seeded $V/Papers/$NAME/paper.json — masthead and sections are yours to edit"
+  fi
+done
 
 # 2. the rendered site is output, never source: it would add ~500 KB of PNG plates to the vault
 #    every night, and git keeps every blob forever.
@@ -31,8 +36,8 @@ add_ignore() {
   echo "  added $1 to the vault .gitignore"
 }
 grep -q "^# The Hermes Daily" "$GI" 2>/dev/null || printf '\n# The Hermes Daily — rendered output, redrawn on demand, never source\n' >> "$GI"
-add_ignore "Paper/.site/"
-add_ignore "Paper/*/images/*-chart.png"
+add_ignore "Papers/*/.site/"
+add_ignore "Papers/*/*/images/*-chart.png"
 
 # 3. the format check — the only half of the engine the writer needs
 if [ ! -x "$PV/bin/vael-paper-check" ]; then
