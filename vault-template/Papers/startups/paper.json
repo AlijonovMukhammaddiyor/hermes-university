@@ -37,9 +37,9 @@
     }
   ],
   "house": {
-    "max_words": 3000,
+    "max_words": 1800,
     "max_section_articles": 4,
-    "max_pillar_words": 1000,
+    "max_pillar_words": 600,
     "pillars": {
       "tech": [
         "ai",

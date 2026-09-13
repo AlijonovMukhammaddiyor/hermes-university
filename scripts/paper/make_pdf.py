@@ -215,9 +215,22 @@ def split_frontmatter(text: str) -> tuple[dict, str]:
         if not line.strip() or line.strip().startswith("#"):
             continue
         if re.match(r"^\s+-\s", line) and key:
-            meta.setdefault(key + "_list", []).append(line.strip()[2:].strip())
+            # A list item may carry its own keys on the lines beneath it
+            # (`- name: X` then `  url: Y`), so entries are dicts, not strings.
+            item = line.strip()[2:].strip()
+            entry: dict = {}
+            if ":" in item:
+                k, _, v = item.partition(":")
+                entry[k.strip()] = v.strip().strip('"').strip("'")
+            else:
+                entry["value"] = item
+            meta.setdefault(key + "_list", []).append(entry)
         elif re.match(r"^\s+\w+:", line) and key:
-            continue                                   # nested (chart:) — not needed in print
+            items = meta.get(key + "_list")
+            if items:                                  # a nested key on the current list item
+                k, _, v = line.strip().partition(":")
+                items[-1][k.strip()] = v.strip().strip('"').strip("'")
+            continue                                   # otherwise nested (chart:) — not needed here
         elif ":" in line and not line.startswith(" "):
             key, _, value = line.partition(":")
             key, value = key.strip(), value.strip().strip('"').strip("'")
@@ -378,7 +391,11 @@ def build_html(edition_dir: Path, paper: dict, size: str = "tabloid",
                   else "standard" if entry["priority"] == 3 else "brief")
         classes = " ".join(filter(None, [weight, "long" if long else ""]))
         out.append(f'<article class="{classes}">' if not lead else "")
-        out.append(f'<h2>{inline(meta.get("headline", ""))}</h2>')
+        link = next((src["url"] for src in (meta.get("sources_list") or [])
+                     if str(src.get("url", "")).startswith(("http://", "https://"))), None)
+        title = inline(meta.get("headline", ""))
+        out.append(f'<h2><a href="{html.escape(link, quote=True)}">{title}</a></h2>'
+                   if link else f"<h2>{title}</h2>")
         if meta.get("deck"):
             out.append(f'<p class="deck">{inline(meta["deck"])}</p>')
         # A byline on every one of sixteen items is noise; the lead and the
@@ -393,10 +410,11 @@ def build_html(edition_dir: Path, paper: dict, size: str = "tabloid",
             if meta.get("caption"):
                 inner.append(f'<p class="caption">{inline(meta["caption"])}</p>')
         inner.append(render_markdown(body))
-        sources = [x for x in (meta.get("sources_list") or []) if not x.startswith("url:")]
+        sources = meta.get("sources_list") or []
         if sources and (lead or entry["priority"] <= 2):
             inner.append('<div class="sources">Sources: '
-                         + "; ".join(html.escape(x.replace("name:", "").strip()) for x in sources)
+                         + "; ".join(html.escape(src.get("name", "")) for src in sources
+                                     if src.get("name"))
                          + "</div>")
 
         if lead:

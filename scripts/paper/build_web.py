@@ -130,6 +130,10 @@ img { max-width: 100%; height: auto; display: block; margin: var(--s2) 0 var(--s
   line-height: 1.4; }
 
 a { color: inherit; text-decoration: none; border-bottom: 1px solid var(--accent); }
+/* The headline is the link; it keeps its own weight rather than wearing a rule. */
+h2 a.headline { border-bottom: 0; }
+h2 a.headline:hover { color: var(--accent); }
+.sources a { border-bottom-color: var(--rule); }
 a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .sources { font-size: 0.68rem; color: var(--muted); margin-top: var(--s3);
   line-height: 1.45; }
@@ -170,7 +174,12 @@ def build(edition_dir: Path, paper: dict) -> str:
                   else "standard" if entry["priority"] == 3 else "brief")
         long = " long" if len(body) > 1400 else ""
         out = [] if lead else [f'<article class="{weight}{long}">']
-        out.append(f"<h2>{inline(meta.get('headline', ''))}</h2>")
+        link = next((src["url"] for src in (meta.get("sources_list") or [])
+                     if str(src.get("url", "")).startswith(("http://", "https://"))), None)
+        title = inline(meta.get("headline", ""))
+        out.append(f'<h2><a class="headline" href="{html.escape(link, quote=True)}" '
+                   f'target="_blank" rel="noopener">{title}</a></h2>'
+                   if link else f"<h2>{title}</h2>")
         if meta.get("deck"):
             out.append(f'<p class="deck">{inline(meta["deck"])}</p>')
         if meta.get("byline") and (lead or entry["priority"] <= 2):
@@ -185,11 +194,16 @@ def build(edition_dir: Path, paper: dict) -> str:
         # wide tables scroll in their own box rather than pushing the page sideways
         inner.append(render_markdown(body).replace("<table>", '<div class="scroll"><table>')
                                           .replace("</table>", "</table></div>"))
-        sources = [x for x in (meta.get("sources_list") or []) if not x.startswith("url:")]
+        sources = meta.get("sources_list") or []
         if sources and (lead or entry["priority"] <= 2):
-            inner.append('<div class="sources">Sources: '
-                         + "; ".join(html.escape(x.replace("name:", "").strip()) for x in sources)
-                         + "</div>")
+            linked = []
+            for src in sources:
+                name = html.escape(src.get("name", "") or "source")
+                url = src.get("url", "")
+                linked.append(f'<a href="{html.escape(url, quote=True)}" target="_blank" '
+                              f'rel="noopener">{name}</a>'
+                              if str(url).startswith(("http://", "https://")) else name)
+            inner.append('<div class="sources">' + " · ".join(linked) + "</div>")
 
         out.append(f'<div class="flow">{"".join(inner)}</div>' if lead else "".join(inner))
         if not lead:

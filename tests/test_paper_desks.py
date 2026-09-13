@@ -599,3 +599,50 @@ def test_sender_fails_loudly_without_a_token(tmp_path):
     env.write_text('TELEGRAM_HOME_CHANNEL="-100"\n')
     with pytest.raises(SystemExit, match="TELEGRAM_BOT_TOKEN"):
         send.main([str(pdf), "--env", str(env)])
+
+
+def test_frontmatter_keeps_a_source_with_its_url(tmp_path):
+    """`- name: X` then `  url: Y` is one source, not two orphaned strings."""
+    pdf = load("make_pdf")
+    meta, _ = pdf.split_frontmatter(
+        "---\nheadline: H\nsources:\n  - name: Axios\n    url: https://axios.com/a\n"
+        "  - name: TrustMRR\n    url: https://trustmrr.com/b\n---\n\nBody.\n")
+    sources = meta["sources_list"]
+    assert len(sources) == 2
+    assert sources[0] == {"name": "Axios", "url": "https://axios.com/a"}
+    assert sources[1]["url"] == "https://trustmrr.com/b"
+
+
+def test_headline_links_to_its_first_source(tmp_path):
+    web = load("build_web")
+    edition = tmp_path / "2026-09-13"
+    (edition / "articles").mkdir(parents=True)
+    (edition / "articles" / "01-lead.md").write_text(
+        "---\nheadline: A Headline\nsection: today\npriority: 1\n"
+        "sources:\n  - name: Axios\n    url: https://axios.com/a\n---\n\nSixty words of body.\n")
+    out = web.build(edition, {"masthead": "X", "sections": [{"id": "today", "name": "Today"}]})
+    assert 'href="https://axios.com/a"' in out
+    assert 'class="headline"' in out
+
+
+def test_headline_without_a_source_is_plain_text(tmp_path):
+    """A story with nothing to link to must not render an empty anchor."""
+    web = load("build_web")
+    edition = tmp_path / "2026-09-13"
+    (edition / "articles").mkdir(parents=True)
+    (edition / "articles" / "01-lead.md").write_text(ARTICLE)
+    out = web.build(edition, {"masthead": "X", "sections": [{"id": "today", "name": "Today"}]})
+    assert "<h2>A Headline</h2>" in out
+
+
+def test_non_http_source_is_never_linked(tmp_path):
+    """Only http/https print; a javascript: or file: url must degrade to text."""
+    web = load("build_web")
+    edition = tmp_path / "2026-09-13"
+    (edition / "articles").mkdir(parents=True)
+    (edition / "articles" / "01-lead.md").write_text(
+        "---\nheadline: H\nsection: today\npriority: 1\n"
+        "sources:\n  - name: Bad\n    url: javascript:alert(1)\n---\n\nBody.\n")
+    out = web.build(edition, {"masthead": "X", "sections": [{"id": "today", "name": "Today"}]})
+    assert "javascript:alert" not in out.split("<style>")[0] + out.split("</style>")[-1]
+    assert "<h2>H</h2>" in out
