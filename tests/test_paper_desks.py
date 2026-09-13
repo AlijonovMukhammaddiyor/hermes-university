@@ -556,3 +556,38 @@ def test_non_http_source_is_never_linked(tmp_path):
     out = web.build(edition, {"masthead": "X", "sections": [{"id": "today", "name": "Today"}]})
     assert "javascript:alert" not in out.split("<style>")[0] + out.split("</style>")[-1]
     assert "<h2>H</h2>" in out
+
+
+def test_print_reads_the_lead_headline_for_the_caption(tmp_path):
+    pdf = load("make_pdf")
+    edition = tmp_path / "2026-09-13"
+    (edition / "articles").mkdir(parents=True)
+    (edition / "articles" / "30-tail.md").write_text(ARTICLE.replace("priority: 1", "priority: 4"))
+    (edition / "articles" / "01-lead.md").write_text(
+        ARTICLE.replace("headline: A Headline", "headline: The Front Page"))
+    assert pdf.lead_headline(edition) == "The Front Page"
+
+
+def test_print_caption_survives_an_edition_with_no_lead(tmp_path):
+    pdf = load("make_pdf")
+    edition = tmp_path / "2026-09-13"
+    (edition / "articles").mkdir(parents=True)
+    (edition / "articles" / "30-tail.md").write_text(ARTICLE.replace("priority: 1", "priority: 4"))
+    assert pdf.lead_headline(edition) == ""
+
+
+def test_a_failed_delivery_never_fails_the_print(tmp_path, monkeypatch, capsys):
+    """The edition on disk is still the edition; a send failure is a warning."""
+    pdf = load("make_pdf")
+    send = load("send_edition")
+    edition = tmp_path / "2026-09-13"
+    (edition / "articles").mkdir(parents=True)
+    (edition / "articles" / "01-lead.md").write_text(ARTICLE)
+    out = tmp_path / "e.pdf"
+    out.write_bytes(b"%PDF")
+
+    def boom(argv):
+        raise SystemExit("Telegram unreachable")
+    monkeypatch.setattr(send, "main", boom)
+    pdf.deliver(out, edition, {"masthead": "X"}, tmp_path / "config.env")   # must not raise
+    assert "did not go out" in capsys.readouterr().err

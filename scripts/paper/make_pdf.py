@@ -493,6 +493,41 @@ def to_pdf(html_text: str, out: Path, chrome: str) -> None:
             raise SystemExit(f"chromium did not write a PDF:\n{result.stderr[-800:]}")
 
 
+def lead_headline(edition_dir: Path) -> str:
+    """The front page's headline, for the caption on the message."""
+    for path in sorted((edition_dir / "articles").glob("*.md")):
+        meta, _ = split_frontmatter(path.read_text())
+        if str(meta.get("priority", "")).strip() == "1":
+            return meta.get("headline", "")
+    return ""
+
+
+def deliver(pdf: Path, edition_dir: Path, paper: dict, env: Path) -> None:
+    """Post the printed edition to Telegram.
+
+    Printing and posting are one act, not two steps. As two, the second was
+    skipped on every run — the agent has no file-sending tool, so a skill told to
+    "attach the PDF" could not comply, and the paper printed into a git-ignored
+    directory nobody opens. A delivery failure is reported and never fails the
+    print: the edition on disk is still the edition.
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    try:
+        import send_edition
+    except ImportError as exc:                       # pragma: no cover - install fault
+        print(f"warning: cannot post the edition ({exc})", file=sys.stderr)
+        return
+
+    masthead = paper.get("masthead", "The Daily")
+    lead = lead_headline(edition_dir)
+    caption = f"{masthead} — {edition_dir.name}" + (f"\n{lead}" if lead else "")
+    try:
+        send_edition.main([str(pdf), "--caption", caption, "--env", str(env)])
+    except SystemExit as exc:
+        if exc.code:
+            print(f"warning: the edition printed but did not go out: {exc}", file=sys.stderr)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("edition_dir", type=Path)
@@ -502,6 +537,10 @@ def main(argv: list[str] | None = None) -> int:
                         help="page size; broadsheet is the full-size original")
     parser.add_argument("--columns", type=int, default=None,
                         help="override the column count for the size")
+    parser.add_argument("--no-send", action="store_true",
+                        help="print the edition without posting it to Telegram")
+    parser.add_argument("--env", type=Path, default=Path("/root/hermes-university/config.env"),
+                        help="where the Telegram credentials live")
     args = parser.parse_args(argv)
 
     edition = args.edition_dir.expanduser().resolve()
@@ -514,6 +553,9 @@ def main(argv: list[str] | None = None) -> int:
     size = out.stat().st_size
     print(f"wrote {out} ({size // 1024} KB, {args.size}"
           f"{f', {args.columns} cols' if args.columns else ''})")
+
+    if not args.no_send:
+        deliver(out, edition, paper, args.env)
     return 0
 
 
