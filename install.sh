@@ -69,6 +69,11 @@ bash "$ROOT/scripts/install_backup.sh" "$ROOT" "$VAULT" || log "backup install s
 log "installing Anki sync timer"
 bash "$ROOT/scripts/install_anki_sync.sh" "$ROOT" "$VAULT" || log "anki-sync install skipped"
 
+# The Hermes Daily: the paper's identity in the vault + the edition format check. Writing an
+# edition needs no Node; rendering the broadsheet happens on the reader's own machine.
+log "installing The Hermes Daily (edition check + paper.json)"
+bash "$ROOT/scripts/install_paper.sh" "$ROOT" "$VAULT" || log "paper install skipped"
+
 # 4. engine state — init once; never clobber existing records
 STATE="$VAULT/Registrar/state.json"
 if [ ! -f "$STATE" ]; then
