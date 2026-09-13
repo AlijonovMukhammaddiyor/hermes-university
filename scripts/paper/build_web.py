@@ -44,14 +44,17 @@ STYLE = """
   --rule-strong: #6d6558; --accent: #e0784f; --plate: #1d1a15;
 }
 
-/* The host paints its own ground behind the page, so html must carry the
-   newsprint colour too — painting only body leaves a white surround. */
-html { background: var(--ground); }
+/* The host paints its own ground behind the page and its own wrapper around it,
+   so setting html/body is not enough — the surround stayed white. A fixed
+   full-viewport layer behind everything is the one thing no ancestor can undo. */
+html, body { background: var(--ground); }
+body::before { content: ""; position: fixed; inset: 0; background: var(--ground);
+  z-index: -1; pointer-events: none; }
 body { background: var(--ground); color: var(--ink);
   font-family: "Source Serif 4", Georgia, "Times New Roman", serif;
   font-size: 17px; line-height: 1.66; margin: 0;
   font-variant-numeric: oldstyle-nums; -webkit-font-smoothing: antialiased; }
-.sheet { max-width: 1220px; margin: 0 auto; padding: var(--s5) var(--s3) calc(var(--s5) * 1.5); }
+.sheet { background: var(--ground); max-width: 1220px; margin: 0 auto; padding: var(--s5) var(--s3) calc(var(--s5) * 1.5); }
 
 .masthead { text-align: center; border-bottom: 2px solid var(--rule-strong);
   padding-bottom: var(--s2); margin-bottom: var(--s2); }
@@ -77,14 +80,54 @@ body { background: var(--ground); color: var(--ink);
 
 /* A wider minimum column: three cramped measures is most of what made this
    feel dense, so the grid drops to two before it squeezes. */
-.body { columns: 3 21rem; column-gap: var(--s4); }
-article { break-inside: avoid; margin: 0 0 var(--s5); }
+/* A modular grid, not a flow. Stories are rectangles spanning a whole number of
+   columns; the span is what encodes importance, and the reader sees where one
+   story ends without reading a word. `columns:` here is what made the page read
+   as a journal. */
+.body { display: grid; grid-template-columns: repeat(6, 1fr);
+        column-gap: var(--s4); row-gap: var(--s5); align-items: start; }
+
+/* Span for rank. The text inside still sets in a narrow measure — a four-column
+   story has four columns of text, never four-column-long lines. */
+article.major { grid-column: span 3; }
+article.major .cols { columns: 2; column-gap: var(--s3); }
+article.standard { grid-column: span 2; }
+/* The rail: one column. Three distinct widths on the page (3 / 2 / 1) is what
+   lets a reader rank the stories by shape before reading any of them; two
+   widths reads as a two-column layout with a wide bit. */
+article.brief { grid-column: span 1; }
+article.brief h2 { font-size: 0.98rem; }
+
+/* The rail: short items live in one narrow column so they do not fragment the
+   grid, and the reader learns where the briefs are. */
+article.digest { grid-column: span 2; background: var(--plate);
+  padding: var(--s3); border-top: 2px solid var(--rule-strong); }
+article.digest h2 { font-size: 1rem; }
+
+/* A hairline separates adjacent STORIES — never the columns inside one. */
+article + article { border-left: 1px solid var(--rule); padding-left: var(--s3); }
+article.digest + article, article + article.digest { border-left: 0; }
+
+@media (max-width: 1000px) {
+  .body { grid-template-columns: repeat(2, 1fr); }
+  article.major { grid-column: 1 / -1; }
+  article.major .cols { columns: 2; }
+  article.standard, article.brief, article.digest { grid-column: span 1; }
+}
+@media (max-width: 680px) {
+  .body { grid-template-columns: 1fr; row-gap: var(--s4); }
+  article, article.major, article.standard, article.brief, article.digest { grid-column: 1 / -1; }
+  article.major .cols { columns: 1; }
+  article + article { border-left: 0; padding-left: 0; border-top: 1px solid var(--rule);
+    padding-top: var(--s4); }
+}
+article { break-inside: avoid; margin: 0; }
 article.long { break-inside: auto; }
-article.major { margin-bottom: var(--s5); }
-article.brief { margin-bottom: var(--s4); }
+
+
 article.brief .deck { display: none; }
 
-.section-head { column-span: all; border-bottom: 1.5px solid var(--rule-strong);
+.section-head { grid-column: 1 / -1; border-bottom: 1.5px solid var(--rule-strong);
   margin: var(--s5) 0 var(--s4); padding-bottom: var(--s1); font-family: "Playfair Display", Georgia, serif;
   font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3em;
   color: var(--accent); }
@@ -170,10 +213,13 @@ def build(edition_dir: Path, paper: dict) -> str:
 
     def render(entry, lead=False):
         meta, body = entry["meta"], entry["body"]
-        weight = ("major" if entry["priority"] <= 2
+        # A digest is the rail: several short items in one module, so it is packaged
+        # rather than ranked. Everything else takes its span from priority.
+        is_digest = "digest" in entry["name"].lower() or body.count("\n- ") >= 3
+        weight = ("digest" if is_digest and not lead
+                  else "major" if entry["priority"] <= 2
                   else "standard" if entry["priority"] == 3 else "brief")
-        long = " long" if len(body) > 1400 else ""
-        out = [] if lead else [f'<article class="{weight}{long}">']
+        out = [] if lead else [f'<article class="{weight}">']
         link = next((src["url"] for src in (meta.get("sources_list") or [])
                      if str(src.get("url", "")).startswith(("http://", "https://"))), None)
         title = inline(meta.get("headline", ""))
@@ -205,7 +251,14 @@ def build(edition_dir: Path, paper: dict) -> str:
                               if str(url).startswith(("http://", "https://")) else name)
             inner.append('<div class="sources">' + " · ".join(linked) + "</div>")
 
-        out.append(f'<div class="flow">{"".join(inner)}</div>' if lead else "".join(inner))
+        # A wide module keeps a narrow measure by setting its own text in columns.
+        body_html = "".join(inner)
+        if lead:
+            out.append(f'<div class="flow">{body_html}</div>')
+        elif weight == "major":
+            out.append(f'<div class="cols">{body_html}</div>')
+        else:
+            out.append(body_html)
         if not lead:
             out.append("</article>")
         return "".join(out)
