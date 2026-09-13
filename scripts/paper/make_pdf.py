@@ -90,7 +90,7 @@ html, body {{ margin: 0; padding: 0; }}
 p, li, td, th, .deck, .caption, .sources {{ orphans: 2; widows: 2; }}
 body {{
   background: #fbf9f3; color: #1a1712;
-  font-family: "Source Serif 4", "Georgia", "Times New Roman", serif;
+  font-family: "PT Serif", Georgia, "Times New Roman", serif;
   font-size: {body}pt; line-height: 1.46;
   text-rendering: optimizeLegibility;
   -webkit-font-feature-settings: "kern" 1, "liga" 1, "onum" 1;
@@ -98,7 +98,7 @@ body {{
 
 .masthead {{ text-align: center; border-bottom: 1pt solid #1a1712;
             padding-bottom: {gap}pt; margin: 0 0 {gap3}pt; }}
-.masthead h1 {{ font-family: "Playfair Display", "Didot", Georgia, serif;
+.masthead h1 {{ font-family: "Old Standard TT", Georgia, serif;
   font-size: {mast}pt; font-weight: 900; letter-spacing: -1pt; margin: 0; line-height: 0.95; }}
 .masthead .rule {{ display: flex; justify-content: space-between; align-items: baseline;
   margin-top: 7pt; font-size: 7pt; text-transform: uppercase; letter-spacing: 1.8pt;
@@ -107,14 +107,14 @@ body {{
 
 .lead {{ margin: 0 0 {gap3}pt; padding-bottom: {gap2}pt;
          border-bottom: 0.6pt solid #d8d0c0; break-inside: avoid; }}
-.lead h2 {{ font-family: "Playfair Display", Georgia, serif; font-size: {leadsize}pt;
+.lead h2 {{ font-family: "Old Standard TT", Georgia, serif; font-size: {leadsize}pt;
   line-height: 1.06; font-weight: 900; text-align: center; margin: 0 0 7pt;
   letter-spacing: -0.4pt; }}
 .lead .deck {{ text-align: center; font-size: {deck}pt; font-style: italic; color: #4a4238;
   margin: 0 auto 12pt; max-width: 74%; line-height: 1.4; }}
 .lead .flow {{ column-count: {leadcols}; column-gap: 9mm; }}
 .lead .flow > p:first-of-type::first-letter {{
-  float: left; font-family: "Playfair Display", Georgia, serif; font-size: {dropcap}pt;
+  float: left; font-family: "Old Standard TT", Georgia, serif; font-size: {dropcap}pt;
   line-height: 0.76; font-weight: 900; padding: 3pt 5pt 0 0; }}
 
 .paper {{ column-count: {cols}; column-gap: 9mm;
@@ -125,10 +125,10 @@ article.long {{ break-inside: auto; }}
 
 .section-head {{ column-span: all; border-bottom: 0.8pt solid #1a1712;
   margin: {gap2}pt 0 {gap2}pt; padding-bottom: 3pt; break-after: avoid; break-inside: avoid;
-  font-family: "Playfair Display", Georgia, serif; font-size: 8.5pt; font-weight: 700;
+  font-family: "Old Standard TT", Georgia, serif; font-size: 8.5pt; font-weight: 700;
   text-transform: uppercase; letter-spacing: 3.4pt; color: #1a1712; }}
 
-h2 {{ font-family: "Playfair Display", Georgia, serif; line-height: 1.14;
+h2 {{ font-family: "Old Standard TT", Georgia, serif; line-height: 1.14;
   font-weight: 700; margin: 0 0 {gap}pt; text-align: left; letter-spacing: -0.1pt;
   break-after: avoid; }}
 /* Weight follows priority: a section's lead story is set larger than its tail,
@@ -143,7 +143,7 @@ article.brief {{ margin-bottom: {gap2}pt; }}
 article.brief .deck {{ display: none; }}
 .deck {{ font-style: italic; color: #4a4238; font-size: {deck}pt; margin: 0 0 6pt;
         text-align: left; line-height: 1.34; }}
-.byline {{ font-size: 6pt; text-transform: uppercase; letter-spacing: 1.2pt; color: #8a8073;
+.byline {{ font-family: "PT Sans Narrow", "Helvetica Neue", sans-serif; font-size: 6pt; text-transform: uppercase; letter-spacing: 1.2pt; color: #8a8073;
   margin: 0 0 6pt; text-align: left; }}
 
 p {{ margin: 0 0 {gap}pt; }}
@@ -151,7 +151,7 @@ p + p {{ text-indent: 1.15em; }}
 ul {{ margin: 0 0 7pt; padding-left: 0; list-style: none; }}
 li {{ margin: 0 0 5pt; text-align: left; padding-left: 8pt; text-indent: -8pt; }}
 li::before {{ content: "— "; color: #a89e8e; }}
-h3 {{ font-size: 6.4pt; text-transform: uppercase; letter-spacing: 1.5pt; color: #8a8073;
+h3 {{ font-family: "PT Sans Narrow", "Helvetica Neue", sans-serif; font-size: 6.4pt; text-transform: uppercase; letter-spacing: 1.5pt; color: #8a8073;
   margin: 9pt 0 4pt; text-align: left; font-weight: 600; }}
 
 /* auto, not fixed: fixed contains but forces equal columns, which wraps a name
@@ -162,7 +162,7 @@ table {{ border-collapse: collapse; width: 100%; max-width: 100%; table-layout: 
 th:first-child, td:first-child {{ width: 1.4em; }}
 th, td {{ padding: 2.6pt 5pt 2.6pt 0; text-align: left; border: 0; }}
 th:last-child, td:last-child {{ padding-right: 0; }}
-th {{ font-size: 5.9pt; text-transform: uppercase; letter-spacing: 0.7pt; color: #8a8073;
+th {{ font-family: "PT Sans Narrow", "Helvetica Neue", sans-serif; font-size: 5.9pt; text-transform: uppercase; letter-spacing: 0.7pt; color: #8a8073;
      border-bottom: 0.6pt solid #1a1712; font-weight: 600; }}
 tbody tr + tr td {{ border-top: 0.3pt solid #e8e1d4; }}
 /* Right-aligned figures keep their gutter — only the last column loses it,
@@ -175,7 +175,7 @@ img {{ max-width: 100%; height: auto; margin: 4pt 0 3pt; break-inside: avoid;
   line-height: 1.35; text-align: left; }}
 
 a {{ color: inherit; text-decoration: none; }}
-.sources {{ font-size: 5.8pt; color: #a89e8e; margin-top: 5pt; text-align: left;
+.sources {{ font-family: "PT Sans Narrow", "Helvetica Neue", sans-serif; font-size: 5.8pt; color: #a89e8e; margin-top: 5pt; text-align: left;
            line-height: 1.3; }}
 strong {{ font-weight: 700; }}
 code {{ font-family: "SF Mono", Menlo, monospace; font-size: 6.4pt; }}
@@ -330,6 +330,22 @@ def read_paper(editions_root: Path) -> dict:
     return meta
 
 
+FONT_CSS = Path("~/.hermes/fonts/fonts.css").expanduser()
+
+
+def font_faces() -> str:
+    """The @font-face block, or nothing if the fonts were never fetched.
+
+    Without this the page falls back to whatever serif the host happens to have —
+    DejaVu on a plain Debian box — and the typography is decorative only.
+    """
+    if FONT_CSS.is_file():
+        return FONT_CSS.read_text()
+    print(f"warning: no fonts at {FONT_CSS}; run fetch_fonts.py or the PDF "
+          f"will set in the host's default serif", file=sys.stderr)
+    return ""
+
+
 def build_html(edition_dir: Path, paper: dict, size: str = "tabloid",
                columns: int | None = None) -> str:
     """The edition as one print-ready newspaper page-flow."""
@@ -451,7 +467,8 @@ def build_html(edition_dir: Path, paper: dict, size: str = "tabloid",
     chunks.append("</div>")
 
     return (f"<!doctype html><meta charset='utf-8'><title>{html.escape(masthead)} "
-            f"{html.escape(date_str)}</title><style>{style}</style>" + "\n".join(chunks))
+            f"{html.escape(date_str)}</title>"
+            f"<style>{font_faces()}\n{style}</style>" + "\n".join(chunks))
 
 
 def to_pdf(html_text: str, out: Path, chrome: str) -> None:
@@ -459,11 +476,15 @@ def to_pdf(html_text: str, out: Path, chrome: str) -> None:
         source = Path(tmp) / "edition.html"
         source.write_text(html_text)
         cmd = [
-            chrome, "--headless", "--disable-gpu", "--no-sandbox",
+            # `--headless=new` and not the legacy mode: the old one resolves
+            # webfonts incompletely and prints the fallback serif instead.
+            chrome, "--headless=new", "--disable-gpu", "--no-sandbox",
             "--no-pdf-header-footer", "--run-all-compositor-stages-before-draw",
             # the @page size is authoritative; without this Chromium refits to Letter
             "--print-to-pdf-no-header",
-            "--virtual-time-budget=10000",
+            # The faces are inlined but still load asynchronously; a short budget
+            # snapshots the fallback. This waits for them.
+            "--virtual-time-budget=30000",
             f"--print-to-pdf={out}", source.as_uri(),
         ]
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=180)

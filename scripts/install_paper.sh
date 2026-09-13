@@ -41,7 +41,16 @@ add_ignore "Papers/*/*/images/*-chart.png"
 # The PDF is ~700 KB and regenerated from the same markdown on demand.
 add_ignore "Papers/*/*/*.pdf"
 
-# 3. the format check — the only half of the engine the writer needs
+# 3. the paper's typefaces. Without these the print build falls back to whatever
+#    serif the host has — DejaVu on a plain Debian box — and the typography in the
+#    stylesheet is decorative only.
+if [ ! -f "$HOME/.hermes/fonts/fonts.css" ]; then
+  echo "  fetching the paper's typefaces"
+  python3 "$R/scripts/paper/fetch_fonts.py" >/dev/null 2>&1 \
+    || echo "  couldn't fetch fonts — the PDF will set in the host's default serif"
+fi
+
+# 4. the format check — the only half of the engine the writer needs
 if [ ! -x "$PV/bin/vael-paper-check" ]; then
   echo "  installing the vael-paper format check (no Node, check only)"
   python3 -m venv "$PV" >/dev/null 2>&1 || true
