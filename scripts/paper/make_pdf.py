@@ -40,11 +40,13 @@ CHROME_CANDIDATES = [
 SIZES = {
     # width, height, and how much column room the page can carry before the
     # measure gets too narrow to read. The count itself is chosen from content.
-    "broadsheet": ("305mm", "560mm", 6),
-    "tabloid":    ("279mm", "432mm", 5),
-    "berliner":   ("315mm", "470mm", 5),
-    "a3":         ("297mm", "420mm", 5),
-    "a4":         ("210mm", "297mm", 3),
+    # width, height, column ceiling, and the margin the sheet is printed with.
+    # A bigger sheet carries a bigger margin; the page never crowds its edge.
+    "broadsheet": ("305mm", "560mm", 6, "22mm", "18mm"),
+    "tabloid":    ("279mm", "432mm", 5, "19mm", "16mm"),
+    "berliner":   ("315mm", "470mm", 5, "20mm", "17mm"),
+    "a3":         ("297mm", "420mm", 5, "19mm", "16mm"),
+    "a4":         ("210mm", "297mm", 3, "16mm", "14mm"),
 }
 
 
@@ -75,11 +77,17 @@ def fit_layout(words: int, ceiling: int) -> tuple[int, float]:
 
 
 STYLE = """
-@page {{ size: {w} {h}; margin: 16mm 14mm 16mm; }}
+@page {{ size: {w} {h}; margin: {mv} {mh}; }}
 @media print {{ body {{ background: #fff; }} }}
 
 html {{ color-scheme: light; }}
 html, body {{ margin: 0; padding: 0; }}
+
+/* Nothing may cross the measure. A bare URL or a long product name would
+   otherwise push past its column and out over the page margin, which no amount
+   of @page margin can claw back. */
+* {{ overflow-wrap: anywhere; word-break: normal; }}
+p, li, td, th, .deck, .caption, .sources {{ orphans: 2; widows: 2; }}
 body {{
   background: #fbf9f3; color: #1a1712;
   font-family: "Source Serif 4", "Georgia", "Times New Roman", serif;
@@ -88,8 +96,8 @@ body {{
   -webkit-font-feature-settings: "kern" 1, "liga" 1, "onum" 1;
 }}
 
-.masthead {{ text-align: center; border-bottom: 1pt solid #1a1712; padding-bottom: 6pt;
-            margin: 0 0 14pt; }}
+.masthead {{ text-align: center; border-bottom: 1pt solid #1a1712;
+            padding-bottom: {gap}pt; margin: 0 0 {gap3}pt; }}
 .masthead h1 {{ font-family: "Playfair Display", "Didot", Georgia, serif;
   font-size: {mast}pt; font-weight: 900; letter-spacing: -1pt; margin: 0; line-height: 0.95; }}
 .masthead .rule {{ display: flex; justify-content: space-between; align-items: baseline;
@@ -97,7 +105,8 @@ body {{
   color: #6b6154; }}
 .masthead .motto {{ font-style: italic; text-transform: none; letter-spacing: 0; font-size: 8pt; }}
 
-.lead {{ margin: 0 0 18pt; padding-bottom: 14pt; border-bottom: 0.6pt solid #d8d0c0; }}
+.lead {{ margin: 0 0 {gap3}pt; padding-bottom: {gap2}pt;
+         border-bottom: 0.6pt solid #d8d0c0; break-inside: avoid; }}
 .lead h2 {{ font-family: "Playfair Display", Georgia, serif; font-size: {leadsize}pt;
   line-height: 1.06; font-weight: 900; text-align: center; margin: 0 0 7pt;
   letter-spacing: -0.4pt; }}
@@ -111,31 +120,32 @@ body {{
 .paper {{ column-count: {cols}; column-gap: 9mm;
          text-align: justify; hyphens: auto; -webkit-hyphens: auto; }}
 
-article {{ break-inside: avoid-column; margin: 0 0 17pt; }}
+article {{ break-inside: avoid-column; margin: 0 0 {gap3}pt; }}
 article.long {{ break-inside: auto; }}
 
 .section-head {{ column-span: all; border-bottom: 0.8pt solid #1a1712;
-  margin: 10pt 0 13pt; padding-bottom: 3pt;
+  margin: {gap2}pt 0 {gap2}pt; padding-bottom: 3pt; break-after: avoid; break-inside: avoid;
   font-family: "Playfair Display", Georgia, serif; font-size: 8.5pt; font-weight: 700;
   text-transform: uppercase; letter-spacing: 3.4pt; color: #1a1712; }}
 
 h2 {{ font-family: "Playfair Display", Georgia, serif; line-height: 1.14;
-  font-weight: 700; margin: 0 0 5pt; text-align: left; letter-spacing: -0.1pt; }}
+  font-weight: 700; margin: 0 0 {gap}pt; text-align: left; letter-spacing: -0.1pt;
+  break-after: avoid; }}
 /* Weight follows priority: a section's lead story is set larger than its tail,
    which is how a reader sees what matters without being told. */
 article.major h2 {{ font-size: {h_major}pt; line-height: 1.08; }}
 article.standard h2 {{ font-size: {h_standard}pt; }}
 article.brief h2 {{ font-size: {h_brief}pt; font-family: "Source Serif 4", Georgia, serif;
   font-weight: 700; letter-spacing: 0; }}
-article.major {{ margin-bottom: 19pt; }}
-article.brief {{ margin-bottom: 13pt; }}
+article.major {{ margin-bottom: {gap3}pt; }}
+article.brief {{ margin-bottom: {gap2}pt; }}
 article.brief .deck {{ display: none; }}
 .deck {{ font-style: italic; color: #4a4238; font-size: {deck}pt; margin: 0 0 6pt;
         text-align: left; line-height: 1.34; }}
 .byline {{ font-size: 6pt; text-transform: uppercase; letter-spacing: 1.2pt; color: #8a8073;
   margin: 0 0 6pt; text-align: left; }}
 
-p {{ margin: 0 0 5pt; }}
+p {{ margin: 0 0 {gap}pt; }}
 p + p {{ text-indent: 1.15em; }}
 ul {{ margin: 0 0 7pt; padding-left: 0; list-style: none; }}
 li {{ margin: 0 0 5pt; text-align: left; padding-left: 8pt; text-indent: -8pt; }}
@@ -143,8 +153,12 @@ li::before {{ content: "— "; color: #a89e8e; }}
 h3 {{ font-size: 6.4pt; text-transform: uppercase; letter-spacing: 1.5pt; color: #8a8073;
   margin: 9pt 0 4pt; text-align: left; font-weight: 600; }}
 
-table {{ border-collapse: collapse; width: 100%; font-size: 7pt; margin: 2pt 0 8pt;
-        break-inside: avoid; }}
+/* auto, not fixed: fixed contains but forces equal columns, which wraps a name
+   onto three lines beside a two-character rank. overflow-wrap above is what
+   actually keeps a long cell inside the measure. */
+table {{ border-collapse: collapse; width: 100%; max-width: 100%; table-layout: auto;
+        font-size: {tbl}pt; margin: 2pt 0 {gap2}pt; break-inside: avoid; }}
+th:first-child, td:first-child {{ width: 1.4em; }}
 th, td {{ padding: 2.6pt 5pt 2.6pt 0; text-align: left; border: 0; }}
 th:last-child, td:last-child {{ padding-right: 0; }}
 th {{ font-size: 5.9pt; text-transform: uppercase; letter-spacing: 0.7pt; color: #8a8073;
@@ -309,7 +323,7 @@ def build_html(edition_dir: Path, paper: dict, size: str = "tabloid",
     if not articles:
         raise SystemExit(f"no articles in {edition_dir}")
 
-    width, height, ceiling = SIZES[size]
+    width, height, ceiling, margin_v, margin_h = SIZES[size]
 
     order = {sec["id"]: i for i, sec in enumerate(paper.get("sections") or [])}
     parsed = []
@@ -332,7 +346,12 @@ def build_html(edition_dir: Path, paper: dict, size: str = "tabloid",
 
     # Everything else is a ratio of the body size, so the page scales as one thing.
     style = STYLE.format(
-        w=width, h=height, cols=cols, body=round(body_pt, 2),
+        w=width, h=height, mv=margin_v, mh=margin_h, cols=cols,
+        body=round(body_pt, 2),
+        gap=round(body_pt * 0.62, 2),      # the vertical unit everything spaces by
+        gap2=round(body_pt * 1.3, 2),
+        gap3=round(body_pt * 1.85, 2),
+        tbl=round(body_pt * 0.72, 2),
         mast=round(body_pt * (5.2 if cols >= 4 else 4.2), 1),
         leadsize=round(body_pt * (3.3 if cols >= 4 else 2.6), 1),
         deck=round(body_pt * 0.82, 2),

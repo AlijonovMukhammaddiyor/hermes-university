@@ -455,3 +455,32 @@ def test_headline_weight_follows_priority(tmp_path):
              float(re.search(rf"article\.{k} h2 \{{ font-size: ([\d.]+)pt", out).group(1))
              for k in ("major", "standard", "brief")}
     assert sizes["major"] > sizes["standard"] > sizes["brief"]
+
+
+def test_print_edition_contains_its_content_within_the_measure(tmp_path):
+    """A bare URL or a wide table must not push past the column and over the margin.
+
+    No amount of @page margin claws that back, so the containment rules have to be
+    in the stylesheet.
+    """
+    pdf = load("make_pdf")
+    edition = tmp_path / "2026-09-13"
+    (edition / "articles").mkdir(parents=True)
+    (edition / "articles" / "01-lead.md").write_text(ARTICLE)
+    out = pdf.build_html(edition, {"masthead": "X", "sections": []})
+    assert "overflow-wrap: anywhere" in out
+    assert "max-width: 100%" in out
+    assert "orphans: 2" in out and "widows: 2" in out
+    assert "break-after: avoid" in out, "a headline must not be stranded at a column foot"
+
+
+def test_margins_scale_with_the_sheet(tmp_path):
+    """A broadsheet carries a bigger margin than an A4; the page never crowds its edge."""
+    pdf = load("make_pdf")
+    edition = tmp_path / "2026-09-13"
+    (edition / "articles").mkdir(parents=True)
+    (edition / "articles" / "01-lead.md").write_text(ARTICLE)
+    paper = {"masthead": "X", "sections": []}
+    assert "margin: 22mm 18mm" in pdf.build_html(edition, paper, "broadsheet")
+    assert "margin: 19mm 16mm" in pdf.build_html(edition, paper, "tabloid")
+    assert "margin: 16mm 14mm" in pdf.build_html(edition, paper, "a4")
