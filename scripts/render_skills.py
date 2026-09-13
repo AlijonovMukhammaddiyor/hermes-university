@@ -33,12 +33,6 @@ def main(argv: list[str]) -> int:
         "COURSES_DIR": str(root / "courses"),
         # source list lives in the VAULT (Obsidian-editable, auto-synced) — seeded from vault-template
         "BRIEFING_SOURCES": str(Path(vault) / "Briefing" / "sources.yaml"),
-        # The Hermes Daily: editions are written into the vault, the data desks live in the
-        # repo, and the format check runs from its own venv so the agent host needs no Node.
-        "PAPER_DIR": str(Path(vault) / "Paper"),
-        "DAILY_DIR": str(Path(vault) / "Daily"),
-        "DESKS": str(root / "scripts" / "paper"),
-        "PAPER_CHECK": str(root / ".venv-paper" / "bin" / "vael-paper-check"),
     }
     # registrar + examiner + professor (RFC-004: one professor teaches every course) + briefer
     # (daily digest, RFC-010). Shared reference docs pulled on demand via skill_view (RFC-013).
