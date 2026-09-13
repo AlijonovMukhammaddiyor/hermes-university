@@ -21,7 +21,6 @@ from __future__ import annotations
 import argparse
 import json
 import mimetypes
-import sys
 import urllib.error
 import urllib.request
 import uuid
